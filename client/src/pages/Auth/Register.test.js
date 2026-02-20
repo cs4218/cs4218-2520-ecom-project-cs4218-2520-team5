@@ -6,9 +6,19 @@ import '@testing-library/jest-dom/extend-expect';
 import toast from 'react-hot-toast';
 import Register from './Register';
 
-// Mocking axios.post
-jest.mock('axios');
-jest.mock('react-hot-toast');
+// Mocking axios and react-hot-toast
+jest.mock('axios', () => ({
+  post: jest.fn(),
+  get: jest.fn(),
+}));
+jest.mock('react-hot-toast', () => ({
+  __esModule: true,
+  default: {
+    success: jest.fn(),
+    error: jest.fn(),
+  },
+  Toaster: () => null,
+}));
 
 jest.mock('../../context/auth', () => ({
     useAuth: jest.fn(() => [null, jest.fn()]) // Mock useAuth hook to return null state and a mock function for setAuth
@@ -38,11 +48,11 @@ window.matchMedia = window.matchMedia || function() {
       removeListener: function() {}
     };
   };
-      
 
 describe('Register Component', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    axios.get.mockResolvedValueOnce({ data: { category: [] } });
   });
 
   it('should register the user successfully', async () => {
@@ -90,6 +100,9 @@ describe('Register Component', () => {
     fireEvent.change(getByPlaceholderText('What is Your Favorite sports'), { target: { value: 'Football' } });
 
     fireEvent.click(getByText('REGISTER'));
+
+    // Wait here
+    await Promise.resolve();
 
     await waitFor(() => expect(axios.post).toHaveBeenCalled());
     expect(toast.error).toHaveBeenCalledWith('Something went wrong');
