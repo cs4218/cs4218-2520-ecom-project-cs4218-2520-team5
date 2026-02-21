@@ -5,23 +5,56 @@ import { hashPassword } from "./../helpers/authHelper.js";
 //update profile
 export const updateProfileController = async (req, res) => {
   try {
-    const { name, email, password, address, phone } = req.body;
+    // Check if user ID exists
+    if (!req.user || !req.user._id) {
+      return res.status(401).send({
+        success: false,
+        message: "User ID not found in request",
+      });
+    }
+
+    const { name, password, address, phone } = req.body;
+
     const user = await userModel.findById(req.user._id);
+
+    // Check if user exists
+    if (!user) {
+      return res.status(404).send({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    // Validate empty strings
+    if (name === "") {
+      return res.status(400).send({ error: "Name cannot be empty" });
+    }
+    if (phone === "") {
+      return res.status(400).send({ error: "Phone cannot be empty" });
+    }
+    if (address === "") {
+      return res.status(400).send({ error: "Address cannot be empty" });
+    }
+
     //password
     if (password && password.length < 6) {
-      return res.json({ error: "Passsword is required and 6 character long" });
+      return res
+        .status(400)
+        .send({ error: "Password is required and 6 character long" });
     }
     const hashedPassword = password ? await hashPassword(password) : undefined;
-    const updatedUser = await userModel.findByIdAndUpdate(
-      req.user._id,
-      {
-        name: name || user.name,
-        password: hashedPassword || user.password,
-        phone: phone || user.phone,
-        address: address || user.address,
-      },
-      { new: true },
-    );
+    const updatedUser = await userModel
+      .findByIdAndUpdate(
+        req.user._id,
+        {
+          name: name || user.name,
+          password: hashedPassword || user.password,
+          phone: phone || user.phone,
+          address: address || user.address,
+        },
+        { new: true },
+      )
+      .select("-password");
     res.status(200).send({
       success: true,
       message: "Profile Updated Successfully",
