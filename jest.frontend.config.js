@@ -39,6 +39,7 @@ export default {
     "client/src/context/cart.js",
     "client/src/components/Form/SearchInput.js",
     "client/src/components/Footer.js",
+    "client/src/components/Header.js",
     "client/src/components/Spinner.js",
     "client/src/components/Layout.js",
     "client/src/components/UserMenu.js",
