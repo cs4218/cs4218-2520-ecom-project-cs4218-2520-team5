@@ -32,6 +32,7 @@ export default {
     "client/src/pages/user/Dashboard.js",
     "client/src/pages/user/Orders.js",
     "client/src/pages/user/Profile.js",
+    "client/src/context/auth.js",
     "client/src/context/search.js",
     "client/src/components/Form/SearchInput.js",
     "client/src/components/Footer.js",

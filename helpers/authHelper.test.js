@@ -1,3 +1,5 @@
+// Test cases written by: Ong Xin Hui Lynnette, A0257058X
+// Assisted by AI
 import { jest, describe, it, expect, beforeEach, afterEach } from "@jest/globals";
 
 const mockHash = jest.fn();

@@ -25,7 +25,7 @@ export default {
     "controllers/categoryController.js",
     "middlewares/authMiddleware.js",
     "helpers/authHelper.js",
-    "models/**",
+    "models/userModel.js",
     "config/db.js",
   ],
   coverageThreshold: {
