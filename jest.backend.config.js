@@ -1,24 +1,27 @@
 export default {
-	transform: {},
-	// display name
-	displayName: "backend",
+  transform: {},
+  // display name
+  displayName: "backend",
 
-	// when testing backend
-	testEnvironment: "node",
+  // inject jest globals for ES modules
+  injectGlobals: true,
 
-	// which test to run
-	testMatch: ["<rootDir>/controllers/*.test.js"],
+  // when testing backend
+  testEnvironment: "node",
 
-	// jest code coverage
-	collectCoverage: true,
-	collectCoverageFrom: ["controllers/**"],
-	coverageThreshold: {
-		global: {
-			lines: 100,
-			functions: 100,
-		},
-	},
-	moduleNameMapper: {
-		"^(\\.{1,2}/.*)\\.js$": "$1",
-	},
+  // which test to run
+  testMatch: ["<rootDir>/controllers/*.test.js"],
+
+  // jest code coverage
+  collectCoverage: true,
+  collectCoverageFrom: ["controllers/**"],
+  coverageThreshold: {
+    global: {
+      lines: 100,
+      functions: 100,
+    },
+  },
+  moduleNameMapper: {
+    "^(\\.{1,2}/.*)\\.js$": "$1",
+  },
 };
