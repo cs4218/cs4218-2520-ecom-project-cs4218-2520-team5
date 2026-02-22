@@ -3,6 +3,9 @@ export default {
 	// display name
 	displayName: "backend",
 
+	// inject jest globals for ES modules
+	injectGlobals: true,
+
 	// when testing backend
 	testEnvironment: "node",
 
