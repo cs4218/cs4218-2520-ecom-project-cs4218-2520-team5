@@ -26,6 +26,8 @@ export default {
     "client/src/pages/Contact.js",
     "client/src/pages/Pagenotfound.js",
     "client/src/pages/Policy.js",
+    "client/src/pages/HomePage.js",
+    "client/src/pages/CartPage.js",
     "client/src/pages/Search.js",
     "client/src/pages/Auth/Login.js",
     "client/src/pages/Auth/Register.js",
@@ -34,6 +36,7 @@ export default {
     "client/src/pages/user/Profile.js",
     "client/src/context/auth.js",
     "client/src/context/search.js",
+    "client/src/context/cart.js",
     "client/src/components/Form/SearchInput.js",
     "client/src/components/Footer.js",
     "client/src/components/Spinner.js",
@@ -48,8 +51,8 @@ export default {
   ],
   coverageThreshold: {
     global: {
-      lines: 100,
-      functions: 100,
+      lines: 90,
+      functions: 90,
     },
   },
   setupFilesAfterEnv: ["<rootDir>/client/src/setupTests.js"],

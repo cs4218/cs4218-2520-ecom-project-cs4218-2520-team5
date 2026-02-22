@@ -26,6 +26,7 @@ export default {
     "middlewares/authMiddleware.js",
     "helpers/authHelper.js",
     "models/userModel.js",
+    "models/orderModel.js",
     "config/db.js",
   ],
   coverageThreshold: {
