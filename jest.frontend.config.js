@@ -29,14 +29,19 @@ export default {
 		"<rootDir>/client/src/pages/admin/AdminDashboard.test.js",
 		"<rootDir>/client/src/components/AdminMenu.test.js",
 		"<rootDir>/client/src/hooks/useCategory.test.js",
+		"<rootDir>/client/src/pages/user/Orders.test.js",
 	],
 
 	// jest code coverage
 	collectCoverage: true,
 	collectCoverageFrom: [
 		"client/src/pages/Auth/**",
-		"client/src/pages/**",
-		"client/src/context/**",
+		"client/src/pages/Categories.js",
+		"client/src/pages/Search.js",
+		"client/src/pages/admin/CreateCategory.js",
+		"client/src/pages/admin/AdminDashboard.js",
+		"client/src/pages/user/Orders.js",
+		"client/src/context/search.js",
 		"client/src/components/Form/**",
 		"client/src/components/AdminMenu.js",
 		"client/src/hooks/useCategory.js",
