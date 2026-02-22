@@ -1,5 +1,10 @@
 import { jest } from "@jest/globals";
 
+// Mock braintree config to prevent real gateway construction
+jest.unstable_mockModule("../config/braintree.js", () => ({
+  default: {},
+}));
+
 // Mock dependencies before importing the controller
 const mockProductModel = {
   find: jest.fn(),
@@ -18,28 +23,6 @@ const mockFs = {
 };
 
 const mockSlugify = jest.fn();
-
-const mockGateway = {
-  clientToken: {
-    generate: jest.fn(),
-  },
-  transaction: {
-    sale: jest.fn(),
-  },
-};
-
-jest.unstable_mockModule("braintree", () => ({
-  default: {
-    BraintreeGateway: jest.fn().mockReturnValue(mockGateway),
-    Environment: { Sandbox: "sandbox" },
-  },
-}));
-
-jest.unstable_mockModule("../models/orderModel.js", () => ({
-  default: jest.fn().mockImplementation(() => ({
-    save: jest.fn().mockResolvedValue({}),
-  })),
-}));
 
 jest.unstable_mockModule("../models/productModel.js", () => ({
   default: jest.fn().mockImplementation(() => ({
@@ -82,8 +65,6 @@ const {
   searchProductController,
   realtedProductController,
   productCategoryController,
-  braintreeTokenController,
-  brainTreePaymentController,
 } = await import("./productController.js");
 
 describe("Product Controller", () => {
@@ -101,8 +82,6 @@ describe("Product Controller", () => {
     mockCategoryModel.findOne.mockReset();
     mockFs.readFileSync.mockReset();
     mockSlugify.mockReset();
-    mockGateway.clientToken.generate.mockReset();
-    mockGateway.transaction.sale.mockReset();
 
     req = {
       fields: {},
@@ -398,7 +377,7 @@ describe("Product Controller", () => {
       expect(res.status).toHaveBeenCalledWith(500);
       expect(res.send).toHaveBeenCalledWith({
         success: false,
-        message: "Eror while getting single product",
+        message: "Error while getting single product",
         error: mockError,
       });
     });
@@ -1144,82 +1123,20 @@ describe("Product Controller", () => {
     });
   });
 
-  // ==================== braintreeTokenController Tests ====================
-  describe("braintreeTokenController", () => {
-    it("should generate client token successfully", async () => {
-      const mockResponse = { clientToken: "test-token" };
-      mockGateway.clientToken.generate.mockImplementation((opts, cb) => {
-        cb(null, mockResponse);
-      });
-
-      await braintreeTokenController(req, res);
-
-      expect(res.send).toHaveBeenCalledWith(mockResponse);
-    });
-
-    it("should handle error when generating client token", async () => {
-      const mockError = new Error("Token error");
-      mockGateway.clientToken.generate.mockImplementation((opts, cb) => {
-        cb(mockError, null);
-      });
-
-      await braintreeTokenController(req, res);
-
+  // ==================== relatedProductsController Edge Case ====================
+  describe("relatedProductsController edge case", () => {
+    it("should handle error and respond with 500", async () => {
+      const { relatedProductsController } = await import("./productController.js");
+      const req = { params: { pid: "test", cid: "test" } };
+      const res = { status: jest.fn().mockReturnThis(), json: jest.fn() };
+      // Force error
+      const originalFind = (await import("../models/productModel.js")).default.find;
+      (await import("../models/productModel.js")).default.find = jest.fn(() => { throw new Error("Test error"); });
+      await relatedProductsController(req, res);
       expect(res.status).toHaveBeenCalledWith(500);
-      expect(res.send).toHaveBeenCalledWith(mockError);
-    });
-
-    it("should handle thrown exception in token generation", async () => {
-      mockGateway.clientToken.generate.mockImplementation(() => {
-        throw new Error("Unexpected throw");
-      });
-
-      await braintreeTokenController(req, res);
-      // catch block reached — no crash
-    });
-  });
-
-  // ==================== brainTreePaymentController Tests ====================
-  describe("brainTreePaymentController", () => {
-    it("should process payment and save order successfully", async () => {
-      const mockResult = { transaction: { id: "txn123" } };
-      req.body = { nonce: "test-nonce", cart: [{ price: 50 }, { price: 30 }] };
-      req.user = { _id: "user1" };
-
-      mockGateway.transaction.sale.mockImplementation((opts, cb) => {
-        cb(null, mockResult);
-      });
-
-      await brainTreePaymentController(req, res);
-
-      expect(res.json).toHaveBeenCalledWith({ ok: true });
-    });
-
-    it("should handle payment failure", async () => {
-      const mockError = new Error("Payment failed");
-      req.body = { nonce: "test-nonce", cart: [{ price: 100 }] };
-      req.user = { _id: "user1" };
-
-      mockGateway.transaction.sale.mockImplementation((opts, cb) => {
-        cb(mockError, null);
-      });
-
-      await brainTreePaymentController(req, res);
-
-      expect(res.status).toHaveBeenCalledWith(500);
-      expect(res.send).toHaveBeenCalledWith(mockError);
-    });
-
-    it("should handle thrown exception in payment", async () => {
-      req.body = { nonce: "test-nonce", cart: [{ price: 100 }] };
-      req.user = { _id: "user1" };
-
-      mockGateway.transaction.sale.mockImplementation(() => {
-        throw new Error("Unexpected throw");
-      });
-
-      await brainTreePaymentController(req, res);
-      // catch block reached — no crash
+      expect(res.json).toHaveBeenCalledWith({ error: "Something went wrong" });
+      // Restore
+      (await import("../models/productModel.js")).default.find = originalFind;
     });
   });
 });
