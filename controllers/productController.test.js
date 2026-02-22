@@ -19,6 +19,28 @@ const mockFs = {
 
 const mockSlugify = jest.fn();
 
+const mockGateway = {
+  clientToken: {
+    generate: jest.fn(),
+  },
+  transaction: {
+    sale: jest.fn(),
+  },
+};
+
+jest.unstable_mockModule("braintree", () => ({
+  default: {
+    BraintreeGateway: jest.fn().mockReturnValue(mockGateway),
+    Environment: { Sandbox: "sandbox" },
+  },
+}));
+
+jest.unstable_mockModule("../models/orderModel.js", () => ({
+  default: jest.fn().mockImplementation(() => ({
+    save: jest.fn().mockResolvedValue({}),
+  })),
+}));
+
 jest.unstable_mockModule("../models/productModel.js", () => ({
   default: jest.fn().mockImplementation(() => ({
     save: jest.fn(),
@@ -60,6 +82,8 @@ const {
   searchProductController,
   realtedProductController,
   productCategoryController,
+  braintreeTokenController,
+  brainTreePaymentController,
 } = await import("./productController.js");
 
 describe("Product Controller", () => {
@@ -77,6 +101,8 @@ describe("Product Controller", () => {
     mockCategoryModel.findOne.mockReset();
     mockFs.readFileSync.mockReset();
     mockSlugify.mockReset();
+    mockGateway.clientToken.generate.mockReset();
+    mockGateway.transaction.sale.mockReset();
 
     req = {
       fields: {},
@@ -432,6 +458,20 @@ describe("Product Controller", () => {
         success: false,
         message: "Product not found",
       });
+    });
+
+    it("should do nothing when product has no photo data", async () => {
+      req.params.pid = "product-id";
+
+      productModel.findById = jest.fn().mockReturnValue({
+        select: jest.fn().mockResolvedValue({
+          photo: { data: null, contentType: null },
+        }),
+      });
+
+      await productPhotoController(req, res);
+
+      expect(res.status).not.toHaveBeenCalled();
     });
   });
 
@@ -894,6 +934,93 @@ describe("Product Controller", () => {
       expect(res.json).toHaveBeenCalledWith(mockProducts);
     });
 
+    it("should include y->ies variation (battery -> batteries)", async () => {
+      const mockProducts = [];
+      req.params.keyword = "battery";
+
+      productModel.find = jest.fn().mockReturnValue({
+        select: jest.fn().mockResolvedValue(mockProducts),
+      });
+
+      await searchProductController(req, res);
+
+      const findArgs = productModel.find.mock.calls[0][0];
+      const patterns = findArgs.$or
+        .map((c) => c.name?.$regex || c.description?.$regex)
+        .filter(Boolean);
+      expect(patterns).toContain("batteries");
+    });
+
+    it("should include ies->y variation (batteries -> battery)", async () => {
+      const mockProducts = [];
+      req.params.keyword = "batteries";
+
+      productModel.find = jest.fn().mockReturnValue({
+        select: jest.fn().mockResolvedValue(mockProducts),
+      });
+
+      await searchProductController(req, res);
+
+      const findArgs = productModel.find.mock.calls[0][0];
+      const patterns = findArgs.$or
+        .map((c) => c.name?.$regex || c.description?.$regex)
+        .filter(Boolean);
+      expect(patterns).toContain("battery");
+    });
+
+    it("should include es->strip variation (boxes -> box)", async () => {
+      const mockProducts = [];
+      req.params.keyword = "boxes";
+
+      productModel.find = jest.fn().mockReturnValue({
+        select: jest.fn().mockResolvedValue(mockProducts),
+      });
+
+      await searchProductController(req, res);
+
+      const findArgs = productModel.find.mock.calls[0][0];
+      const patterns = findArgs.$or
+        .map((c) => c.name?.$regex || c.description?.$regex)
+        .filter(Boolean);
+      expect(patterns).toContain("box");
+    });
+
+    it("should include ing->strip and ing->strip+e variations (computing -> comput, compute)", async () => {
+      const mockProducts = [];
+      req.params.keyword = "computing";
+
+      productModel.find = jest.fn().mockReturnValue({
+        select: jest.fn().mockResolvedValue(mockProducts),
+      });
+
+      await searchProductController(req, res);
+
+      const findArgs = productModel.find.mock.calls[0][0];
+      const patterns = findArgs.$or
+        .map((c) => c.name?.$regex || c.description?.$regex)
+        .filter(Boolean);
+      expect(patterns).toContain("comput");
+      expect(patterns).toContain("compute");
+    });
+
+    it("should include ed->strip variations (walked -> walk)", async () => {
+      const mockProducts = [];
+      req.params.keyword = "walked";
+
+      productModel.find = jest.fn().mockReturnValue({
+        select: jest.fn().mockResolvedValue(mockProducts),
+      });
+
+      await searchProductController(req, res);
+
+      const findArgs = productModel.find.mock.calls[0][0];
+      const patterns = findArgs.$or
+        .map((c) => c.name?.$regex || c.description?.$regex)
+        .filter(Boolean);
+      expect(patterns).toContain("walk");
+      expect(patterns).toContain("walke");
+    });
+
     it("should handle error during search", async () => {
       const mockError = new Error("Search error");
       req.params.keyword = "test";
@@ -1014,6 +1141,85 @@ describe("Product Controller", () => {
         error: mockError,
         message: "Error While Getting products",
       });
+    });
+  });
+
+  // ==================== braintreeTokenController Tests ====================
+  describe("braintreeTokenController", () => {
+    it("should generate client token successfully", async () => {
+      const mockResponse = { clientToken: "test-token" };
+      mockGateway.clientToken.generate.mockImplementation((opts, cb) => {
+        cb(null, mockResponse);
+      });
+
+      await braintreeTokenController(req, res);
+
+      expect(res.send).toHaveBeenCalledWith(mockResponse);
+    });
+
+    it("should handle error when generating client token", async () => {
+      const mockError = new Error("Token error");
+      mockGateway.clientToken.generate.mockImplementation((opts, cb) => {
+        cb(mockError, null);
+      });
+
+      await braintreeTokenController(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(500);
+      expect(res.send).toHaveBeenCalledWith(mockError);
+    });
+
+    it("should handle thrown exception in token generation", async () => {
+      mockGateway.clientToken.generate.mockImplementation(() => {
+        throw new Error("Unexpected throw");
+      });
+
+      await braintreeTokenController(req, res);
+      // catch block reached — no crash
+    });
+  });
+
+  // ==================== brainTreePaymentController Tests ====================
+  describe("brainTreePaymentController", () => {
+    it("should process payment and save order successfully", async () => {
+      const mockResult = { transaction: { id: "txn123" } };
+      req.body = { nonce: "test-nonce", cart: [{ price: 50 }, { price: 30 }] };
+      req.user = { _id: "user1" };
+
+      mockGateway.transaction.sale.mockImplementation((opts, cb) => {
+        cb(null, mockResult);
+      });
+
+      await brainTreePaymentController(req, res);
+
+      expect(res.json).toHaveBeenCalledWith({ ok: true });
+    });
+
+    it("should handle payment failure", async () => {
+      const mockError = new Error("Payment failed");
+      req.body = { nonce: "test-nonce", cart: [{ price: 100 }] };
+      req.user = { _id: "user1" };
+
+      mockGateway.transaction.sale.mockImplementation((opts, cb) => {
+        cb(mockError, null);
+      });
+
+      await brainTreePaymentController(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(500);
+      expect(res.send).toHaveBeenCalledWith(mockError);
+    });
+
+    it("should handle thrown exception in payment", async () => {
+      req.body = { nonce: "test-nonce", cart: [{ price: 100 }] };
+      req.user = { _id: "user1" };
+
+      mockGateway.transaction.sale.mockImplementation(() => {
+        throw new Error("Unexpected throw");
+      });
+
+      await brainTreePaymentController(req, res);
+      // catch block reached — no crash
     });
   });
 });
