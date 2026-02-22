@@ -246,7 +246,11 @@ All test files below were written with the assistance of AI.
 - `models/userModel.test.js` — Tests for the User model schema (field types, required constraints, trim, unique, default role value, timestamps, model name)
 
 ### 6.3 Alyssa Ong Yi Xian
-### 1. **Header Component**
+### 1. **Header Component**(20 tests, 100% coverage)
+   - **Tested:** Brand name (1), search input (1), navigation links (3), auth state rendering (6), logout functionality (3), cart badge (3), categories dropdown (6)
+   - **Key Features:** Role-based dashboard routing (admin vs user), auth-conditional rendering (guest vs authenticated), cart count badge, dynamic categories, logout clears auth/localStorage/shows toast
+   - **Mocking:** useAuth, useCart, useCategory, toast, SearchInput, Badge (antd), localStorage
+   - **Style:** Output-based (display), Communication-based (logout interactions)
 
 ### 2. **Footer Component** (9 tests)
    - Tested copyright display and navigation links (About, Contact, Privacy Policy)
