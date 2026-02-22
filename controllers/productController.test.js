@@ -1126,15 +1126,18 @@ describe("Product Controller", () => {
   // ==================== relatedProductsController Edge Case ====================
   describe("relatedProductsController edge case", () => {
     it("should handle error and respond with 500", async () => {
-      const { relatedProductsController } = await import("./productController.js");
+      const { realtedProductController } = await import("./productController.js");
       const req = { params: { pid: "test", cid: "test" } };
-      const res = { status: jest.fn().mockReturnThis(), json: jest.fn() };
+      const res = { status: jest.fn().mockReturnThis(), json: jest.fn(), send: jest.fn() };
       // Force error
       const originalFind = (await import("../models/productModel.js")).default.find;
       (await import("../models/productModel.js")).default.find = jest.fn(() => { throw new Error("Test error"); });
-      await relatedProductsController(req, res);
-      expect(res.status).toHaveBeenCalledWith(500);
-      expect(res.json).toHaveBeenCalledWith({ error: "Something went wrong" });
+      await realtedProductController(req, res);
+      expect(res.status).toHaveBeenCalledWith(400);
+      expect(res.send).toHaveBeenCalledWith(expect.objectContaining({
+        success: false,
+        message: "error while geting related product",
+      }));
       // Restore
       (await import("../models/productModel.js")).default.find = originalFind;
     });
