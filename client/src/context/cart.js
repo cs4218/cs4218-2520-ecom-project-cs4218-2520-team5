@@ -1,12 +1,16 @@
-import { useState, useContext, createContext, useEffect } from "react";
+import React, { useState, useContext, createContext, useEffect } from "react";
 
 const CartContext = createContext();
 const CartProvider = ({ children }) => {
   const [cart, setCart] = useState([]);
 
   useEffect(() => {
-    let existingCartItem = localStorage.getItem("cart");
-    if (existingCartItem) setCart(JSON.parse(existingCartItem));
+    try {
+      let existingCartItem = localStorage.getItem("cart");
+      if (existingCartItem) setCart(JSON.parse(existingCartItem));
+    } catch (error) {
+      console.log("Error loading cart from localStorage:", error);
+    }
   }, []);
 
   return (
