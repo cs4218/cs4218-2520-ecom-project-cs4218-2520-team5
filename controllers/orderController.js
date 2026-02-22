@@ -106,8 +106,11 @@ export const getAllOrdersController = async (req, res) => {
       .find({})
       .populate("products", "-photo")
       .populate("buyer", "name")
-      .sort({ createdAt: "-1" });
-    res.json(orders);
+      .sort({ createdAt: -1 });
+    res.status(200).send({
+      success: true,
+      orders,
+    });
   } catch (error) {
     console.log(error);
     res.status(500).send({
@@ -123,12 +126,58 @@ export const orderStatusController = async (req, res) => {
   try {
     const { orderId } = req.params;
     const { status } = req.body;
-    const orders = await orderModel.findByIdAndUpdate(
-      orderId,
-      { status },
-      { new: true },
-    );
-    res.json(orders);
+
+    // Validate orderId
+    if (!orderId) {
+      return res.status(400).send({
+        success: false,
+        message: "Order ID is required",
+        error: "Order ID is required",
+      });
+    }
+
+    // Validate status
+    if (!status) {
+      return res.status(400).send({
+        success: false,
+        message: "Status is required",
+        error: "Status is required",
+      });
+    }
+
+    // Validate status against enum
+    const validStatuses = [
+      "Not Process",
+      "Processing",
+      "Shipped",
+      "Delivered",
+      "Cancelled",
+    ];
+    if (!validStatuses.includes(status)) {
+      return res.status(400).send({
+        success: false,
+        message: "Invalid status value",
+        error: `Status must be one of: ${validStatuses.join(", ")}`,
+      });
+    }
+
+    const order = await orderModel
+      .findByIdAndUpdate(orderId, { status }, { new: true })
+      .populate("products", "-photo")
+      .populate("buyer", "name");
+    // Check if order exists
+    if (!order) {
+      return res.status(404).send({
+        success: false,
+        message: "Order not found",
+        error: "Order not found",
+      });
+    }
+
+    res.status(200).send({
+      success: true,
+      order,
+    });
   } catch (error) {
     console.log(error);
     res.status(500).send({
