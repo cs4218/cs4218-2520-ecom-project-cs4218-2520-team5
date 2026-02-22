@@ -1,9 +1,6 @@
 export default {
   displayName: "frontend",
-<<<<<<< HEAD
 
-=======
->>>>>>> 511eee1 (Fixes)
   testEnvironment: "jest-environment-jsdom",
 
   transform: {
@@ -25,9 +22,18 @@ export default {
 
   collectCoverage: true,
   collectCoverageFrom: [
-    "client/src/pages/**/*.js",
-    "client/src/context/**/*.js",
-    "client/src/components/Form/**/*.js",
+    "client/src/pages/About.js",
+    "client/src/pages/Contact.js",
+    "client/src/pages/Pagenotfound.js",
+    "client/src/pages/Policy.js",
+    "client/src/pages/Search.js",
+    "client/src/pages/Auth/Login.js",
+    "client/src/pages/Auth/Register.js",
+    "client/src/pages/user/Dashboard.js",
+    "client/src/pages/user/Orders.js",
+    "client/src/pages/user/Profile.js",
+    "client/src/context/search.js",
+    "client/src/components/Form/SearchInput.js",
     "client/src/components/Footer.js",
     "client/src/components/Spinner.js",
     "client/src/components/Layout.js",
