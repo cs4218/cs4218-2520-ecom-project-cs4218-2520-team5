@@ -144,3 +144,125 @@ To begin unit testing with Jest in your project, follow these steps:
      ```bash
      npm run test
      ```
+## 6. Contributions
+### 6.1 Ang Yi Jie, Ivan
+
+**Category Controllers (categoryController.js)**
+- Fixed missing 404 handling for update, delete, and single category lookups
+- Fixed undefined variable bug in the controller
+- Corrected typos in controller and routes
+
+**createCategoryController**
+- Tested missing and empty name input (401 response)
+- Tested duplicate category handling (200 response)
+- Tested successful category creation with slugify (201 response)
+- Tested database error handling (500 response)
+- Mocked categoryModel and slugify to isolate controller logic
+
+**updateCategoryController**
+- Tested successful update with correct payload and slug generation (200 response)
+- Tested category not found case (404 response)
+- Tested database error handling (500 response)
+
+**deleteCategoryController**
+- Tested successful deletion by ID (200 response)
+- Tested category not found case (404 response)
+- Tested database error handling (500 response)
+
+**categoryController (get all)**
+- Tested successful retrieval of all categories (200 response)
+- Tested database error handling (500 response)
+
+**singleCategoryController**
+- Tested successful retrieval by slug (200 response)
+- Tested category not found case (404 response)
+- Tested database error handling (500 response)
+
+**CreateCategory.js**
+- Tested page heading and form rendering
+- Tested fetching and displaying categories on mount
+- Tested error toast when category fetch fails
+- Tested successful category creation with list refresh
+- Tested error toast when server returns success=false on creation and on network errors
+- Tested edit modal opens pre-filled with existing category name
+- Tested successful category update with modal close
+- Tested error toast on update failure and network errors
+- Tested modal dismissal via cancel button
+- Tested successful category deletion with list refresh
+- Tested error toast on delete failure and network errors
+- Mocked axios, react-hot-toast, Layout, AdminMenu, and antd Modal
+
+**CategoryForm.js**
+- Tested rendering of input field and submit button
+- Tested that provided value is displayed in the input
+- Tested that setValue is called on input change
+- Tested that handleSubmit is called on form submission
+
+**useCategory hook**
+- Tested successful category fetch from API on mount
+- Tested initial empty array state before API responds
+- Tested empty array is maintained on API failure
+
+**Categories.js**
+- Tested that a link is rendered for each category returned by useCategory
+- Tested that each link points to the correct `/category/:slug` route
+- Tested that no links are rendered when there are no categories
+- Mocked useCategory hook and Layout to isolate component
+
+**AdminMenu.js**
+- Tested Admin Panel heading renders
+- Tested all nav links (Create Category, Create Product, Products, Orders) with correct routes
+
+**AdminDashboard.js**
+- Tested rendering of admin name, email, and phone from auth context
+- Tested graceful rendering when auth user is null
+- Tested that AdminMenu component is rendered
+- Mocked useAuth, Layout, and AdminMenu
+
+**CI Setup**
+- Configured GitHub Actions workflow for automated testing pipeline
+
+### 6.2 Lynnette Ong Xin Hui
+
+### 6.3 Alyssa Ong Yi Xian
+
+### 6.4 Premakumar Meenu Lekha
+
+### 6.5 Koo Zhuo Hui
+
+1. **Payment Controllers**
+   - brainTreeTokenController
+      - Tested successful token generation.
+      - Tested error handling scenario.
+   - brainTreePaymentController
+      - Fixed and improved controller method to handle missing inputs
+      - Tested input validation (including missing inputs)
+      - Tested successful payment flow
+      - Tested failed transaction scenarios
+      - Mocked payment gateway, Orders model, and braintree callback functions.
+      - Added proper error handling safeguards.
+2. **SearchInput.js**
+   - Tested proper class names and attributes.
+   - Tested initial empty input state, with updates and clearing functionality.
+   - Validated form submission behavior (e.g. number of API calls)
+   - Verified number of results returned by API
+   - Tested edge cases such as empty input search, multiple form submissions, error handling.
+3. **Search.js**
+   - Made use of sample products for testing
+   - Fixed erroneous attributes, and missing button functionality to
+   'Add to Cart' and 'More Details'
+   - Mocked useCart and useNavigation to isolate dependencies
+   - Tested product details and images rendering
+   - Tested Description truncation for long descriptions
+   - Tested proper navigation and behaviour of the 'Add to Cart' and 'More Details' buttons
+4. **Search Context**
+   - Fixed erroneous naming of variables for SearchProvider
+   - Verified SearchProvider renders children correctly
+   - Validated default context state initialization
+   - Test state updates:
+      - Setter function updates keywords and results
+      - Component re-renders correctly after updates
+   - Test multiple sequential state updates using renderHook
+   - Verified state persistence across mulitple children components.
+5. **Other bug fixes**
+   - Fixed 'Add to Cart' functionality in ProductDetails.js

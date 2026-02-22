@@ -1,13 +1,13 @@
 export default {
-  transform: {},
-  // display name
-  displayName: "backend",
+	transform: {},
+	// display name
+	displayName: "backend",
 
-  // inject jest globals for ES modules
-  injectGlobals: true,
+	// inject jest globals for ES modules
+	injectGlobals: true,
 
-  // when testing backend
-  testEnvironment: "node",
+	// when testing backend
+	testEnvironment: "node",
 
   // which test to run
   testMatch: [
