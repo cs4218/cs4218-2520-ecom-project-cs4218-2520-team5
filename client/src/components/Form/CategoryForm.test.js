@@ -1,4 +1,5 @@
 // Ivan Ang, A0259256U
+// Assisted by AI
 import React from "react";
 import { render, fireEvent } from "@testing-library/react";
 import "@testing-library/jest-dom/extend-expect";
