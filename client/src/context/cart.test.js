@@ -1,3 +1,6 @@
+// Alyssa Ong, A0264663X
+// These test cases are generated with the help of AI.
+
 import React from "react";
 import { render, screen, renderHook, act } from "@testing-library/react";
 import { CartProvider, useCart } from "./cart";
