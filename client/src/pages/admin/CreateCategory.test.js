@@ -6,8 +6,7 @@ import axios from "axios";
 import toast from "react-hot-toast";
 import CreateCategory from "./CreateCategory";
 
-// ─── Module mocks ────────────────────────────────────────────────────────────
-
+// ─── Module mocks
 jest.mock("axios", () => ({
   get: jest.fn(),
   post: jest.fn(),
@@ -49,8 +48,7 @@ jest.mock("antd", () => {
   };
 });
 
-// ─── Browser API stub ────────────────────────────────────────────────────────
-
+// ─── Browser API stub
 window.matchMedia =
   window.matchMedia ||
   function () {
@@ -61,16 +59,14 @@ window.matchMedia =
     };
   };
 
-// ─── Story 1: CreateCategory page ────────────────────────────────────────────
-
+// Story 1: CreateCategory page
 describe("CreateCategory page", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     axios.get.mockResolvedValue({ data: { success: true, category: [] } });
   });
 
-  // ── Render ─────────────────────────────────────────────────────────────────
-
+  // ── Render
   it("should render the Manage Category heading and input form", async () => {
     const { getByText, getByPlaceholderText } = render(<CreateCategory />);
     await waitFor(() => expect(axios.get).toHaveBeenCalled());
@@ -79,8 +75,7 @@ describe("CreateCategory page", () => {
     expect(getByPlaceholderText("Enter new category")).toBeInTheDocument();
   });
 
-  // ── getAllCategory ──────────────────────────────────────────────────────────
-
+  // ── getAllCategory
   it("should fetch and display categories on mount", async () => {
     axios.get.mockResolvedValueOnce({
       data: {
@@ -113,8 +108,7 @@ describe("CreateCategory page", () => {
     );
   });
 
-  // ── handleSubmit (create) ──────────────────────────────────────────────────
-
+  // ── handleSubmit (create)
   it("should create a category and refresh the list on success", async () => {
     axios.post.mockResolvedValueOnce({ data: { success: true } });
     const { getByPlaceholderText, getByText } = render(<CreateCategory />);
@@ -167,8 +161,7 @@ describe("CreateCategory page", () => {
     );
   });
 
-  // ── Edit / handleUpdate ────────────────────────────────────────────────────
-
+  // ── Edit / handleUpdate
   it("should open the edit modal pre-filled with the category name when Edit is clicked", async () => {
     axios.get.mockResolvedValueOnce({
       data: { success: true, category: [{ _id: "1", name: "Electronics" }] },
@@ -255,8 +248,7 @@ describe("CreateCategory page", () => {
     expect(queryByTestId("edit-modal")).not.toBeInTheDocument();
   });
 
-  // ── Delete / handleDelete ──────────────────────────────────────────────────
-
+  // ── Delete / handleDelete
   it("should delete a category successfully and refresh the list", async () => {
     axios.get.mockResolvedValue({
       data: { success: true, category: [{ _id: "1", name: "Electronics" }] },

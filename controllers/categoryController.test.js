@@ -1,5 +1,4 @@
 // Ivan Ang, A0259256U
-// Native ESM mode: jest must be imported explicitly.
 import { jest } from "@jest/globals";
 
 // jest.unstable_mockModule must be called before any imports of the mocked module.
@@ -31,8 +30,7 @@ const {
   deleteCategoryController,
 } = await import("../controllers/categoryController.js");
 
-// ─── Story 1: createCategoryController ──────────────────────────────────────
-
+// Story 1: createCategoryController
 describe("createCategoryController", () => {
   let req, res;
 
@@ -110,8 +108,7 @@ describe("createCategoryController", () => {
   });
 });
 
-// ─── Story 2: updateCategoryController ──────────────────────────────────────
-
+// Story 2: updateCategoryController
 describe("updateCategoryController", () => {
   let req, res;
 
@@ -177,8 +174,7 @@ describe("updateCategoryController", () => {
   });
 });
 
-// ─── Story 3: deleteCategoryController ──────────────────────────────────────
-
+// Story 3: deleteCategoryController
 describe("deleteCategoryController", () => {
   let req, res;
 
@@ -233,8 +229,7 @@ describe("deleteCategoryController", () => {
   });
 });
 
-// ─── Story 4: categoryController (get all) ──────────────────────────────────
-
+// Story 4: categoryController (get all)
 describe("categoryController", () => {
   let req, res;
 
@@ -280,8 +275,7 @@ describe("categoryController", () => {
   });
 });
 
-// ─── Story 5: singleCategoryController ──────────────────────────────────────
-
+// Story 5: singleCategoryController
 describe("singleCategoryController", () => {
   let req, res;
 

@@ -6,8 +6,7 @@ import useCategory from "./useCategory";
 
 jest.mock("axios");
 
-// ─── Story 4: useCategory hook ───────────────────────────────────────────────
-
+// Story 4: useCategory hook
 describe("useCategory hook", () => {
   beforeEach(() => {
     jest.clearAllMocks();

@@ -10,8 +10,7 @@ jest.mock("../components/Layout", () => ({ children }) => <>{children}</>);
 
 import useCategory from "../hooks/useCategory";
 
-// ─── Story 4: Categories page ────────────────────────────────────────────────
-
+// Story 4: Categories page
 describe("Categories page", () => {
   beforeEach(() => {
     jest.clearAllMocks();

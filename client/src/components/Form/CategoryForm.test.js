@@ -4,8 +4,7 @@ import { render, fireEvent } from "@testing-library/react";
 import "@testing-library/jest-dom/extend-expect";
 import CategoryForm from "./CategoryForm";
 
-// ─── Story 1: CategoryForm component ────────────────────────────────────────
-
+// Story 1: CategoryForm component
 describe("CategoryForm", () => {
   it("should render the input field and submit button", () => {
     const handleSubmit = jest.fn();

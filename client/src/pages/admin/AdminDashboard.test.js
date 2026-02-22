@@ -13,8 +13,7 @@ jest.mock("../../components/AdminMenu", () => () => <div>AdminMenu</div>);
 
 import { useAuth } from "../../context/auth";
 
-// ─── Story 6: AdminDashboard component ──────────────────────────────────────
-
+// Story 6: AdminDashboard component
 describe("AdminDashboard", () => {
   beforeEach(() => {
     jest.clearAllMocks();
