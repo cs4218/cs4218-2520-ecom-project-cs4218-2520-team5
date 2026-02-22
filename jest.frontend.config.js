@@ -1,6 +1,9 @@
 export default {
   displayName: "frontend",
+<<<<<<< HEAD
 
+=======
+>>>>>>> 511eee1 (Fixes)
   testEnvironment: "jest-environment-jsdom",
 
   transform: {

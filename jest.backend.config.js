@@ -1,8 +1,12 @@
 export default {
   displayName: "backend",
+<<<<<<< HEAD
 
   injectGlobals: true,
 
+=======
+  injectGlobals: true,
+>>>>>>> 511eee1 (Fixes)
   testEnvironment: "node",
 
   transform: {},
@@ -27,4 +31,13 @@ export default {
     "config/db.js",
     "!**/*.test.js",
   ],
+<<<<<<< HEAD
+=======
+  coverageThreshold: {
+    global: {
+      lines: 100,
+      functions: 100,
+    },
+  },
+>>>>>>> 511eee1 (Fixes)
 };

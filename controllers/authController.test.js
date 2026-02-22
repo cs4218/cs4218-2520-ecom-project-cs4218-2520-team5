@@ -1,31 +1,42 @@
-import {
+import { jest, describe, it, expect, beforeEach, afterEach } from "@jest/globals";
+
+const mockFindOne = jest.fn();
+const mockFindById = jest.fn();
+const mockFindByIdAndUpdate = jest.fn();
+const mockUserModelConstructor = jest.fn();
+const mockHashPassword = jest.fn();
+const mockComparePassword = jest.fn();
+const mockSign = jest.fn();
+const mockVerify = jest.fn();
+
+jest.unstable_mockModule("../models/userModel.js", () => {
+  const model = function (...args) {
+    return mockUserModelConstructor(...args);
+  };
+  model.findOne = mockFindOne;
+  model.findById = mockFindById;
+  model.findByIdAndUpdate = mockFindByIdAndUpdate;
+  return { default: model };
+});
+
+jest.unstable_mockModule("../helpers/authHelper.js", () => ({
+  hashPassword: mockHashPassword,
+  comparePassword: mockComparePassword,
+}));
+
+jest.unstable_mockModule("jsonwebtoken", () => ({
+  default: {
+    sign: mockSign,
+    verify: mockVerify,
+  },
+}));
+
+const {
   registerController,
   loginController,
   forgotPasswordController,
   testController,
-} from "./authController.js";
-import userModel from "../models/userModel.js";
-import { hashPassword, comparePassword } from "../helpers/authHelper.js";
-import JWT from "jsonwebtoken";
-
-jest.mock("../models/userModel.js", () => {
-  const mockModel = jest.fn();
-  mockModel.findOne = jest.fn();
-  mockModel.findById = jest.fn();
-  mockModel.findByIdAndUpdate = jest.fn();
-  return { __esModule: true, default: mockModel };
-});
-
-jest.mock("../helpers/authHelper.js", () => ({
-  __esModule: true,
-  hashPassword: jest.fn(),
-  comparePassword: jest.fn(),
-}));
-
-jest.mock("jsonwebtoken", () => ({
-  sign: jest.fn(),
-  verify: jest.fn(),
-}));
+} = await import("./authController.js");
 
 describe("Auth Controller", () => {
   let req, res;
@@ -44,8 +55,6 @@ describe("Auth Controller", () => {
   afterEach(() => {
     jest.restoreAllMocks();
   });
-
-  // ─── registerController ───────────────────────────────────────────
 
   describe("registerController", () => {
     const validBody = {
@@ -115,11 +124,11 @@ describe("Auth Controller", () => {
 
     it("should return 200 with failure message when user already exists", async () => {
       req.body = validBody;
-      userModel.findOne.mockResolvedValue({ _id: "existing-id" });
+      mockFindOne.mockResolvedValue({ _id: "existing-id" });
 
       await registerController(req, res);
 
-      expect(userModel.findOne).toHaveBeenCalledWith({
+      expect(mockFindOne).toHaveBeenCalledWith({
         email: validBody.email,
       });
       expect(res.status).toHaveBeenCalledWith(200);
@@ -131,15 +140,15 @@ describe("Auth Controller", () => {
 
     it("should register a new user successfully and return 201", async () => {
       req.body = validBody;
-      userModel.findOne.mockResolvedValue(null);
-      hashPassword.mockResolvedValue("hashed_pw");
+      mockFindOne.mockResolvedValue(null);
+      mockHashPassword.mockResolvedValue("hashed_pw");
       const savedUser = { ...validBody, password: "hashed_pw", _id: "new-id" };
       const mockSave = jest.fn().mockResolvedValue(savedUser);
-      userModel.mockImplementation(() => ({ save: mockSave }));
+      mockUserModelConstructor.mockReturnValue({ save: mockSave });
 
       await registerController(req, res);
 
-      expect(hashPassword).toHaveBeenCalledWith(validBody.password);
+      expect(mockHashPassword).toHaveBeenCalledWith(validBody.password);
       expect(mockSave).toHaveBeenCalled();
       expect(res.status).toHaveBeenCalledWith(201);
       expect(res.send).toHaveBeenCalledWith({
@@ -152,7 +161,7 @@ describe("Auth Controller", () => {
     it("should return 500 when an unexpected error occurs", async () => {
       req.body = validBody;
       const error = new Error("Database connection failed");
-      userModel.findOne.mockRejectedValue(error);
+      mockFindOne.mockRejectedValue(error);
 
       await registerController(req, res);
 
@@ -164,8 +173,6 @@ describe("Auth Controller", () => {
       });
     });
   });
-
-  // ─── loginController ─────────────────────────────────────────────
 
   describe("loginController", () => {
     it("should return 404 when email is missing", async () => {
@@ -202,7 +209,7 @@ describe("Auth Controller", () => {
 
     it("should return 404 when user is not found", async () => {
       req.body = { email: "nobody@test.com", password: "pass" };
-      userModel.findOne.mockResolvedValue(null);
+      mockFindOne.mockResolvedValue(null);
 
       await loginController(req, res);
 
@@ -215,15 +222,15 @@ describe("Auth Controller", () => {
 
     it("should return 200 with failure when password does not match", async () => {
       req.body = { email: "john@test.com", password: "wrong" };
-      userModel.findOne.mockResolvedValue({
+      mockFindOne.mockResolvedValue({
         _id: "u1",
         password: "hashed_pw",
       });
-      comparePassword.mockResolvedValue(false);
+      mockComparePassword.mockResolvedValue(false);
 
       await loginController(req, res);
 
-      expect(comparePassword).toHaveBeenCalledWith("wrong", "hashed_pw");
+      expect(mockComparePassword).toHaveBeenCalledWith("wrong", "hashed_pw");
       expect(res.status).toHaveBeenCalledWith(200);
       expect(res.send).toHaveBeenCalledWith({
         success: false,
@@ -243,13 +250,13 @@ describe("Auth Controller", () => {
       };
       req.body = { email: "john@test.com", password: "pass123" };
       process.env.JWT_SECRET = "test-secret";
-      userModel.findOne.mockResolvedValue(mockUser);
-      comparePassword.mockResolvedValue(true);
-      JWT.sign.mockReturnValue("jwt-token-abc");
+      mockFindOne.mockResolvedValue(mockUser);
+      mockComparePassword.mockResolvedValue(true);
+      mockSign.mockReturnValue("jwt-token-abc");
 
       await loginController(req, res);
 
-      expect(JWT.sign).toHaveBeenCalledWith(
+      expect(mockSign).toHaveBeenCalledWith(
         { _id: "u1" },
         "test-secret",
         { expiresIn: "7d" }
@@ -273,7 +280,7 @@ describe("Auth Controller", () => {
     it("should return 500 when an unexpected error occurs", async () => {
       req.body = { email: "test@test.com", password: "pass" };
       const error = new Error("DB failure");
-      userModel.findOne.mockRejectedValue(error);
+      mockFindOne.mockRejectedValue(error);
 
       await loginController(req, res);
 
@@ -285,8 +292,6 @@ describe("Auth Controller", () => {
       });
     });
   });
-
-  // ─── forgotPasswordController ─────────────────────────────────────
 
   describe("forgotPasswordController", () => {
     it("should return 400 when email is missing", async () => {
@@ -328,11 +333,11 @@ describe("Auth Controller", () => {
         answer: "wrong",
         newPassword: "new123",
       };
-      userModel.findOne.mockResolvedValue(null);
+      mockFindOne.mockResolvedValue(null);
 
       await forgotPasswordController(req, res);
 
-      expect(userModel.findOne).toHaveBeenCalledWith({
+      expect(mockFindOne).toHaveBeenCalledWith({
         email: "wrong@test.com",
         answer: "wrong",
       });
@@ -349,14 +354,14 @@ describe("Auth Controller", () => {
         answer: "Football",
         newPassword: "newpass123",
       };
-      userModel.findOne.mockResolvedValue({ _id: "u1" });
-      hashPassword.mockResolvedValue("hashed_new");
-      userModel.findByIdAndUpdate.mockResolvedValue({});
+      mockFindOne.mockResolvedValue({ _id: "u1" });
+      mockHashPassword.mockResolvedValue("hashed_new");
+      mockFindByIdAndUpdate.mockResolvedValue({});
 
       await forgotPasswordController(req, res);
 
-      expect(hashPassword).toHaveBeenCalledWith("newpass123");
-      expect(userModel.findByIdAndUpdate).toHaveBeenCalledWith("u1", {
+      expect(mockHashPassword).toHaveBeenCalledWith("newpass123");
+      expect(mockFindByIdAndUpdate).toHaveBeenCalledWith("u1", {
         password: "hashed_new",
       });
       expect(res.status).toHaveBeenCalledWith(200);
@@ -373,7 +378,7 @@ describe("Auth Controller", () => {
         newPassword: "new123",
       };
       const error = new Error("DB error");
-      userModel.findOne.mockRejectedValue(error);
+      mockFindOne.mockRejectedValue(error);
 
       await forgotPasswordController(req, res);
 
@@ -385,8 +390,6 @@ describe("Auth Controller", () => {
       });
     });
   });
-
-  // ─── testController ──────────────────────────────────────────────
 
   describe("testController", () => {
     it("should send Protected Routes message", () => {
