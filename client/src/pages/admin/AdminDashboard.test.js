@@ -1,3 +1,4 @@
+// Ivan Ang, A0259256U
 import React from "react";
 import { render } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
@@ -12,8 +13,7 @@ jest.mock("../../components/AdminMenu", () => () => <div>AdminMenu</div>);
 
 import { useAuth } from "../../context/auth";
 
-// ─── Story 6: AdminDashboard component ──────────────────────────────────────
-
+// Story 6: AdminDashboard component
 describe("AdminDashboard", () => {
   beforeEach(() => {
     jest.clearAllMocks();

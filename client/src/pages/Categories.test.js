@@ -1,3 +1,4 @@
+// Ivan Ang, A0259256U
 import React from "react";
 import { render } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
@@ -9,8 +10,7 @@ jest.mock("../components/Layout", () => ({ children }) => <>{children}</>);
 
 import useCategory from "../hooks/useCategory";
 
-// ─── Story 4: Categories page ────────────────────────────────────────────────
-
+// Story 4: Categories page
 describe("Categories page", () => {
   beforeEach(() => {
     jest.clearAllMocks();

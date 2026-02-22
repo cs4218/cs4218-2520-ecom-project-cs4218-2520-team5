@@ -1,11 +1,11 @@
+// Ivan Ang, A0259256U
 import React from "react";
 import { render } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import "@testing-library/jest-dom/extend-expect";
 import AdminMenu from "./AdminMenu";
 
-// ─── Story 6: AdminMenu component ───────────────────────────────────────────
-
+// Story 6: AdminMenu component
 describe("AdminMenu", () => {
   const renderAdminMenu = () =>
     render(

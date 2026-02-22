@@ -1,3 +1,4 @@
+// Ivan Ang, A0259256U
 import { renderHook, waitFor } from "@testing-library/react";
 import "@testing-library/jest-dom/extend-expect";
 import axios from "axios";
@@ -5,8 +6,7 @@ import useCategory from "./useCategory";
 
 jest.mock("axios");
 
-// ─── Story 4: useCategory hook ───────────────────────────────────────────────
-
+// Story 4: useCategory hook
 describe("useCategory hook", () => {
   beforeEach(() => {
     jest.clearAllMocks();
