@@ -1,56 +1,56 @@
 export default {
-	// name displayed during tests
-	displayName: "frontend",
+  displayName: "frontend",
 
-	// simulates browser environment in jest
-	// e.g., using document.querySelector in your tests
-	testEnvironment: "jest-environment-jsdom",
+  testEnvironment: "jest-environment-jsdom",
 
-	// jest does not recognise jsx files by default, so we use babel to transform any jsx files
-	transform: {
-		"^.+\\.jsx?$": "babel-jest",
-	},
+  transform: {
+    "^.+\\.jsx?$": "babel-jest",
+  },
 
-	// tells jest how to handle css/scss imports in your tests
-	moduleNameMapper: {
-		"\\.(css|scss)$": "identity-obj-proxy",
-	},
+  moduleNameMapper: {
+    "\\.(css|scss)$": "identity-obj-proxy",
+  },
 
-	// ignore all node_modules except styleMock (needed for css imports)
-	transformIgnorePatterns: ["/node_modules/(?!(styleMock\\.js)$)"],
+  transformIgnorePatterns: ["/node_modules/(?!(styleMock\\.js)$)"],
 
-	// only run these tests
-	testMatch: [
-		"<rootDir>/client/src/pages/Auth/*.test.js",
-		"<rootDir>/client/src/pages/**/*.test.js",
-		"<rootDir>/client/src/context/*.test.js",
-		"<rootDir>/client/src/components/Form/*.test.js",
-		"<rootDir>/client/src/pages/admin/CreateCategory.test.js",
-		"<rootDir>/client/src/pages/admin/AdminDashboard.test.js",
-		"<rootDir>/client/src/components/AdminMenu.test.js",
-		"<rootDir>/client/src/hooks/useCategory.test.js",
-		"<rootDir>/client/src/pages/user/Orders.test.js",
-	],
+  testMatch: [
+    "<rootDir>/client/src/pages/**/*.test.js",
+    "<rootDir>/client/src/components/**/*.test.js",
+    "<rootDir>/client/src/context/**/*.test.js",
+    "<rootDir>/client/src/hooks/useCategory.test.js",
+  ],
 
-	// jest code coverage
-	collectCoverage: true,
-	collectCoverageFrom: [
-		"client/src/pages/Auth/**",
-		"client/src/pages/Categories.js",
-		"client/src/pages/Search.js",
-		"client/src/pages/admin/CreateCategory.js",
-		"client/src/pages/admin/AdminDashboard.js",
-		"client/src/pages/user/Orders.js",
-		"client/src/context/search.js",
-		"client/src/components/Form/**",
-		"client/src/components/AdminMenu.js",
-		"client/src/hooks/useCategory.js",
-	],
-	coverageThreshold: {
-		global: {
-			lines: 100,
-			functions: 100,
-		},
-	},
-	setupFilesAfterEnv: ["<rootDir>/client/src/setupTests.js"],
+  collectCoverage: true,
+  collectCoverageFrom: [
+    "client/src/pages/About.js",
+    "client/src/pages/Contact.js",
+    "client/src/pages/Pagenotfound.js",
+    "client/src/pages/Policy.js",
+    "client/src/pages/Search.js",
+    "client/src/pages/Auth/Login.js",
+    "client/src/pages/Auth/Register.js",
+    "client/src/pages/user/Dashboard.js",
+    "client/src/pages/user/Orders.js",
+    "client/src/pages/user/Profile.js",
+    "client/src/context/auth.js",
+    "client/src/context/search.js",
+    "client/src/components/Form/SearchInput.js",
+    "client/src/components/Footer.js",
+    "client/src/components/Spinner.js",
+    "client/src/components/Layout.js",
+    "client/src/components/UserMenu.js",
+    "client/src/components/AdminMenu.js",
+    "client/src/components/Routes/Private.js",
+    "client/src/hooks/useCategory.js",
+    "!**/*.test.js",
+    "!**/node_modules/**",
+    "!**/_site/**",
+  ],
+  coverageThreshold: {
+    global: {
+      lines: 100,
+      functions: 100,
+    },
+  },
+  setupFilesAfterEnv: ["<rootDir>/client/src/setupTests.js"],
 };

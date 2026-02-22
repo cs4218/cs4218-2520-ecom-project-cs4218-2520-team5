@@ -144,7 +144,11 @@ To begin unit testing with Jest in your project, follow these steps:
      ```bash
      npm run test
      ```
-## 6. Contributions
+
+## 6. Milestone 1 - Contributions
+
+**Passing Jest CI:** //insert link here
+
 ### 6.1 Ang Yi Jie, Ivan
 
 **Category Controllers (categoryController.js)**
@@ -222,7 +226,24 @@ To begin unit testing with Jest in your project, follow these steps:
 **CI Setup**
 - Configured GitHub Actions workflow for automated testing pipeline
 
-### 6.2 Lynnette Ong Xin Hui
+### 6.2 Ong Xin Hui Lynnette (A0257058X)
+
+All test files below were written with the assistance of AI.
+
+#### Frontend Unit Tests
+- `client/src/context/auth.test.js` — Tests for the AuthProvider context (rendering children, default state, loading auth from localStorage, skipping update when no stored data, setting axios Authorization header)
+- `client/src/pages/Auth/Login.test.js` — Tests for the Login page (form rendering, input handling, successful login with auth context and localStorage update, error handling, navigation to forgot-password)
+- `client/src/pages/Auth/Register.test.js` — Tests for the Register page (form rendering, field input, successful registration with navigation, server-side and network error handling)
+- `client/src/pages/user/Profile.test.js` — Tests for the Profile page (pre-filled user data, disabled email field, field editing, successful profile update, API error handling)
+- `client/src/pages/user/Dashboard.test.js` — Tests for the Dashboard page (user details display, UserMenu navigation rendering, h3 element verification)
+- `client/src/components/UserMenu.test.js` — Tests for the UserMenu component (Dashboard heading, Profile link, Orders link)
+- `client/src/components/Routes/Private.test.js` — Tests for the PrivateRoute component (authenticated access, API rejection, missing/null auth token)
+
+#### Backend Unit Tests
+- `controllers/authController.test.js` — Tests for registerController (field validation, duplicate user, successful registration, 500 error), loginController (missing credentials, user not found, wrong password, successful login with JWT, 500 error), forgotPasswordController (missing fields, wrong email/answer, successful reset, 500 error), testController (success and error paths)
+- `helpers/authHelper.test.js` — Tests for hashPassword (successful hash, error handling) and comparePassword (match and mismatch)
+- `middlewares/authMiddleware.test.js` — Tests for requireSignIn (valid token, invalid token, missing header) and isAdmin (admin role, non-admin role, DB lookup failure)
+- `models/userModel.test.js` — Tests for the User model schema (field types, required constraints, trim, unique, default role value, timestamps, model name)
 
 ### 6.3 Alyssa Ong Yi Xian
 
@@ -247,7 +268,7 @@ To begin unit testing with Jest in your project, follow these steps:
    - Validated form submission behavior (e.g. number of API calls)
    - Verified number of results returned by API
    - Tested edge cases such as empty input search, multiple form submissions, error handling.
-3. **Search.js**
+3. **Context/Search.js**
    - Made use of sample products for testing
    - Fixed erroneous attributes, and missing button functionality to
    'Add to Cart' and 'More Details'
@@ -266,3 +287,4 @@ To begin unit testing with Jest in your project, follow these steps:
    - Verified state persistence across mulitple children components.
 5. **Other bug fixes**
    - Fixed 'Add to Cart' functionality in ProductDetails.js
+
