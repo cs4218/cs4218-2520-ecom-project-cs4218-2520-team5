@@ -25,9 +25,9 @@ const { default: slugify } = await import("slugify");
 const {
   createCategoryController,
   updateCategoryController,
-  categoryControlller,
+  categoryController,
   singleCategoryController,
-  deleteCategoryCOntroller,
+  deleteCategoryController,
 } = await import("../controllers/categoryController.js");
 
 // ─── Story 1: createCategoryController ──────────────────────────────────────
@@ -73,7 +73,7 @@ describe("createCategoryController", () => {
     expect(res.status).toHaveBeenCalledWith(200);
     expect(res.send).toHaveBeenCalledWith({
       success: true,
-      message: "Category Already Exisits",
+      message: "Category Already Exists",
     });
   });
 
@@ -141,7 +141,7 @@ describe("updateCategoryController", () => {
     expect(res.status).toHaveBeenCalledWith(200);
     expect(res.send).toHaveBeenCalledWith({
       success: true,
-      messsage: "Category Updated Successfully",
+      message: "Category Updated Successfully",
       category: updatedCategory,
     });
   });
@@ -176,9 +176,9 @@ describe("updateCategoryController", () => {
   });
 });
 
-// ─── Story 3: deleteCategoryCOntroller ──────────────────────────────────────
+// ─── Story 3: deleteCategoryController ──────────────────────────────────────
 
-describe("deleteCategoryCOntroller", () => {
+describe("deleteCategoryController", () => {
   let req, res;
 
   beforeEach(() => {
@@ -194,13 +194,13 @@ describe("deleteCategoryCOntroller", () => {
     req.params = { id: "1" };
     categoryModel.findByIdAndDelete.mockResolvedValueOnce({ _id: "1", name: "Electronics" });
 
-    await deleteCategoryCOntroller(req, res);
+    await deleteCategoryController(req, res);
 
     expect(categoryModel.findByIdAndDelete).toHaveBeenCalledWith("1");
     expect(res.status).toHaveBeenCalledWith(200);
     expect(res.send).toHaveBeenCalledWith({
       success: true,
-      message: "Categry Deleted Successfully",
+      message: "Category Deleted Successfully",
     });
   });
 
@@ -208,7 +208,7 @@ describe("deleteCategoryCOntroller", () => {
     req.params = { id: "nonexistent" };
     categoryModel.findByIdAndDelete.mockResolvedValueOnce(null);
 
-    await deleteCategoryCOntroller(req, res);
+    await deleteCategoryController(req, res);
 
     expect(res.status).toHaveBeenCalledWith(404);
     expect(res.send).toHaveBeenCalledWith(
@@ -220,7 +220,7 @@ describe("deleteCategoryCOntroller", () => {
     req.params = { id: "1" };
     categoryModel.findByIdAndDelete.mockRejectedValueOnce(new Error("DB error"));
 
-    await deleteCategoryCOntroller(req, res);
+    await deleteCategoryController(req, res);
 
     expect(res.status).toHaveBeenCalledWith(500);
     expect(res.send).toHaveBeenCalledWith(
@@ -232,9 +232,9 @@ describe("deleteCategoryCOntroller", () => {
   });
 });
 
-// ─── Story 4: categoryControlller (get all) ──────────────────────────────────
+// ─── Story 4: categoryController (get all) ──────────────────────────────────
 
-describe("categoryControlller", () => {
+describe("categoryController", () => {
   let req, res;
 
   beforeEach(() => {
@@ -253,7 +253,7 @@ describe("categoryControlller", () => {
     ];
     categoryModel.find.mockResolvedValueOnce(categories);
 
-    await categoryControlller(req, res);
+    await categoryController(req, res);
 
     expect(categoryModel.find).toHaveBeenCalledWith({});
     expect(res.status).toHaveBeenCalledWith(200);
@@ -267,7 +267,7 @@ describe("categoryControlller", () => {
   it("should return 500 on a database error", async () => {
     categoryModel.find.mockRejectedValueOnce(new Error("DB error"));
 
-    await categoryControlller(req, res);
+    await categoryController(req, res);
 
     expect(res.status).toHaveBeenCalledWith(500);
     expect(res.send).toHaveBeenCalledWith(
@@ -304,7 +304,7 @@ describe("singleCategoryController", () => {
     expect(res.status).toHaveBeenCalledWith(200);
     expect(res.send).toHaveBeenCalledWith({
       success: true,
-      message: "Get SIngle Category SUccessfully",
+      message: "Get Single Category Successfully",
       category,
     });
   });
