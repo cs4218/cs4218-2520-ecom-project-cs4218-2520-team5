@@ -144,3 +144,50 @@ To begin unit testing with Jest in your project, follow these steps:
      ```bash
      npm run test
      ```
+## 6. Contributions
+### 6.1 Ang Yi Jie, Ivan
+
+### 6.2 Lynnette Ong Xin Hui
+
+### 6.3 Alyssa Ong Yi Xian
+
+### 6.4 Premakumar Meenu Lekha
+
+### 6.5 Koo Zhuo Hui
+
+1. **Payment Controllers**
+   - brainTreeTokenController
+      - Tested successful token generation.
+      - Tested error handling scenario.
+   - brainTreePaymentController
+      - Fixed and improved controller method to handle missing inputs
+      - Tested input validation (including missing inputs)
+      - Tested successful payment flow
+      - Tested failed transaction scenarios
+      - Mocked payment gateway, Orders model, and braintree callback functions.
+      - Added proper error handling safeguards.
+2. **SearchInput.js**
+   - Tested proper class names and attributes.
+   - Tested initial empty input state, with updates and clearing functionality.
+   - Validated form submission behavior (e.g. number of API calls)
+   - Verified number of results returned by API
+   - Tested edge cases such as empty input search, multiple form submissions, error handling.
+3. **Search.js**
+   - Made use of sample products for testing
+   - Fixed erroneous attributes, and missing button functionality to
+   'Add to Cart' and 'More Details'
+   - Mocked useCart and useNavigation to isolate dependencies
+   - Tested product details and images rendering
+   - Tested Description truncation for long descriptions
+   - Tested proper navigation and behaviour of the 'Add to Cart' and 'More Details' buttons
+4. **Search Context**
+   - Fixed erroneous naming of variables for SearchProvider
+   - Verified SearchProvider renders children correctly
+   - Validated default context state initialization
+   - Test state updates:
+      - Setter function updates keywords and results
+      - Component re-renders correctly after updates
+   - Test multiple sequential state updates using renderHook
+   - Verified state persistence across mulitple children components.
+5. **Other bug fixes**
+   - Fixed 'Add to Cart' functionality in ProductDetails.js
