@@ -5,6 +5,7 @@ import {
   updateProfileController,
   getOrdersController,
   getAllOrdersController,
+  orderStatusController,
 } from "../controllers/orderController.js";
 import userModel from "../models/userModel.js";
 import orderModel from "../models/orderModel.js";
@@ -1352,8 +1353,8 @@ describe("getOrdersController", () => {
         { _id: "o1", status: "Not Process" },
         { _id: "o2", status: "Processing" },
         { _id: "o3", status: "Shipped" },
-        { _id: "o4", status: "deliverd" },
-        { _id: "o5", status: "cancel" },
+        { _id: "o4", status: "Delivered" },
+        { _id: "o5", status: "Cancelled" },
       ];
       mockQueryChain.sort.mockResolvedValue(ordersWithAllStatuses);
       orderModel.find.mockReturnValue(mockQueryChain);
@@ -1775,8 +1776,8 @@ describe("getAllOrdersController", () => {
         { _id: "o1", buyer: { _id: "u1" }, status: "Not Process" },
         { _id: "o2", buyer: { _id: "u2" }, status: "Processing" },
         { _id: "o3", buyer: { _id: "u3" }, status: "Shipped" },
-        { _id: "o4", buyer: { _id: "u4" }, status: "deliverd" },
-        { _id: "o5", buyer: { _id: "u5" }, status: "cancel" },
+        { _id: "o4", buyer: { _id: "u4" }, status: "Delivered" },
+        { _id: "o5", buyer: { _id: "u5" }, status: "Cancelled" },
       ];
       mockQueryChain.sort.mockResolvedValue(ordersWithAllStatuses);
       orderModel.find.mockReturnValue(mockQueryChain);
@@ -2168,6 +2169,852 @@ describe("getAllOrdersController", () => {
       expect(orderModel.find).toHaveBeenCalledTimes(1);
       expect(mockQueryChain.populate).toHaveBeenCalledTimes(2);
       expect(mockQueryChain.sort).toHaveBeenCalledTimes(1);
+    });
+  });
+});
+
+// ===================================
+// orderStatusController Test Suite
+// ===================================
+describe("orderStatusController", () => {
+  let req, res;
+
+  beforeEach(() => {
+    req = {
+      params: {},
+      body: {},
+    };
+    res = {
+      json: jest.fn().mockReturnThis(),
+      status: jest.fn().mockReturnThis(),
+      send: jest.fn().mockReturnThis(),
+    };
+
+    jest.clearAllMocks();
+  });
+
+  // Helper function to create mock query chain
+  const createMockQueryChain = (resolvedValue) => {
+    const mockQuery = {
+      populate: jest.fn().mockReturnThis(),
+      then: jest.fn((resolve) => Promise.resolve(resolvedValue).then(resolve)),
+    };
+    return mockQuery;
+  };
+
+  // ===== INPUT VALIDATION TESTS (Communication-based) =====
+  // These verify error responses when inputs are invalid
+  describe("Input Validation - Order ID", () => {
+    it("should return 400 when orderId is missing", async () => {
+      // Arrange
+      req.params = {};
+      req.body = { status: "Processing" };
+
+      // Act
+      await orderStatusController(req, res);
+
+      // Assert
+      expect(res.status).toHaveBeenCalledWith(400);
+      expect(res.send).toHaveBeenCalledWith({
+        success: false,
+        message: "Order ID is required",
+        error: "Order ID is required",
+      });
+    });
+
+    it("should return 400 when orderId is undefined", async () => {
+      // Arrange
+      req.params = { orderId: undefined };
+      req.body = { status: "Processing" };
+
+      // Act
+      await orderStatusController(req, res);
+
+      // Assert
+      expect(res.status).toHaveBeenCalledWith(400);
+      expect(res.send).toHaveBeenCalledWith({
+        success: false,
+        message: "Order ID is required",
+        error: "Order ID is required",
+      });
+    });
+
+    it("should return 400 when orderId is null", async () => {
+      // Arrange
+      req.params = { orderId: null };
+      req.body = { status: "Processing" };
+
+      // Act
+      await orderStatusController(req, res);
+
+      // Assert
+      expect(res.status).toHaveBeenCalledWith(400);
+      expect(res.send).toHaveBeenCalledWith({
+        success: false,
+        message: "Order ID is required",
+        error: "Order ID is required",
+      });
+    });
+
+    it("should accept valid orderId and proceed to next validation", async () => {
+      // Arrange
+      req.params = { orderId: "507f1f77bcf86cd799439011" };
+      req.body = {}; // Missing status - will fail at status validation
+
+      // Act
+      await orderStatusController(req, res);
+
+      // Assert - Should not fail at orderId validation
+      expect(res.send).toHaveBeenCalledWith(
+        expect.objectContaining({
+          message: "Status is required", // Fails at next validation
+        }),
+      );
+    });
+  });
+
+  describe("Input Validation - Status", () => {
+    beforeEach(() => {
+      req.params = { orderId: "507f1f77bcf86cd799439011" };
+    });
+
+    it("should return 400 when status is missing", async () => {
+      // Arrange
+      req.body = {};
+
+      // Act
+      await orderStatusController(req, res);
+
+      // Assert
+      expect(res.status).toHaveBeenCalledWith(400);
+      expect(res.send).toHaveBeenCalledWith({
+        success: false,
+        message: "Status is required",
+        error: "Status is required",
+      });
+    });
+
+    it("should return 400 when status is undefined", async () => {
+      // Arrange
+      req.body = { status: undefined };
+
+      // Act
+      await orderStatusController(req, res);
+
+      // Assert
+      expect(res.status).toHaveBeenCalledWith(400);
+      expect(res.send).toHaveBeenCalledWith({
+        success: false,
+        message: "Status is required",
+        error: "Status is required",
+      });
+    });
+
+    it("should return 400 when status is null", async () => {
+      // Arrange
+      req.body = { status: null };
+
+      // Act
+      await orderStatusController(req, res);
+
+      // Assert
+      expect(res.status).toHaveBeenCalledWith(400);
+      expect(res.send).toHaveBeenCalledWith({
+        success: false,
+        message: "Status is required",
+        error: "Status is required",
+      });
+    });
+  });
+
+  describe("Input Validation - Status Enum", () => {
+    beforeEach(() => {
+      req.params = { orderId: "507f1f77bcf86cd799439011" };
+    });
+
+    it("should return 400 for invalid status value", async () => {
+      // Arrange
+      req.body = { status: "InvalidStatus" };
+
+      // Act
+      await orderStatusController(req, res);
+
+      // Assert
+      expect(res.status).toHaveBeenCalledWith(400);
+      expect(res.send).toHaveBeenCalledWith({
+        success: false,
+        message: "Invalid status value",
+        error:
+          "Status must be one of: Not Process, Processing, Shipped, Delivered, Cancelled",
+      });
+    });
+
+    it("should accept 'Not Process' as valid status", async () => {
+      // Arrange
+      req.body = { status: "Not Process" };
+      const mockOrder = {
+        _id: "507f1f77bcf86cd799439011",
+        status: "Not Process",
+      };
+      const mockQueryChain = createMockQueryChain(mockOrder);
+      orderModel.findByIdAndUpdate = jest.fn().mockReturnValue(mockQueryChain);
+
+      // Act
+      await orderStatusController(req, res);
+
+      // Assert - Should not return validation error
+      expect(res.status).toHaveBeenCalledWith(200);
+    });
+
+    it("should accept 'Processing' as valid status", async () => {
+      // Arrange
+      req.body = { status: "Processing" };
+      const mockOrder = {
+        _id: "507f1f77bcf86cd799439011",
+        status: "Processing",
+      };
+      const mockQueryChain = createMockQueryChain(mockOrder);
+      orderModel.findByIdAndUpdate = jest.fn().mockReturnValue(mockQueryChain);
+
+      // Act
+      await orderStatusController(req, res);
+
+      // Assert
+      expect(res.status).toHaveBeenCalledWith(200);
+    });
+
+    it("should accept 'Shipped' as valid status", async () => {
+      // Arrange
+      req.body = { status: "Shipped" };
+      const mockOrder = { _id: "507f1f77bcf86cd799439011", status: "Shipped" };
+      const mockQueryChain = createMockQueryChain(mockOrder);
+      orderModel.findByIdAndUpdate = jest.fn().mockReturnValue(mockQueryChain);
+
+      // Act
+      await orderStatusController(req, res);
+
+      // Assert
+      expect(res.status).toHaveBeenCalledWith(200);
+    });
+
+    it("should accept 'Delivered' as valid status", async () => {
+      // Arrange
+      req.body = { status: "Delivered" };
+      const mockOrder = {
+        _id: "507f1f77bcf86cd799439011",
+        status: "Delivered",
+      };
+      const mockQueryChain = createMockQueryChain(mockOrder);
+      orderModel.findByIdAndUpdate = jest.fn().mockReturnValue(mockQueryChain);
+
+      // Act
+      await orderStatusController(req, res);
+
+      // Assert
+      expect(res.status).toHaveBeenCalledWith(200);
+    });
+
+    it("should accept 'Cancelled' as valid status", async () => {
+      // Arrange
+      req.body = { status: "Cancelled" };
+      const mockOrder = {
+        _id: "507f1f77bcf86cd799439011",
+        status: "Cancelled",
+      };
+      const mockQueryChain = createMockQueryChain(mockOrder);
+      orderModel.findByIdAndUpdate = jest.fn().mockReturnValue(mockQueryChain);
+
+      // Act
+      await orderStatusController(req, res);
+
+      // Assert
+      expect(res.status).toHaveBeenCalledWith(200);
+    });
+
+    it("should reject lowercase status values (case-sensitive)", async () => {
+      // Arrange
+      req.body = { status: "delivered" }; // lowercase
+
+      // Act
+      await orderStatusController(req, res);
+
+      // Assert
+      expect(res.status).toHaveBeenCalledWith(400);
+      expect(res.send).toHaveBeenCalledWith(
+        expect.objectContaining({
+          success: false,
+          message: "Invalid status value",
+        }),
+      );
+    });
+
+    it("should reject uppercase status values (case-sensitive)", async () => {
+      // Arrange
+      req.body = { status: "CANCELLED" }; // uppercase
+
+      // Act
+      await orderStatusController(req, res);
+
+      // Assert
+      expect(res.status).toHaveBeenCalledWith(400);
+      expect(res.send).toHaveBeenCalledWith(
+        expect.objectContaining({
+          success: false,
+          message: "Invalid status value",
+        }),
+      );
+    });
+
+    it("should reject old typo 'deliverd' (with typo)", async () => {
+      // Arrange
+      req.body = { status: "deliverd" }; // Old typo version
+
+      // Act
+      await orderStatusController(req, res);
+
+      // Assert
+      expect(res.status).toHaveBeenCalledWith(400);
+      expect(res.send).toHaveBeenCalledWith(
+        expect.objectContaining({
+          message: "Invalid status value",
+        }),
+      );
+    });
+
+    it("should reject old typo 'cancel' (without 'led')", async () => {
+      // Arrange
+      req.body = { status: "cancel" }; // Old typo version
+
+      // Act
+      await orderStatusController(req, res);
+
+      // Assert
+      expect(res.status).toHaveBeenCalledWith(400);
+      expect(res.send).toHaveBeenCalledWith(
+        expect.objectContaining({
+          message: "Invalid status value",
+        }),
+      );
+    });
+  });
+
+  // ===== SUCCESSFUL UPDATE TESTS (Output-based + Communication-based) =====
+  describe("Successful Status Updates", () => {
+    beforeEach(() => {
+      req.params = { orderId: "507f1f77bcf86cd799439011" };
+    });
+
+    it("should successfully update order status to Processing", async () => {
+      // Arrange
+      req.body = { status: "Processing" };
+      const mockOrder = {
+        _id: "507f1f77bcf86cd799439011",
+        status: "Processing",
+        buyer: { _id: "user123", name: "John Doe" },
+        products: [{ _id: "prod1", name: "Product 1" }],
+      };
+      const mockQueryChain = createMockQueryChain(mockOrder);
+      orderModel.findByIdAndUpdate = jest.fn().mockReturnValue(mockQueryChain);
+
+      // Act
+      await orderStatusController(req, res);
+
+      // Assert - Output-based: verify response
+      expect(res.status).toHaveBeenCalledWith(200);
+      expect(res.send).toHaveBeenCalledWith({
+        success: true,
+        order: mockOrder,
+      });
+    });
+
+    it("should call findByIdAndUpdate with correct parameters", async () => {
+      // Arrange
+      req.body = { status: "Shipped" };
+      const mockOrder = { _id: "507f1f77bcf86cd799439011", status: "Shipped" };
+      const mockQueryChain = createMockQueryChain(mockOrder);
+      orderModel.findByIdAndUpdate = jest.fn().mockReturnValue(mockQueryChain);
+
+      // Act
+      await orderStatusController(req, res);
+
+      // Assert - Communication-based: verify method call
+      expect(orderModel.findByIdAndUpdate).toHaveBeenCalledWith(
+        "507f1f77bcf86cd799439011",
+        { status: "Shipped" },
+        { new: true },
+      );
+      expect(orderModel.findByIdAndUpdate).toHaveBeenCalledTimes(1);
+    });
+
+    it("should populate products field correctly", async () => {
+      // Arrange
+      req.body = { status: "Delivered" };
+      const mockOrder = {
+        _id: "507f1f77bcf86cd799439011",
+        status: "Delivered",
+        products: [
+          { _id: "prod1", name: "Product 1", price: 100 },
+          { _id: "prod2", name: "Product 2", price: 200 },
+        ],
+      };
+      const mockQueryChain = createMockQueryChain(mockOrder);
+      orderModel.findByIdAndUpdate = jest.fn().mockReturnValue(mockQueryChain);
+
+      // Act
+      await orderStatusController(req, res);
+
+      // Assert - Communication-based: verify populate was called correctly
+      expect(mockQueryChain.populate).toHaveBeenCalledWith(
+        "products",
+        "-photo",
+      );
+      expect(mockQueryChain.populate).toHaveBeenCalledWith("buyer", "name");
+      expect(mockQueryChain.populate).toHaveBeenCalledTimes(2);
+    });
+
+    it("should update status to Cancelled successfully", async () => {
+      // Arrange
+      req.body = { status: "Cancelled" };
+      const mockOrder = {
+        _id: "507f1f77bcf86cd799439011",
+        status: "Cancelled",
+        buyer: { _id: "user123", name: "Jane Smith" },
+      };
+      const mockQueryChain = createMockQueryChain(mockOrder);
+      orderModel.findByIdAndUpdate = jest.fn().mockReturnValue(mockQueryChain);
+
+      // Act
+      await orderStatusController(req, res);
+
+      // Assert
+      expect(res.status).toHaveBeenCalledWith(200);
+      expect(res.send).toHaveBeenCalledWith({
+        success: true,
+        order: expect.objectContaining({
+          status: "Cancelled",
+        }),
+      });
+    });
+
+    it("should return order with populated buyer name", async () => {
+      // Arrange
+      req.body = { status: "Delivered" };
+      const mockOrder = {
+        _id: "507f1f77bcf86cd799439011",
+        status: "Delivered",
+        buyer: { _id: "user123", name: "Alice Johnson" },
+        products: [],
+      };
+      const mockQueryChain = createMockQueryChain(mockOrder);
+      orderModel.findByIdAndUpdate = jest.fn().mockReturnValue(mockQueryChain);
+
+      // Act
+      await orderStatusController(req, res);
+
+      // Assert - State-based: verify returned order structure
+      expect(res.send).toHaveBeenCalledWith({
+        success: true,
+        order: expect.objectContaining({
+          buyer: expect.objectContaining({
+            name: "Alice Johnson",
+          }),
+        }),
+      });
+    });
+
+    it("should handle updating to same status (idempotent)", async () => {
+      // Arrange
+      req.body = { status: "Processing" };
+      const mockOrder = {
+        _id: "507f1f77bcf86cd799439011",
+        status: "Processing", // Already in this status
+      };
+      const mockQueryChain = createMockQueryChain(mockOrder);
+      orderModel.findByIdAndUpdate = jest.fn().mockReturnValue(mockQueryChain);
+
+      // Act
+      await orderStatusController(req, res);
+
+      // Assert - Should still succeed
+      expect(res.status).toHaveBeenCalledWith(200);
+      expect(res.send).toHaveBeenCalledWith({
+        success: true,
+        order: mockOrder,
+      });
+    });
+  });
+
+  // ===== ORDER NOT FOUND TESTS (Communication-based) =====
+  describe("Order Not Found Handling", () => {
+    beforeEach(() => {
+      req.params = { orderId: "507f1f77bcf86cd799439011" };
+      req.body = { status: "Processing" };
+    });
+
+    it("should return 404 when order does not exist", async () => {
+      // Arrange
+      const mockQueryChain = createMockQueryChain(null);
+      orderModel.findByIdAndUpdate = jest.fn().mockReturnValue(mockQueryChain);
+
+      // Act
+      await orderStatusController(req, res);
+
+      // Assert
+      expect(res.status).toHaveBeenCalledWith(404);
+      expect(res.send).toHaveBeenCalledWith({
+        success: false,
+        message: "Order not found",
+        error: "Order not found",
+      });
+    });
+
+    it("should verify findByIdAndUpdate was called before returning 404", async () => {
+      // Arrange
+      const mockQueryChain = createMockQueryChain(null);
+      orderModel.findByIdAndUpdate = jest.fn().mockReturnValue(mockQueryChain);
+
+      // Act
+      await orderStatusController(req, res);
+
+      // Assert - Communication-based: verify DB was queried
+      expect(orderModel.findByIdAndUpdate).toHaveBeenCalledTimes(1);
+    });
+
+    it("should return 404 for non-existent orderId with valid format", async () => {
+      // Arrange
+      req.params = { orderId: "000000000000000000000000" };
+      const mockQueryChain = createMockQueryChain(null);
+      orderModel.findByIdAndUpdate = jest.fn().mockReturnValue(mockQueryChain);
+
+      // Act
+      await orderStatusController(req, res);
+
+      // Assert
+      expect(res.status).toHaveBeenCalledWith(404);
+    });
+  });
+
+  // ===== ERROR HANDLING TESTS (Communication-based) =====
+  describe("Error Handling", () => {
+    beforeEach(() => {
+      req.params = { orderId: "507f1f77bcf86cd799439011" };
+      req.body = { status: "Processing" };
+    });
+
+    it("should handle database connection errors", async () => {
+      // Arrange
+      const dbError = new Error("Database connection failed");
+      const mockQueryChain = createMockQueryChain(null);
+      mockQueryChain.then = jest.fn((resolve, reject) =>
+        Promise.reject(dbError).then(resolve, reject),
+      );
+      orderModel.findByIdAndUpdate = jest.fn().mockReturnValue(mockQueryChain);
+
+      // Act
+      await orderStatusController(req, res);
+
+      // Assert
+      expect(res.status).toHaveBeenCalledWith(500);
+      expect(res.send).toHaveBeenCalledWith({
+        success: false,
+        message: "Error While Updating Order",
+        error: dbError,
+      });
+    });
+
+    it("should handle network timeout errors", async () => {
+      // Arrange
+      const timeoutError = new Error("Network timeout");
+      timeoutError.code = "ETIMEDOUT";
+      const mockQueryChain = createMockQueryChain(null);
+      mockQueryChain.then = jest.fn((resolve, reject) =>
+        Promise.reject(timeoutError).then(resolve, reject),
+      );
+      orderModel.findByIdAndUpdate = jest.fn().mockReturnValue(mockQueryChain);
+
+      // Act
+      await orderStatusController(req, res);
+
+      // Assert
+      expect(res.status).toHaveBeenCalledWith(500);
+      expect(res.send).toHaveBeenCalledWith(
+        expect.objectContaining({
+          success: false,
+          message: "Error While Updating Order",
+        }),
+      );
+    });
+
+    it("should handle MongoDB validation errors", async () => {
+      // Arrange
+      const validationError = new Error("Validation failed");
+      validationError.name = "ValidationError";
+      const mockQueryChain = createMockQueryChain(null);
+      mockQueryChain.then = jest.fn((resolve, reject) =>
+        Promise.reject(validationError).then(resolve, reject),
+      );
+      orderModel.findByIdAndUpdate = jest.fn().mockReturnValue(mockQueryChain);
+
+      // Act
+      await orderStatusController(req, res);
+
+      // Assert
+      expect(res.status).toHaveBeenCalledWith(500);
+    });
+
+    it("should log error to console", async () => {
+      // Arrange
+      const consoleLogSpy = jest.spyOn(console, "log").mockImplementation();
+      const testError = new Error("Test error");
+      const mockQueryChain = createMockQueryChain(null);
+      mockQueryChain.then = jest.fn((resolve, reject) =>
+        Promise.reject(testError).then(resolve, reject),
+      );
+      orderModel.findByIdAndUpdate = jest.fn().mockReturnValue(mockQueryChain);
+
+      // Act
+      await orderStatusController(req, res);
+
+      // Assert - Communication-based: verify logging
+      expect(consoleLogSpy).toHaveBeenCalledWith(testError);
+      consoleLogSpy.mockRestore();
+    });
+  });
+
+  // ===== EDGE CASES TESTS (Mixed styles) =====
+  describe("Edge Cases", () => {
+    it("should handle order with minimal data", async () => {
+      // Arrange
+      req.params = { orderId: "507f1f77bcf86cd799439011" };
+      req.body = { status: "Processing" };
+      const minimalOrder = {
+        _id: "507f1f77bcf86cd799439011",
+        status: "Processing",
+      };
+      const mockQueryChain = createMockQueryChain(minimalOrder);
+      orderModel.findByIdAndUpdate = jest.fn().mockReturnValue(mockQueryChain);
+
+      // Act
+      await orderStatusController(req, res);
+
+      // Assert
+      expect(res.status).toHaveBeenCalledWith(200);
+      expect(res.send).toHaveBeenCalledWith({
+        success: true,
+        order: minimalOrder,
+      });
+    });
+
+    it("should handle extra fields in request body", async () => {
+      // Arrange
+      req.params = { orderId: "507f1f77bcf86cd799439011" };
+      req.body = {
+        status: "Shipped",
+        extraField: "should be ignored",
+        hackAttempt: "malicious data",
+      };
+      const mockOrder = { _id: "507f1f77bcf86cd799439011", status: "Shipped" };
+      const mockQueryChain = createMockQueryChain(mockOrder);
+      orderModel.findByIdAndUpdate = jest.fn().mockReturnValue(mockQueryChain);
+
+      // Act
+      await orderStatusController(req, res);
+
+      // Assert - Only status should be passed to update
+      expect(orderModel.findByIdAndUpdate).toHaveBeenCalledWith(
+        "507f1f77bcf86cd799439011",
+        { status: "Shipped" }, // Only status field
+        { new: true },
+      );
+    });
+
+    it("should not mutate request object", async () => {
+      // Arrange
+      req.params = { orderId: "507f1f77bcf86cd799439011" };
+      req.body = { status: "Delivered" };
+      const originalParams = { ...req.params };
+      const originalBody = { ...req.body };
+      const mockOrder = {
+        _id: "507f1f77bcf86cd799439011",
+        status: "Delivered",
+      };
+      const mockQueryChain = createMockQueryChain(mockOrder);
+      orderModel.findByIdAndUpdate = jest.fn().mockReturnValue(mockQueryChain);
+
+      // Act
+      await orderStatusController(req, res);
+
+      // Assert - Request should remain unchanged
+      expect(req.params).toEqual(originalParams);
+      expect(req.body).toEqual(originalBody);
+    });
+
+    it("should handle very long orderId", async () => {
+      // Arrange
+      const longOrderId = "a".repeat(500);
+      req.params = { orderId: longOrderId };
+      req.body = { status: "Processing" };
+      const mockQueryChain = createMockQueryChain(null);
+      orderModel.findByIdAndUpdate = jest.fn().mockReturnValue(mockQueryChain);
+
+      // Act
+      await orderStatusController(req, res);
+
+      // Assert - Should handle gracefully
+      expect(orderModel.findByIdAndUpdate).toHaveBeenCalledWith(
+        longOrderId,
+        { status: "Processing" },
+        { new: true },
+      );
+    });
+
+    it("should handle special characters in orderId", async () => {
+      // Arrange
+      req.params = { orderId: "507f-1f77_bcf8@6cd7" };
+      req.body = { status: "Cancelled" };
+      const mockQueryChain = createMockQueryChain(null);
+      orderModel.findByIdAndUpdate = jest.fn().mockReturnValue(mockQueryChain);
+
+      // Act
+      await orderStatusController(req, res);
+
+      // Assert - Should pass through to DB layer
+      expect(orderModel.findByIdAndUpdate).toHaveBeenCalledWith(
+        "507f-1f77_bcf8@6cd7",
+        { status: "Cancelled" },
+        { new: true },
+      );
+    });
+  });
+
+  // ===== RESPONSE FORMAT CONSISTENCY TESTS (Output-based) =====
+  describe("Response Format Consistency", () => {
+    it("should always include success field in responses", async () => {
+      // Arrange - Test error case
+      req.params = {};
+      req.body = { status: "Processing" };
+
+      // Act
+      await orderStatusController(req, res);
+
+      // Assert
+      expect(res.send).toHaveBeenCalledWith(
+        expect.objectContaining({
+          success: expect.any(Boolean),
+        }),
+      );
+    });
+
+    it("should include error and message fields in error responses", async () => {
+      // Arrange
+      req.params = { orderId: "507f1f77bcf86cd799439011" };
+      req.body = {};
+
+      // Act
+      await orderStatusController(req, res);
+
+      // Assert
+      expect(res.send).toHaveBeenCalledWith(
+        expect.objectContaining({
+          success: false,
+          message: expect.any(String),
+          error: expect.any(String),
+        }),
+      );
+    });
+
+    it("should include order field in success responses", async () => {
+      // Arrange
+      req.params = { orderId: "507f1f77bcf86cd799439011" };
+      req.body = { status: "Delivered" };
+      const mockOrder = {
+        _id: "507f1f77bcf86cd799439011",
+        status: "Delivered",
+      };
+      const mockQueryChain = createMockQueryChain(mockOrder);
+      orderModel.findByIdAndUpdate = jest.fn().mockReturnValue(mockQueryChain);
+
+      // Act
+      await orderStatusController(req, res);
+
+      // Assert
+      expect(res.send).toHaveBeenCalledWith(
+        expect.objectContaining({
+          success: true,
+          order: expect.any(Object),
+        }),
+      );
+    });
+
+    it("should use appropriate HTTP status codes", async () => {
+      // Arrange - Success case
+      req.params = { orderId: "507f1f77bcf86cd799439011" };
+      req.body = { status: "Processing" };
+      const mockOrder = {
+        _id: "507f1f77bcf86cd799439011",
+        status: "Processing",
+      };
+      const mockQueryChain = createMockQueryChain(mockOrder);
+      orderModel.findByIdAndUpdate = jest.fn().mockReturnValue(mockQueryChain);
+
+      // Act
+      await orderStatusController(req, res);
+
+      // Assert
+      expect(res.status).toHaveBeenCalledWith(200); // Success = 200
+    });
+  });
+
+  // ===== PERFORMANCE TESTS (Fast Feedback Pillar) =====
+  describe("Performance Considerations", () => {
+    it("should fail fast on validation errors without DB calls", async () => {
+      // Arrange
+      req.params = {};
+      req.body = { status: "Processing" };
+      orderModel.findByIdAndUpdate = jest.fn();
+
+      // Act
+      await orderStatusController(req, res);
+
+      // Assert - No DB call should be made
+      expect(orderModel.findByIdAndUpdate).not.toHaveBeenCalled();
+    });
+
+    it("should make minimal database calls", async () => {
+      // Arrange
+      req.params = { orderId: "507f1f77bcf86cd799439011" };
+      req.body = { status: "Shipped" };
+      const mockOrder = { _id: "507f1f77bcf86cd799439011", status: "Shipped" };
+      const mockQueryChain = createMockQueryChain(mockOrder);
+      orderModel.findByIdAndUpdate = jest.fn().mockReturnValue(mockQueryChain);
+
+      // Act
+      await orderStatusController(req, res);
+
+      // Assert - Only one findByIdAndUpdate call
+      expect(orderModel.findByIdAndUpdate).toHaveBeenCalledTimes(1);
+      // And two populate calls (chained)
+      expect(mockQueryChain.populate).toHaveBeenCalledTimes(2);
+    });
+
+    it("should complete quickly with mocked dependencies", async () => {
+      // Arrange
+      req.params = { orderId: "507f1f77bcf86cd799439011" };
+      req.body = { status: "Cancelled" };
+      const mockOrder = {
+        _id: "507f1f77bcf86cd799439011",
+        status: "Cancelled",
+      };
+      const mockQueryChain = createMockQueryChain(mockOrder);
+      orderModel.findByIdAndUpdate = jest.fn().mockReturnValue(mockQueryChain);
+
+      // Act
+      const startTime = Date.now();
+      await orderStatusController(req, res);
+      const endTime = Date.now();
+
+      // Assert - Should complete in under 100ms with mocks
+      expect(endTime - startTime).toBeLessThan(100);
     });
   });
 });
