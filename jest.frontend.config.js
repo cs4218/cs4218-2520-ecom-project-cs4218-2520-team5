@@ -21,6 +21,7 @@ export default {
 
   // only run these tests
   testMatch: [
+    "<rootDir>/client/src/pages/Auth/*.test.js",
     "<rootDir>/client/src/pages/admin/CreateCategory.test.js",
     "<rootDir>/client/src/pages/admin/AdminDashboard.test.js",
     "<rootDir>/client/src/components/Form/CategoryForm.test.js",
@@ -32,6 +33,8 @@ export default {
   // jest code coverage
   collectCoverage: true,
   collectCoverageFrom: [
+    "client/src/pages/Auth/Login.js",
+    "client/src/pages/Auth/Register.js",
     "client/src/pages/admin/CreateCategory.js",
     "client/src/pages/admin/AdminDashboard.js",
     "client/src/components/Form/CategoryForm.js",
