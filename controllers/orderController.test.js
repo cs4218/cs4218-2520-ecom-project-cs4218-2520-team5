@@ -1,20 +1,42 @@
 // Alyssa Ong, A0264663X (added test cases for the controllers for order)
 // The test cases are generated with the help from AI.
 
-import {
+import { jest, describe, test, it, expect, beforeEach } from "@jest/globals";
+
+// Create mock function before mocking
+const mockHashPassword = jest.fn();
+
+// Mock dependencies for isolation using unstable_mockModule for ES modules
+jest.unstable_mockModule("../models/userModel.js", () => ({
+  default: {
+    findById: jest.fn(),
+    findByIdAndUpdate: jest.fn(),
+  },
+}));
+
+jest.unstable_mockModule("../models/orderModel.js", () => ({
+  default: {
+    find: jest.fn(),
+    sort: jest.fn(),
+    populate: jest.fn(),
+    findByIdAndUpdate: jest.fn(),
+  },
+}));
+
+jest.unstable_mockModule("../helpers/authHelper.js", () => ({
+  hashPassword: mockHashPassword,
+}));
+
+// Import after mocking
+const {
   updateProfileController,
   getOrdersController,
   getAllOrdersController,
   orderStatusController,
-} from "../controllers/orderController.js";
-import userModel from "../models/userModel.js";
-import orderModel from "../models/orderModel.js";
-import { hashPassword } from "../helpers/authHelper.js";
-
-// Mock dependencies for isolation
-jest.mock("../models/userModel.js");
-jest.mock("../models/orderModel.js");
-jest.mock("../helpers/authHelper.js");
+} = await import("../controllers/orderController.js");
+const userModel = (await import("../models/userModel.js")).default;
+const orderModel = (await import("../models/orderModel.js")).default;
+const { hashPassword } = await import("../helpers/authHelper.js");
 
 describe("updateProfileController", () => {
   // Mock request and response objects
@@ -43,8 +65,10 @@ describe("updateProfileController", () => {
       password: "hashedPassword123",
     };
 
-    // Clear all mocks before each test
-    jest.clearAllMocks();
+    // Re-initialize mocks before each test
+    userModel.findById = jest.fn();
+    userModel.findByIdAndUpdate = jest.fn();
+    hashPassword.mockClear();
   });
 
   // ===== AUTHENTICATION & AUTHORIZATION TESTS =====
@@ -659,7 +683,12 @@ describe("getOrdersController", () => {
       sort: jest.fn().mockResolvedValue(mockOrders),
     };
 
-    // Clear all mocks before each test
+    // Re-initialize mocks before each test
+    orderModel.find = jest.fn();
+  });
+
+  afterEach(() => {
+    // Clear all mocks after each test
     jest.clearAllMocks();
   });
 
@@ -1376,7 +1405,12 @@ describe("getAllOrdersController", () => {
       sort: jest.fn().mockResolvedValue(mockAllOrders),
     };
 
-    // Clear all mocks before each test
+    // Re-initialize mocks before each test
+    orderModel.find = jest.fn();
+  });
+
+  afterEach(() => {
+    // Clear all mocks after each test
     jest.clearAllMocks();
   });
 
@@ -2031,6 +2065,9 @@ describe("orderStatusController", () => {
     };
 
     jest.clearAllMocks();
+
+    // Re-initialize mocks after clearAllMocks
+    orderModel.findByIdAndUpdate = jest.fn();
   });
 
   // Helper function to create mock query chain
