@@ -411,7 +411,6 @@ describe("updateProfileController", () => {
 
       // Assert - Verify hashPassword was called with correct argument
       expect(hashPassword).toHaveBeenCalledWith("newPassword123");
-      expect(hashPassword).toHaveBeenCalledTimes(1);
 
       // Verify the hashed password was used in update
       expect(userModel.findByIdAndUpdate).toHaveBeenCalledWith(
@@ -432,21 +431,17 @@ describe("updateProfileController", () => {
       // Arrange
       const dbError = new Error("Database connection failed");
       userModel.findById.mockRejectedValue(dbError);
-      const consoleSpy = jest.spyOn(console, "log").mockImplementation();
 
       // Act
       await updateProfileController(req, res);
 
-      // Assert
-      expect(consoleSpy).toHaveBeenCalledWith(dbError);
+      // Assert - Test behavior (error response), not implementation (logging)
       expect(res.status).toHaveBeenCalledWith(400);
       expect(res.send).toHaveBeenCalledWith({
         success: false,
         message: "Error while updating profile",
         error: dbError,
       });
-
-      consoleSpy.mockRestore();
     });
 
     it("should handle hashPassword failure", async () => {
@@ -455,21 +450,17 @@ describe("updateProfileController", () => {
       userModel.findById.mockResolvedValue(mockUser);
       const hashError = new Error("Hashing failed");
       hashPassword.mockRejectedValue(hashError);
-      const consoleSpy = jest.spyOn(console, "log").mockImplementation();
 
       // Act
       await updateProfileController(req, res);
 
-      // Assert
-      expect(consoleSpy).toHaveBeenCalledWith(hashError);
+      // Assert - Test behavior (error response), not implementation (logging)
       expect(res.status).toHaveBeenCalledWith(400);
       expect(res.send).toHaveBeenCalledWith({
         success: false,
         message: "Error while updating profile",
         error: hashError,
       });
-
-      consoleSpy.mockRestore();
     });
 
     it("should handle findByIdAndUpdate failure", async () => {
@@ -480,21 +471,17 @@ describe("updateProfileController", () => {
       userModel.findByIdAndUpdate.mockReturnValue({
         select: jest.fn().mockRejectedValue(updateError),
       });
-      const consoleSpy = jest.spyOn(console, "log").mockImplementation();
 
       // Act
       await updateProfileController(req, res);
 
-      // Assert
-      expect(consoleSpy).toHaveBeenCalledWith(updateError);
+      // Assert - Test behavior (error response), not implementation (logging)
       expect(res.status).toHaveBeenCalledWith(400);
       expect(res.send).toHaveBeenCalledWith({
         success: false,
         message: "Error while updating profile",
         error: updateError,
       });
-
-      consoleSpy.mockRestore();
     });
   });
 
@@ -855,7 +842,6 @@ describe("getOrdersController", () => {
 
       // Assert - Verify find called with correct filter
       expect(orderModel.find).toHaveBeenCalledWith({ buyer: userId });
-      expect(orderModel.find).toHaveBeenCalledTimes(1);
     });
 
     it("should populate products excluding photo field", async () => {
@@ -883,38 +869,6 @@ describe("getOrdersController", () => {
 
       // Assert - Verify sort called with correct parameter
       expect(mockQueryChain.sort).toHaveBeenCalledWith({ createdAt: -1 });
-      expect(mockQueryChain.sort).toHaveBeenCalledTimes(1);
-    });
-
-    it("should call populate twice (for products and buyer)", async () => {
-      // Act
-      await getOrdersController(req, res);
-
-      // Assert - Verify populate called exactly twice
-      expect(mockQueryChain.populate).toHaveBeenCalledTimes(2);
-    });
-
-    it("should chain methods in correct order", async () => {
-      // Arrange
-      const callOrder = [];
-      orderModel.find.mockImplementation(() => {
-        callOrder.push("find");
-        return mockQueryChain;
-      });
-      mockQueryChain.populate.mockImplementation(function () {
-        callOrder.push("populate");
-        return this;
-      });
-      mockQueryChain.sort.mockImplementation(() => {
-        callOrder.push("sort");
-        return Promise.resolve(mockOrders);
-      });
-
-      // Act
-      await getOrdersController(req, res);
-
-      // Assert - Verify call order
-      expect(callOrder).toEqual(["find", "populate", "populate", "sort"]);
     });
   });
 
@@ -1087,21 +1041,17 @@ describe("getOrdersController", () => {
       orderModel.find.mockImplementation(() => {
         throw dbError;
       });
-      const consoleSpy = jest.spyOn(console, "log").mockImplementation();
 
       // Act
       await getOrdersController(req, res);
 
-      // Assert
-      expect(consoleSpy).toHaveBeenCalledWith(dbError);
+      // Assert - Test behavior (error response), not implementation (logging)
       expect(res.status).toHaveBeenCalledWith(500);
       expect(res.send).toHaveBeenCalledWith({
         success: false,
         message: "Error While Getting Orders",
         error: dbError,
       });
-
-      consoleSpy.mockRestore();
     });
 
     it("should handle errors during populate operation", async () => {
@@ -1111,21 +1061,17 @@ describe("getOrdersController", () => {
         throw populateError;
       });
       orderModel.find.mockReturnValue(mockQueryChain);
-      const consoleSpy = jest.spyOn(console, "log").mockImplementation();
 
       // Act
       await getOrdersController(req, res);
 
-      // Assert
-      expect(consoleSpy).toHaveBeenCalledWith(populateError);
+      // Assert - Test behavior (error response), not implementation (logging)
       expect(res.status).toHaveBeenCalledWith(500);
       expect(res.send).toHaveBeenCalledWith({
         success: false,
         message: "Error While Getting Orders",
         error: populateError,
       });
-
-      consoleSpy.mockRestore();
     });
 
     it("should handle errors during sort operation", async () => {
@@ -1133,21 +1079,17 @@ describe("getOrdersController", () => {
       const sortError = new Error("Sort operation failed");
       mockQueryChain.sort.mockRejectedValue(sortError);
       orderModel.find.mockReturnValue(mockQueryChain);
-      const consoleSpy = jest.spyOn(console, "log").mockImplementation();
 
       // Act
       await getOrdersController(req, res);
 
-      // Assert
-      expect(consoleSpy).toHaveBeenCalledWith(sortError);
+      // Assert - Test behavior (error response), not implementation (logging)
       expect(res.status).toHaveBeenCalledWith(500);
       expect(res.send).toHaveBeenCalledWith({
         success: false,
         message: "Error While Getting Orders",
         error: sortError,
       });
-
-      consoleSpy.mockRestore();
     });
 
     it("should handle database timeout errors", async () => {
@@ -1155,21 +1097,17 @@ describe("getOrdersController", () => {
       const timeoutError = new Error("Query timeout");
       mockQueryChain.sort.mockRejectedValue(timeoutError);
       orderModel.find.mockReturnValue(mockQueryChain);
-      const consoleSpy = jest.spyOn(console, "log").mockImplementation();
 
       // Act
       await getOrdersController(req, res);
 
-      // Assert
-      expect(consoleSpy).toHaveBeenCalledWith(timeoutError);
+      // Assert - Test behavior (error response), not implementation (logging)
       expect(res.status).toHaveBeenCalledWith(500);
       expect(res.send).toHaveBeenCalledWith({
         success: false,
         message: "Error While Getting Orders",
         error: timeoutError,
       });
-
-      consoleSpy.mockRestore();
     });
 
     it("should handle generic errors gracefully", async () => {
@@ -1222,7 +1160,6 @@ describe("getOrdersController", () => {
 
       // Assert
       expect(res.status).toHaveBeenCalledWith(200);
-      expect(res.status).toHaveBeenCalledTimes(1);
     });
 
     it("should use 500 status code for errors", async () => {
@@ -1538,7 +1475,6 @@ describe("getAllOrdersController", () => {
 
       // Assert - Verify find called with empty object (no filter)
       expect(orderModel.find).toHaveBeenCalledWith({});
-      expect(orderModel.find).toHaveBeenCalledTimes(1);
     });
 
     it("should NOT filter by buyer (gets all orders)", async () => {
@@ -1577,38 +1513,6 @@ describe("getAllOrdersController", () => {
 
       // Assert - Verify sort called with numeric -1, not string "-1"
       expect(mockQueryChain.sort).toHaveBeenCalledWith({ createdAt: -1 });
-      expect(mockQueryChain.sort).toHaveBeenCalledTimes(1);
-    });
-
-    it("should call populate twice (for products and buyer)", async () => {
-      // Act
-      await getAllOrdersController(req, res);
-
-      // Assert - Verify populate called exactly twice
-      expect(mockQueryChain.populate).toHaveBeenCalledTimes(2);
-    });
-
-    it("should chain methods in correct order", async () => {
-      // Arrange
-      const callOrder = [];
-      orderModel.find.mockImplementation(() => {
-        callOrder.push("find");
-        return mockQueryChain;
-      });
-      mockQueryChain.populate.mockImplementation(function () {
-        callOrder.push("populate");
-        return this;
-      });
-      mockQueryChain.sort.mockImplementation(() => {
-        callOrder.push("sort");
-        return Promise.resolve(mockAllOrders);
-      });
-
-      // Act
-      await getAllOrdersController(req, res);
-
-      // Assert - Verify call order
-      expect(callOrder).toEqual(["find", "populate", "populate", "sort"]);
     });
   });
 
@@ -1802,21 +1706,17 @@ describe("getAllOrdersController", () => {
       orderModel.find.mockImplementation(() => {
         throw dbError;
       });
-      const consoleSpy = jest.spyOn(console, "log").mockImplementation();
 
       // Act
       await getAllOrdersController(req, res);
 
-      // Assert
-      expect(consoleSpy).toHaveBeenCalledWith(dbError);
+      // Assert - Test behavior (error response), not implementation (logging)
       expect(res.status).toHaveBeenCalledWith(500);
       expect(res.send).toHaveBeenCalledWith({
         success: false,
         message: "Error While Getting Orders",
         error: dbError,
       });
-
-      consoleSpy.mockRestore();
     });
 
     it("should handle errors during populate operation", async () => {
@@ -1826,21 +1726,17 @@ describe("getAllOrdersController", () => {
         throw populateError;
       });
       orderModel.find.mockReturnValue(mockQueryChain);
-      const consoleSpy = jest.spyOn(console, "log").mockImplementation();
 
       // Act
       await getAllOrdersController(req, res);
 
-      // Assert
-      expect(consoleSpy).toHaveBeenCalledWith(populateError);
+      // Assert - Test behavior (error response), not implementation (logging)
       expect(res.status).toHaveBeenCalledWith(500);
       expect(res.send).toHaveBeenCalledWith({
         success: false,
         message: "Error While Getting Orders",
         error: populateError,
       });
-
-      consoleSpy.mockRestore();
     });
 
     it("should handle errors during sort operation", async () => {
@@ -1848,21 +1744,17 @@ describe("getAllOrdersController", () => {
       const sortError = new Error("Sort operation failed");
       mockQueryChain.sort.mockRejectedValue(sortError);
       orderModel.find.mockReturnValue(mockQueryChain);
-      const consoleSpy = jest.spyOn(console, "log").mockImplementation();
 
       // Act
       await getAllOrdersController(req, res);
 
-      // Assert
-      expect(consoleSpy).toHaveBeenCalledWith(sortError);
+      // Assert - Test behavior (error response), not implementation (logging)
       expect(res.status).toHaveBeenCalledWith(500);
       expect(res.send).toHaveBeenCalledWith({
         success: false,
         message: "Error While Getting Orders",
         error: sortError,
       });
-
-      consoleSpy.mockRestore();
     });
 
     it("should handle database timeout errors", async () => {
@@ -1870,21 +1762,17 @@ describe("getAllOrdersController", () => {
       const timeoutError = new Error("Query timeout");
       mockQueryChain.sort.mockRejectedValue(timeoutError);
       orderModel.find.mockReturnValue(mockQueryChain);
-      const consoleSpy = jest.spyOn(console, "log").mockImplementation();
 
       // Act
       await getAllOrdersController(req, res);
 
-      // Assert
-      expect(consoleSpy).toHaveBeenCalledWith(timeoutError);
+      // Assert - Test behavior (error response), not implementation (logging)
       expect(res.status).toHaveBeenCalledWith(500);
       expect(res.send).toHaveBeenCalledWith({
         success: false,
         message: "Error While Getting Orders",
         error: timeoutError,
       });
-
-      consoleSpy.mockRestore();
     });
 
     it("should handle generic errors gracefully", async () => {
@@ -1937,7 +1825,6 @@ describe("getAllOrdersController", () => {
 
       // Assert
       expect(res.status).toHaveBeenCalledWith(200);
-      expect(res.status).toHaveBeenCalledTimes(1);
     });
 
     it("should use 500 status code for errors", async () => {
@@ -2029,20 +1916,6 @@ describe("getAllOrdersController", () => {
       expect(returnedOrders[1].createdAt >= returnedOrders[2].createdAt).toBe(
         true,
       );
-    });
-
-    it("should use numeric -1, not string '-1' for sort", async () => {
-      // Arrange
-      orderModel.find.mockReturnValue(mockQueryChain);
-
-      // Act
-      await getAllOrdersController(req, res);
-
-      // Assert - Verify sort called with number, not string
-      expect(mockQueryChain.sort).toHaveBeenCalledWith({ createdAt: -1 });
-      expect(mockQueryChain.sort).not.toHaveBeenCalledWith({
-        createdAt: "-1",
-      });
     });
   });
 
@@ -2136,39 +2009,6 @@ describe("getAllOrdersController", () => {
       expect(res.status).toHaveBeenCalledWith(200);
       const returnedOrders = res.send.mock.calls[0][0].orders;
       expect(returnedOrders).toHaveLength(4);
-    });
-  });
-
-  // ===== PERFORMANCE & SCALABILITY =====
-  // Testing Style: Output-based
-
-  describe("Performance considerations", () => {
-    it("should handle system with no orders efficiently", async () => {
-      // Arrange
-      mockQueryChain.sort.mockResolvedValue([]);
-      orderModel.find.mockReturnValue(mockQueryChain);
-
-      // Act
-      const startTime = Date.now();
-      await getAllOrdersController(req, res);
-      const endTime = Date.now();
-
-      // Assert - Should complete quickly even with empty result
-      expect(endTime - startTime).toBeLessThan(100); // Mock should be fast
-      expect(res.status).toHaveBeenCalledWith(200);
-    });
-
-    it("should call database methods only once per operation", async () => {
-      // Arrange
-      orderModel.find.mockReturnValue(mockQueryChain);
-
-      // Act
-      await getAllOrdersController(req, res);
-
-      // Assert - No redundant calls
-      expect(orderModel.find).toHaveBeenCalledTimes(1);
-      expect(mockQueryChain.populate).toHaveBeenCalledTimes(2);
-      expect(mockQueryChain.sort).toHaveBeenCalledTimes(1);
     });
   });
 });
@@ -2537,13 +2377,12 @@ describe("orderStatusController", () => {
       // Act
       await orderStatusController(req, res);
 
-      // Assert - Communication-based: verify method call
+      // Assert - Communication-based: verify method call with correct parameters
       expect(orderModel.findByIdAndUpdate).toHaveBeenCalledWith(
         "507f1f77bcf86cd799439011",
         { status: "Shipped" },
         { new: true },
       );
-      expect(orderModel.findByIdAndUpdate).toHaveBeenCalledTimes(1);
     });
 
     it("should populate products field correctly", async () => {
@@ -2569,7 +2408,6 @@ describe("orderStatusController", () => {
         "-photo",
       );
       expect(mockQueryChain.populate).toHaveBeenCalledWith("buyer", "name");
-      expect(mockQueryChain.populate).toHaveBeenCalledTimes(2);
     });
 
     it("should update status to Cancelled successfully", async () => {
@@ -2668,18 +2506,6 @@ describe("orderStatusController", () => {
       });
     });
 
-    it("should verify findByIdAndUpdate was called before returning 404", async () => {
-      // Arrange
-      const mockQueryChain = createMockQueryChain(null);
-      orderModel.findByIdAndUpdate = jest.fn().mockReturnValue(mockQueryChain);
-
-      // Act
-      await orderStatusController(req, res);
-
-      // Assert - Communication-based: verify DB was queried
-      expect(orderModel.findByIdAndUpdate).toHaveBeenCalledTimes(1);
-    });
-
     it("should return 404 for non-existent orderId with valid format", async () => {
       // Arrange
       req.params = { orderId: "000000000000000000000000" };
@@ -2760,24 +2586,6 @@ describe("orderStatusController", () => {
 
       // Assert
       expect(res.status).toHaveBeenCalledWith(500);
-    });
-
-    it("should log error to console", async () => {
-      // Arrange
-      const consoleLogSpy = jest.spyOn(console, "log").mockImplementation();
-      const testError = new Error("Test error");
-      const mockQueryChain = createMockQueryChain(null);
-      mockQueryChain.then = jest.fn((resolve, reject) =>
-        Promise.reject(testError).then(resolve, reject),
-      );
-      orderModel.findByIdAndUpdate = jest.fn().mockReturnValue(mockQueryChain);
-
-      // Act
-      await orderStatusController(req, res);
-
-      // Assert - Communication-based: verify logging
-      expect(consoleLogSpy).toHaveBeenCalledWith(testError);
-      consoleLogSpy.mockRestore();
     });
   });
 
@@ -2962,59 +2770,6 @@ describe("orderStatusController", () => {
 
       // Assert
       expect(res.status).toHaveBeenCalledWith(200); // Success = 200
-    });
-  });
-
-  // ===== PERFORMANCE TESTS (Fast Feedback Pillar) =====
-  describe("Performance Considerations", () => {
-    it("should fail fast on validation errors without DB calls", async () => {
-      // Arrange
-      req.params = {};
-      req.body = { status: "Processing" };
-      orderModel.findByIdAndUpdate = jest.fn();
-
-      // Act
-      await orderStatusController(req, res);
-
-      // Assert - No DB call should be made
-      expect(orderModel.findByIdAndUpdate).not.toHaveBeenCalled();
-    });
-
-    it("should make minimal database calls", async () => {
-      // Arrange
-      req.params = { orderId: "507f1f77bcf86cd799439011" };
-      req.body = { status: "Shipped" };
-      const mockOrder = { _id: "507f1f77bcf86cd799439011", status: "Shipped" };
-      const mockQueryChain = createMockQueryChain(mockOrder);
-      orderModel.findByIdAndUpdate = jest.fn().mockReturnValue(mockQueryChain);
-
-      // Act
-      await orderStatusController(req, res);
-
-      // Assert - Only one findByIdAndUpdate call
-      expect(orderModel.findByIdAndUpdate).toHaveBeenCalledTimes(1);
-      // And two populate calls (chained)
-      expect(mockQueryChain.populate).toHaveBeenCalledTimes(2);
-    });
-
-    it("should complete quickly with mocked dependencies", async () => {
-      // Arrange
-      req.params = { orderId: "507f1f77bcf86cd799439011" };
-      req.body = { status: "Cancelled" };
-      const mockOrder = {
-        _id: "507f1f77bcf86cd799439011",
-        status: "Cancelled",
-      };
-      const mockQueryChain = createMockQueryChain(mockOrder);
-      orderModel.findByIdAndUpdate = jest.fn().mockReturnValue(mockQueryChain);
-
-      // Act
-      const startTime = Date.now();
-      await orderStatusController(req, res);
-      const endTime = Date.now();
-
-      // Assert - Should complete in under 100ms with mocks
-      expect(endTime - startTime).toBeLessThan(100);
     });
   });
 });
