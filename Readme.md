@@ -145,12 +145,9 @@ To begin unit testing with Jest in your project, follow these steps:
      npm run test
      ```
 
-
-## Milestone 1
+## 6. Milestone 1 - Contributions
 
 **Passing Jest CI:** //insert link here
-
-## 6. Contributions
 
 ### 6.1 Ang Yi Jie, Ivan
 
@@ -271,7 +268,7 @@ All test files below were written with the assistance of AI.
    - Validated form submission behavior (e.g. number of API calls)
    - Verified number of results returned by API
    - Tested edge cases such as empty input search, multiple form submissions, error handling.
-3. **Search.js**
+3. **Context/Search.js**
    - Made use of sample products for testing
    - Fixed erroneous attributes, and missing button functionality to
    'Add to Cart' and 'More Details'
@@ -290,3 +287,4 @@ All test files below were written with the assistance of AI.
    - Verified state persistence across mulitple children components.
 5. **Other bug fixes**
    - Fixed 'Add to Cart' functionality in ProductDetails.js
+
