@@ -1,4 +1,5 @@
 // Ivan Ang, A0259256U
+// Assisted by AI
 import { jest } from "@jest/globals";
 
 // jest.unstable_mockModule must be called before any imports of the mocked module.
