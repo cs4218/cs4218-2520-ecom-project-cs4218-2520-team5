@@ -38,6 +38,7 @@ export default {
     "client/src/pages/Pagenotfound.js",
     "client/src/components/Footer.js",
     "client/src/components/Spinner.js",
+    "client/src/components/Layout.js",
   ],
   coverageThreshold: {
     global: {
