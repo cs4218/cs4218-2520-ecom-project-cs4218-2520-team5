@@ -137,4 +137,36 @@ describe("Login Component", () => {
 		await waitFor(() => expect(axios.post).toHaveBeenCalled());
 		expect(toast.error).toHaveBeenCalledWith("Something went wrong");
 	});
+
+	it("should display server error message when login returns success=false", async () => {
+		axios.post.mockResolvedValueOnce({
+			data: { success: false, message: "Invalid email or password" },
+		});
+
+		const { getByPlaceholderText, getByText } = render(
+			<MemoryRouter initialEntries={["/login"]}>
+				<Routes>
+					<Route path="/login" element={<Login />} />
+				</Routes>
+			</MemoryRouter>,
+		);
+
+		fireEvent.change(getByPlaceholderText("Enter Your Email"), { target: { value: "test@example.com" } });
+		fireEvent.change(getByPlaceholderText("Enter Your Password"), { target: { value: "password123" } });
+		fireEvent.click(getByText("LOGIN"));
+
+		await waitFor(() => expect(toast.error).toHaveBeenCalledWith("Invalid email or password"));
+	});
+
+	it("should navigate to forgot-password page when Forgot Password is clicked", () => {
+		const { getByText } = render(
+			<MemoryRouter initialEntries={["/login"]}>
+				<Routes>
+					<Route path="/login" element={<Login />} />
+				</Routes>
+			</MemoryRouter>,
+		);
+
+		fireEvent.click(getByText("Forgot Password"));
+	});
 });
