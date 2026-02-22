@@ -24,6 +24,7 @@ export default {
     "<rootDir>/client/src/pages/Auth/*.test.js",
     "<rootDir>/client/src/pages/user/*.test.js",
     "<rootDir>/client/src/pages/*.test.js",
+    "<rootDir>/client/src/components/*.test.js",
   ],
 
   // jest code coverage
@@ -34,6 +35,9 @@ export default {
     "client/src/pages/Contact.js",
     "client/src/pages/About.js",
     "client/src/pages/Policy.js",
+    "client/src/pages/Pagenotfound.js",
+    "client/src/components/Footer.js",
+    "client/src/components/Spinner.js",
   ],
   coverageThreshold: {
     global: {
