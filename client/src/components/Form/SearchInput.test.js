@@ -1,3 +1,4 @@
+// Koo Zhuo Hui, A0253417h
 import React from "react";
 import { SearchProvider, useSearch } from "../../context/search";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";

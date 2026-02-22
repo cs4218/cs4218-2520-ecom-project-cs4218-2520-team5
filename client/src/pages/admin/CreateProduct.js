@@ -46,19 +46,22 @@ const CreateProduct = () => {
       productData.append("quantity", quantity);
       productData.append("photo", photo);
       productData.append("category", category);
-      const { data } = axios.post(
+      const { data } = await axios.post(
         "/api/v1/product/create-product",
-        productData
+        productData,
+        { validateStatus: () => true },
       );
       if (data?.success) {
-        toast.error(data?.message);
-      } else {
         toast.success("Product Created Successfully");
         navigate("/dashboard/admin/products");
+      } else if (data?.errors?.length) {
+        data.errors.forEach((err) => toast.error(err));
+      } else {
+        toast.error(data?.error || data?.message || "Something went wrong");
       }
     } catch (error) {
       console.log(error);
-      toast.error("something went wrong");
+      toast.error("Something went wrong");
     }
   };
 
