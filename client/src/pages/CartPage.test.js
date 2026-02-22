@@ -57,6 +57,18 @@ describe("CartPage Component", () => {
   let useCartMock;
   let mockSetCart;
 
+  // Helper to render and wait for async updates (eliminates act() warnings)
+  const renderCartPage = async () => {
+    const result = render(
+      <MemoryRouter>
+        <CartPage />
+      </MemoryRouter>,
+    );
+    // Wait for async state updates from useEffect (getToken call)
+    await waitFor(() => {});
+    return result;
+  };
+
   beforeEach(() => {
     // Arrange - Reset mocks before each test
     jest.clearAllMocks();
@@ -86,39 +98,31 @@ describe("CartPage Component", () => {
   // ===== GUEST USER BEHAVIORS =====
   // Testing Style: Output-based (verify what renders)
 
-  it("should display 'Hello Guest' when user is not authenticated", () => {
+  it("should display 'Hello Guest' when user is not authenticated", async () => {
     // Arrange - guest user with no auth
     useAuthMock[0] = null;
     require("../context/auth").useAuth.mockReturnValue(useAuthMock);
 
     // Act
-    render(
-      <MemoryRouter>
-        <CartPage />
-      </MemoryRouter>,
-    );
+    await renderCartPage();
 
     // Assert - verify observable output
     expect(screen.getByText(/Hello Guest/i)).toBeInTheDocument();
   });
 
-  it("should display 'Your Cart Is Empty' when cart has no items", () => {
+  it("should display 'Your Cart Is Empty' when cart has no items", async () => {
     // Arrange - empty cart
     useCartMock[0] = [];
     require("../context/cart").useCart.mockReturnValue(useCartMock);
 
     // Act
-    render(
-      <MemoryRouter>
-        <CartPage />
-      </MemoryRouter>,
-    );
+    await renderCartPage();
 
     // Assert - verify empty cart message
     expect(screen.getByText(/Your Cart Is Empty/i)).toBeInTheDocument();
   });
 
-  it("should display login prompt when guest user has items in cart", () => {
+  it("should display login prompt when guest user has items in cart", async () => {
     // Arrange - guest with items
     useAuthMock[0] = null;
     useCartMock[0] = [
@@ -128,11 +132,7 @@ describe("CartPage Component", () => {
     require("../context/cart").useCart.mockReturnValue(useCartMock);
 
     // Act
-    render(
-      <MemoryRouter>
-        <CartPage />
-      </MemoryRouter>,
-    );
+    await renderCartPage();
 
     // Assert - verify login prompt appears
     expect(screen.getByText(/please login to checkout !/i)).toBeInTheDocument();
@@ -141,7 +141,7 @@ describe("CartPage Component", () => {
   // ===== AUTHENTICATED USER BEHAVIORS =====
   // Testing Style: Output-based
 
-  it("should display user name when authenticated", () => {
+  it("should display user name when authenticated", async () => {
     // Arrange - authenticated user
     useAuthMock[0] = {
       user: { name: "John Doe", address: "123 Main St" },
@@ -150,17 +150,13 @@ describe("CartPage Component", () => {
     require("../context/auth").useAuth.mockReturnValue(useAuthMock);
 
     // Act
-    render(
-      <MemoryRouter>
-        <CartPage />
-      </MemoryRouter>,
-    );
+    await renderCartPage();
 
     // Assert - verify user name displays
     expect(screen.getByText(/Hello\s+John Doe/i)).toBeInTheDocument();
   });
 
-  it("should display cart item count when cart has items", () => {
+  it("should display cart item count when cart has items", async () => {
     // Arrange - cart with 2 items
     useCartMock[0] = [
       { _id: "1", name: "Product 1", price: 100, description: "Description 1" },
@@ -169,11 +165,7 @@ describe("CartPage Component", () => {
     require("../context/cart").useCart.mockReturnValue(useCartMock);
 
     // Act
-    render(
-      <MemoryRouter>
-        <CartPage />
-      </MemoryRouter>,
-    );
+    await renderCartPage();
 
     // Assert - verify count displays
     expect(
@@ -184,7 +176,7 @@ describe("CartPage Component", () => {
   // ===== CART ITEM DISPLAY BEHAVIORS =====
   // Testing Style: Output-based (verify rendered data)
 
-  it("should display all cart items with correct data", () => {
+  it("should display all cart items with correct data", async () => {
     // Arrange - cart with multiple items
     const mockCart = [
       {
@@ -204,11 +196,7 @@ describe("CartPage Component", () => {
     require("../context/cart").useCart.mockReturnValue(useCartMock);
 
     // Act
-    render(
-      <MemoryRouter>
-        <CartPage />
-      </MemoryRouter>,
-    );
+    await renderCartPage();
 
     // Assert - verify each item displays correctly
     expect(screen.getByText("Laptop")).toBeInTheDocument();
@@ -220,7 +208,7 @@ describe("CartPage Component", () => {
     expect(screen.getByText(/Price : 50/i)).toBeInTheDocument();
   });
 
-  it("should display correct total price for cart items", () => {
+  it("should display correct total price for cart items", async () => {
     // Arrange - cart with known prices
     useCartMock[0] = [
       { _id: "1", name: "Item1", price: 100, description: "Desc 1" },
@@ -230,11 +218,7 @@ describe("CartPage Component", () => {
     require("../context/cart").useCart.mockReturnValue(useCartMock);
 
     // Act
-    render(
-      <MemoryRouter>
-        <CartPage />
-      </MemoryRouter>,
-    );
+    await renderCartPage();
 
     // Assert - verify total calculation (100 + 250 + 50 = $400.00)
     expect(screen.getByText(/Total : \$400\.00/i)).toBeInTheDocument();
@@ -243,7 +227,7 @@ describe("CartPage Component", () => {
   // ===== CART ITEM REMOVAL BEHAVIOR =====
   // Testing Style: Communication-based (verify interactions)
 
-  it("should remove item from cart when remove button is clicked", () => {
+  it("should remove item from cart when remove button is clicked", async () => {
     // Arrange - cart with items (no async operations)
     const mockCart = [
       { _id: "prod1", name: "Product 1", price: 100, description: "Desc 1" },
@@ -252,11 +236,7 @@ describe("CartPage Component", () => {
     useCartMock[0] = mockCart;
     require("../context/cart").useCart.mockReturnValue(useCartMock);
 
-    render(
-      <MemoryRouter>
-        <CartPage />
-      </MemoryRouter>,
-    );
+    await renderCartPage();
 
     // Act - click first remove button (synchronous)
     const removeButtons = screen.getAllByText("Remove");
@@ -268,7 +248,7 @@ describe("CartPage Component", () => {
     ]);
   });
 
-  it("should update localStorage when item is removed", () => {
+  it("should update localStorage when item is removed", async () => {
     // Arrange (no async)
     const mockCart = [
       { _id: "prod1", name: "Product 1", price: 100, description: "Desc 1" },
@@ -276,11 +256,7 @@ describe("CartPage Component", () => {
     useCartMock[0] = mockCart;
     require("../context/cart").useCart.mockReturnValue(useCartMock);
 
-    render(
-      <MemoryRouter>
-        <CartPage />
-      </MemoryRouter>,
-    );
+    await renderCartPage();
 
     // Act - remove the item
     const removeButton = screen.getByText("Remove");
@@ -293,7 +269,7 @@ describe("CartPage Component", () => {
   // ===== ADDRESS DISPLAY BEHAVIORS =====
   // Testing Style: Output-based (conditional rendering)
 
-  it("should display current address when user has address", () => {
+  it("should display current address when user has address", async () => {
     // Arrange - user with address
     useAuthMock[0] = {
       user: { name: "John", address: "456 Oak Street" },
@@ -302,18 +278,14 @@ describe("CartPage Component", () => {
     require("../context/auth").useAuth.mockReturnValue(useAuthMock);
 
     // Act
-    render(
-      <MemoryRouter>
-        <CartPage />
-      </MemoryRouter>,
-    );
+    await renderCartPage();
 
     // Assert
     expect(screen.getByText("Current Address")).toBeInTheDocument();
     expect(screen.getByText("456 Oak Street")).toBeInTheDocument();
   });
 
-  it("should show update address button when authenticated", () => {
+  it("should show update address button when authenticated", async () => {
     // Arrange
     useAuthMock[0] = {
       user: { name: "John", address: "123 Main" },
@@ -322,11 +294,7 @@ describe("CartPage Component", () => {
     require("../context/auth").useAuth.mockReturnValue(useAuthMock);
 
     // Act
-    render(
-      <MemoryRouter>
-        <CartPage />
-      </MemoryRouter>,
-    );
+    await renderCartPage();
 
     // Assert
     expect(screen.getByText("Update Address")).toBeInTheDocument();
@@ -335,7 +303,7 @@ describe("CartPage Component", () => {
   // ===== NAVIGATION BEHAVIORS =====
   // Testing Style: Communication-based (verify navigation calls)
 
-  it("should navigate to profile when 'Update Address' clicked", () => {
+  it("should navigate to profile when 'Update Address' clicked", async () => {
     // Arrange (no async)
     useAuthMock[0] = {
       user: { name: "John", address: "123 Main" },
@@ -343,11 +311,7 @@ describe("CartPage Component", () => {
     };
     require("../context/auth").useAuth.mockReturnValue(useAuthMock);
 
-    render(
-      <MemoryRouter>
-        <CartPage />
-      </MemoryRouter>,
-    );
+    await renderCartPage();
 
     // Act - click button (synchronous)
     const updateButton = screen.getByText("Update Address");
@@ -357,7 +321,7 @@ describe("CartPage Component", () => {
     expect(mockNavigate).toHaveBeenCalledWith("/dashboard/user/profile");
   });
 
-  it("should navigate to profile when user without address clicks 'Update Address'", () => {
+  it("should navigate to profile when user without address clicks 'Update Address'", async () => {
     // Arrange - authenticated user without address
     useAuthMock[0] = {
       user: { name: "John" }, // No address
@@ -365,11 +329,7 @@ describe("CartPage Component", () => {
     };
     require("../context/auth").useAuth.mockReturnValue(useAuthMock);
 
-    render(
-      <MemoryRouter>
-        <CartPage />
-      </MemoryRouter>,
-    );
+    await renderCartPage();
 
     // Act - click button
     const updateButton = screen.getByText("Update Address");
@@ -379,16 +339,12 @@ describe("CartPage Component", () => {
     expect(mockNavigate).toHaveBeenCalledWith("/dashboard/user/profile");
   });
 
-  it("should navigate to login with cart state when guest clicks login button", () => {
+  it("should navigate to login with cart state when guest clicks login button", async () => {
     // Arrange - guest user (no async)
     useAuthMock[0] = null;
     require("../context/auth").useAuth.mockReturnValue(useAuthMock);
 
-    render(
-      <MemoryRouter>
-        <CartPage />
-      </MemoryRouter>,
-    );
+    await renderCartPage();
 
     // Act - click login button
     const loginButton = screen.getByText(/Please Login to checkout/i);
@@ -414,20 +370,10 @@ describe("CartPage Component", () => {
     });
 
     // Act
-    render(
-      <MemoryRouter>
-        <CartPage />
-      </MemoryRouter>,
-    );
+    await renderCartPage();
 
-    // Assert - axios mock is async, verify it was called
-    await waitFor(
-      () =>
-        expect(axios.get).toHaveBeenCalledWith(
-          "/api/v1/product/braintree/token",
-        ),
-      { timeout: 500 },
-    );
+    // Assert - verify API was called
+    expect(axios.get).toHaveBeenCalledWith("/api/v1/product/braintree/token");
   });
 
   // ===== PAYMENT UI DISPLAY BEHAVIOR =====
@@ -451,13 +397,9 @@ describe("CartPage Component", () => {
     });
 
     // Act
-    render(
-      <MemoryRouter>
-        <CartPage />
-      </MemoryRouter>,
-    );
+    await renderCartPage();
 
-    // Assert - wait for async token fetch to complete, then button appears
+    // Assert - button appears after async operations complete
     await waitFor(
       () => expect(screen.getByText("Make Payment")).toBeInTheDocument(),
       { timeout: 500 },
@@ -482,11 +424,7 @@ describe("CartPage Component", () => {
     });
 
     // Act
-    render(
-      <MemoryRouter>
-        <CartPage />
-      </MemoryRouter>,
-    );
+    await renderCartPage();
 
     // Assert - payment button should be disabled
     await waitFor(
@@ -500,7 +438,7 @@ describe("CartPage Component", () => {
     );
   });
 
-  it("should not display payment button when cart is empty", () => {
+  it("should not display payment button when cart is empty", async () => {
     // Arrange - empty cart (no token fetch needed)
     useAuthMock[0] = {
       user: { name: "John", address: "123 Main" },
@@ -512,11 +450,7 @@ describe("CartPage Component", () => {
     require("../context/cart").useCart.mockReturnValue(useCartMock);
 
     // Act
-    render(
-      <MemoryRouter>
-        <CartPage />
-      </MemoryRouter>,
-    );
+    await renderCartPage();
 
     // Assert - payment section should not be visible
     expect(screen.queryByText("Make Payment")).not.toBeInTheDocument();
@@ -543,11 +477,7 @@ describe("CartPage Component", () => {
     });
 
     // Act
-    render(
-      <MemoryRouter>
-        <CartPage />
-      </MemoryRouter>,
-    );
+    await renderCartPage();
 
     // Assert - wait for button to appear after async token fetch
     await waitFor(
@@ -575,11 +505,7 @@ describe("CartPage Component", () => {
     axios.get.mockRejectedValue(new Error("Token fetch failed"));
 
     // Act
-    render(
-      <MemoryRouter>
-        <CartPage />
-      </MemoryRouter>,
-    );
+    await renderCartPage();
 
     // Assert - component renders despite error, showing cart without payment option
     await waitFor(() => {
@@ -591,7 +517,7 @@ describe("CartPage Component", () => {
     expect(screen.queryByText("Make Payment")).not.toBeInTheDocument();
   });
 
-  it("should not modify cart when removeCartItem fails", () => {
+  it("should not modify cart when removeCartItem fails", async () => {
     // Arrange
     const cart = [
       { _id: "1", name: "Product", price: 100, description: "Test product" },
@@ -612,11 +538,7 @@ describe("CartPage Component", () => {
     axios.get.mockResolvedValue({ data: { clientToken: null } });
 
     // Act
-    render(
-      <MemoryRouter>
-        <CartPage />
-      </MemoryRouter>,
-    );
+    await renderCartPage();
 
     const removeButton = screen.getByText("Remove");
     fireEvent.click(removeButton);
@@ -629,7 +551,7 @@ describe("CartPage Component", () => {
     Array.prototype.findIndex = originalFindIndex;
   });
 
-  it("should render cart items even when price formatting fails", () => {
+  it("should render cart items even when price formatting fails", async () => {
     // Arrange
     // Mock toLocaleString to throw an error
     const originalToLocaleString = Number.prototype.toLocaleString;
@@ -648,11 +570,7 @@ describe("CartPage Component", () => {
     axios.get.mockResolvedValue({ data: { clientToken: null } });
 
     // Act - rendering should trigger totalPrice calculation
-    render(
-      <MemoryRouter>
-        <CartPage />
-      </MemoryRouter>,
-    );
+    await renderCartPage();
 
     // Assert - component renders successfully with cart item visible
     expect(screen.getByText("Hello John")).toBeInTheDocument();
