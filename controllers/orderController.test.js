@@ -1,12 +1,17 @@
-//Alyssa Ong, A0264663X (added test cases for the controllers for order)
+// Alyssa Ong, A0264663X (added test cases for the controllers for order)
 // The test cases are generated with the help from AI.
 
-import { updateProfileController } from "../controllers/orderController.js";
+import {
+  updateProfileController,
+  getOrdersController,
+} from "../controllers/orderController.js";
 import userModel from "../models/userModel.js";
+import orderModel from "../models/orderModel.js";
 import { hashPassword } from "../helpers/authHelper.js";
 
 // Mock dependencies for isolation
 jest.mock("../models/userModel.js");
+jest.mock("../models/orderModel.js");
 jest.mock("../helpers/authHelper.js");
 
 describe("updateProfileController", () => {
@@ -616,6 +621,769 @@ describe("updateProfileController", () => {
         },
         { new: true },
       );
+    });
+  });
+});
+
+// ===== TEST SUITE FOR getOrdersController =====
+describe("getOrdersController", () => {
+  let req;
+  let res;
+  let mockOrders;
+  let mockQueryChain;
+
+  beforeEach(() => {
+    // Arrange - Setup common test data
+    req = {
+      user: { _id: "user123" },
+    };
+
+    res = {
+      status: jest.fn().mockReturnThis(),
+      send: jest.fn().mockReturnThis(),
+    };
+
+    // Mock orders data
+    mockOrders = [
+      {
+        _id: "order1",
+        buyer: { _id: "user123", name: "John Doe" },
+        products: [
+          { _id: "prod1", name: "Product 1", price: 100 },
+          { _id: "prod2", name: "Product 2", price: 200 },
+        ],
+        status: "Processing",
+        createdAt: new Date("2026-02-20"),
+      },
+      {
+        _id: "order2",
+        buyer: { _id: "user123", name: "John Doe" },
+        products: [{ _id: "prod3", name: "Product 3", price: 150 }],
+        status: "Shipped",
+        createdAt: new Date("2026-02-19"),
+      },
+    ];
+
+    // Setup query chain mock
+    mockQueryChain = {
+      populate: jest.fn().mockReturnThis(),
+      sort: jest.fn().mockResolvedValue(mockOrders),
+    };
+
+    // Clear all mocks before each test
+    jest.clearAllMocks();
+  });
+
+  // ===== AUTHENTICATION & AUTHORIZATION TESTS =====
+  // Testing Style: State-based (verify response state)
+
+  describe("Authentication validation", () => {
+    it("should return 401 when req.user is missing", async () => {
+      // Arrange
+      req.user = undefined;
+
+      // Act
+      await getOrdersController(req, res);
+
+      // Assert
+      expect(res.status).toHaveBeenCalledWith(401);
+      expect(res.send).toHaveBeenCalledWith({
+        success: false,
+        message: "User ID not found in request",
+      });
+      expect(orderModel.find).not.toHaveBeenCalled();
+    });
+
+    it("should return 401 when req.user is null", async () => {
+      // Arrange
+      req.user = null;
+
+      // Act
+      await getOrdersController(req, res);
+
+      // Assert
+      expect(res.status).toHaveBeenCalledWith(401);
+      expect(res.send).toHaveBeenCalledWith({
+        success: false,
+        message: "User ID not found in request",
+      });
+    });
+
+    it("should return 401 when req.user._id is missing", async () => {
+      // Arrange
+      req.user = {};
+
+      // Act
+      await getOrdersController(req, res);
+
+      // Assert
+      expect(res.status).toHaveBeenCalledWith(401);
+      expect(res.send).toHaveBeenCalledWith({
+        success: false,
+        message: "User ID not found in request",
+      });
+    });
+
+    it("should return 401 when req.user._id is null", async () => {
+      // Arrange
+      req.user = { _id: null };
+
+      // Act
+      await getOrdersController(req, res);
+
+      // Assert
+      expect(res.status).toHaveBeenCalledWith(401);
+      expect(res.send).toHaveBeenCalledWith({
+        success: false,
+        message: "User ID not found in request",
+      });
+    });
+
+    it("should return 401 when req.user._id is undefined", async () => {
+      // Arrange
+      req.user = { _id: undefined };
+
+      // Act
+      await getOrdersController(req, res);
+
+      // Assert
+      expect(res.status).toHaveBeenCalledWith(401);
+      expect(res.send).toHaveBeenCalledWith({
+        success: false,
+        message: "User ID not found in request",
+      });
+    });
+  });
+
+  // ===== SUCCESSFUL RETRIEVAL TESTS =====
+  // Testing Style: State-based + Communication-based
+
+  describe("Successful order retrieval", () => {
+    it("should return all orders for authenticated user", async () => {
+      // Arrange
+      orderModel.find.mockReturnValue(mockQueryChain);
+
+      // Act
+      await getOrdersController(req, res);
+
+      // Assert - Communication-based: verify correct database calls
+      expect(orderModel.find).toHaveBeenCalledWith({ buyer: "user123" });
+      expect(mockQueryChain.populate).toHaveBeenCalledWith(
+        "products",
+        "-photo",
+      );
+      expect(mockQueryChain.populate).toHaveBeenCalledWith("buyer", "name");
+      expect(mockQueryChain.sort).toHaveBeenCalledWith({ createdAt: -1 });
+
+      // Assert - State-based: verify response format
+      expect(res.status).toHaveBeenCalledWith(200);
+      expect(res.send).toHaveBeenCalledWith({
+        success: true,
+        orders: mockOrders,
+      });
+    });
+
+    it("should return empty array when user has no orders", async () => {
+      // Arrange
+      const emptyOrders = [];
+      mockQueryChain.sort.mockResolvedValue(emptyOrders);
+      orderModel.find.mockReturnValue(mockQueryChain);
+
+      // Act
+      await getOrdersController(req, res);
+
+      // Assert
+      expect(res.status).toHaveBeenCalledWith(200);
+      expect(res.send).toHaveBeenCalledWith({
+        success: true,
+        orders: [],
+      });
+    });
+
+    it("should return exactly one order when user has one order", async () => {
+      // Arrange
+      const singleOrder = [mockOrders[0]];
+      mockQueryChain.sort.mockResolvedValue(singleOrder);
+      orderModel.find.mockReturnValue(mockQueryChain);
+
+      // Act
+      await getOrdersController(req, res);
+
+      // Assert
+      expect(res.status).toHaveBeenCalledWith(200);
+      expect(res.send).toHaveBeenCalledWith({
+        success: true,
+        orders: singleOrder,
+      });
+      expect(singleOrder).toHaveLength(1);
+    });
+
+    it("should return multiple orders when user has multiple orders", async () => {
+      // Arrange
+      orderModel.find.mockReturnValue(mockQueryChain);
+
+      // Act
+      await getOrdersController(req, res);
+
+      // Assert
+      expect(res.status).toHaveBeenCalledWith(200);
+      expect(res.send).toHaveBeenCalledWith({
+        success: true,
+        orders: mockOrders,
+      });
+      expect(mockOrders).toHaveLength(2);
+    });
+  });
+
+  // ===== QUERY CHAINING TESTS =====
+  // Testing Style: Communication-based (verify method calls)
+
+  describe("Database query construction", () => {
+    beforeEach(() => {
+      orderModel.find.mockReturnValue(mockQueryChain);
+    });
+
+    it("should filter orders by buyer._id", async () => {
+      // Arrange
+      const userId = "user123";
+      req.user._id = userId;
+
+      // Act
+      await getOrdersController(req, res);
+
+      // Assert - Verify find called with correct filter
+      expect(orderModel.find).toHaveBeenCalledWith({ buyer: userId });
+      expect(orderModel.find).toHaveBeenCalledTimes(1);
+    });
+
+    it("should populate products excluding photo field", async () => {
+      // Act
+      await getOrdersController(req, res);
+
+      // Assert - Verify populate called with correct parameters
+      expect(mockQueryChain.populate).toHaveBeenCalledWith(
+        "products",
+        "-photo",
+      );
+    });
+
+    it("should populate buyer with only name field", async () => {
+      // Act
+      await getOrdersController(req, res);
+
+      // Assert - Verify populate called with correct parameters
+      expect(mockQueryChain.populate).toHaveBeenCalledWith("buyer", "name");
+    });
+
+    it("should sort orders by createdAt in descending order", async () => {
+      // Act
+      await getOrdersController(req, res);
+
+      // Assert - Verify sort called with correct parameter
+      expect(mockQueryChain.sort).toHaveBeenCalledWith({ createdAt: -1 });
+      expect(mockQueryChain.sort).toHaveBeenCalledTimes(1);
+    });
+
+    it("should call populate twice (for products and buyer)", async () => {
+      // Act
+      await getOrdersController(req, res);
+
+      // Assert - Verify populate called exactly twice
+      expect(mockQueryChain.populate).toHaveBeenCalledTimes(2);
+    });
+
+    it("should chain methods in correct order", async () => {
+      // Arrange
+      const callOrder = [];
+      orderModel.find.mockImplementation(() => {
+        callOrder.push("find");
+        return mockQueryChain;
+      });
+      mockQueryChain.populate.mockImplementation(function () {
+        callOrder.push("populate");
+        return this;
+      });
+      mockQueryChain.sort.mockImplementation(() => {
+        callOrder.push("sort");
+        return Promise.resolve(mockOrders);
+      });
+
+      // Act
+      await getOrdersController(req, res);
+
+      // Assert - Verify call order
+      expect(callOrder).toEqual(["find", "populate", "populate", "sort"]);
+    });
+  });
+
+  // ===== DATA FILTERING TESTS =====
+  // Testing Style: Output-based
+
+  describe("User isolation and data filtering", () => {
+    it("should only return orders for the authenticated user", async () => {
+      // Arrange
+      const user1Id = "user123";
+      const user2Id = "user456";
+      req.user._id = user1Id;
+
+      const user1Orders = [
+        { _id: "order1", buyer: { _id: user1Id } },
+        { _id: "order2", buyer: { _id: user1Id } },
+      ];
+
+      mockQueryChain.sort.mockResolvedValue(user1Orders);
+      orderModel.find.mockReturnValue(mockQueryChain);
+
+      // Act
+      await getOrdersController(req, res);
+
+      // Assert - Verify only user1's orders are queried
+      expect(orderModel.find).toHaveBeenCalledWith({ buyer: user1Id });
+      expect(orderModel.find).not.toHaveBeenCalledWith({ buyer: user2Id });
+
+      const returnedOrders = res.send.mock.calls[0][0].orders;
+      returnedOrders.forEach((order) => {
+        expect(order.buyer._id).toBe(user1Id);
+      });
+    });
+
+    it("should handle different user IDs correctly", async () => {
+      // Arrange
+      const differentUserId = "differentUser789";
+      req.user._id = differentUserId;
+      orderModel.find.mockReturnValue(mockQueryChain);
+
+      // Act
+      await getOrdersController(req, res);
+
+      // Assert
+      expect(orderModel.find).toHaveBeenCalledWith({ buyer: differentUserId });
+    });
+  });
+
+  // ===== EDGE CASES WITH POPULATED DATA =====
+  // Testing Style: State-based
+
+  describe("Populated data edge cases", () => {
+    it("should handle orders with deleted products (null references)", async () => {
+      // Arrange
+      const ordersWithDeletedProducts = [
+        {
+          _id: "order1",
+          buyer: { _id: "user123", name: "John Doe" },
+          products: [null, { _id: "prod2", name: "Product 2" }, null],
+          status: "Processing",
+        },
+      ];
+      mockQueryChain.sort.mockResolvedValue(ordersWithDeletedProducts);
+      orderModel.find.mockReturnValue(mockQueryChain);
+
+      // Act
+      await getOrdersController(req, res);
+
+      // Assert - Should still return the orders
+      expect(res.status).toHaveBeenCalledWith(200);
+      expect(res.send).toHaveBeenCalledWith({
+        success: true,
+        orders: ordersWithDeletedProducts,
+      });
+    });
+
+    it("should handle orders with empty products array", async () => {
+      // Arrange
+      const ordersWithNoProducts = [
+        {
+          _id: "order1",
+          buyer: { _id: "user123", name: "John Doe" },
+          products: [],
+          status: "Cancelled",
+        },
+      ];
+      mockQueryChain.sort.mockResolvedValue(ordersWithNoProducts);
+      orderModel.find.mockReturnValue(mockQueryChain);
+
+      // Act
+      await getOrdersController(req, res);
+
+      // Assert
+      expect(res.status).toHaveBeenCalledWith(200);
+      expect(res.send).toHaveBeenCalledWith({
+        success: true,
+        orders: ordersWithNoProducts,
+      });
+    });
+
+    it("should handle orders with deleted buyer (null reference)", async () => {
+      // Arrange
+      const ordersWithDeletedBuyer = [
+        {
+          _id: "order1",
+          buyer: null,
+          products: [{ _id: "prod1", name: "Product 1" }],
+          status: "Processing",
+        },
+      ];
+      mockQueryChain.sort.mockResolvedValue(ordersWithDeletedBuyer);
+      orderModel.find.mockReturnValue(mockQueryChain);
+
+      // Act
+      await getOrdersController(req, res);
+
+      // Assert - Should still return the orders
+      expect(res.status).toHaveBeenCalledWith(200);
+      expect(res.send).toHaveBeenCalledWith({
+        success: true,
+        orders: ordersWithDeletedBuyer,
+      });
+    });
+
+    it("should verify photo field is excluded from products", async () => {
+      // Arrange
+      const ordersWithProductsNoPhoto = [
+        {
+          _id: "order1",
+          buyer: { _id: "user123", name: "John Doe" },
+          products: [
+            {
+              _id: "prod1",
+              name: "Product 1",
+              price: 100,
+              // photo field should not be present
+            },
+          ],
+          status: "Processing",
+        },
+      ];
+      mockQueryChain.sort.mockResolvedValue(ordersWithProductsNoPhoto);
+      orderModel.find.mockReturnValue(mockQueryChain);
+
+      // Act
+      await getOrdersController(req, res);
+
+      // Assert - Verify populate was called to exclude photo
+      expect(mockQueryChain.populate).toHaveBeenCalledWith(
+        "products",
+        "-photo",
+      );
+
+      const returnedOrders = res.send.mock.calls[0][0].orders;
+      returnedOrders.forEach((order) => {
+        order.products.forEach((product) => {
+          expect(product).not.toHaveProperty("photo");
+        });
+      });
+    });
+  });
+
+  // ===== ERROR HANDLING TESTS =====
+  // Testing Style: State-based
+
+  describe("Error handling", () => {
+    it("should handle database connection errors", async () => {
+      // Arrange
+      const dbError = new Error("Database connection failed");
+      orderModel.find.mockImplementation(() => {
+        throw dbError;
+      });
+      const consoleSpy = jest.spyOn(console, "log").mockImplementation();
+
+      // Act
+      await getOrdersController(req, res);
+
+      // Assert
+      expect(consoleSpy).toHaveBeenCalledWith(dbError);
+      expect(res.status).toHaveBeenCalledWith(500);
+      expect(res.send).toHaveBeenCalledWith({
+        success: false,
+        message: "Error While Getting Orders",
+        error: dbError,
+      });
+
+      consoleSpy.mockRestore();
+    });
+
+    it("should handle errors during populate operation", async () => {
+      // Arrange
+      const populateError = new Error("Populate failed");
+      mockQueryChain.populate.mockImplementation(function () {
+        throw populateError;
+      });
+      orderModel.find.mockReturnValue(mockQueryChain);
+      const consoleSpy = jest.spyOn(console, "log").mockImplementation();
+
+      // Act
+      await getOrdersController(req, res);
+
+      // Assert
+      expect(consoleSpy).toHaveBeenCalledWith(populateError);
+      expect(res.status).toHaveBeenCalledWith(500);
+      expect(res.send).toHaveBeenCalledWith({
+        success: false,
+        message: "Error While Getting Orders",
+        error: populateError,
+      });
+
+      consoleSpy.mockRestore();
+    });
+
+    it("should handle errors during sort operation", async () => {
+      // Arrange
+      const sortError = new Error("Sort operation failed");
+      mockQueryChain.sort.mockRejectedValue(sortError);
+      orderModel.find.mockReturnValue(mockQueryChain);
+      const consoleSpy = jest.spyOn(console, "log").mockImplementation();
+
+      // Act
+      await getOrdersController(req, res);
+
+      // Assert
+      expect(consoleSpy).toHaveBeenCalledWith(sortError);
+      expect(res.status).toHaveBeenCalledWith(500);
+      expect(res.send).toHaveBeenCalledWith({
+        success: false,
+        message: "Error While Getting Orders",
+        error: sortError,
+      });
+
+      consoleSpy.mockRestore();
+    });
+
+    it("should handle database timeout errors", async () => {
+      // Arrange
+      const timeoutError = new Error("Query timeout");
+      mockQueryChain.sort.mockRejectedValue(timeoutError);
+      orderModel.find.mockReturnValue(mockQueryChain);
+      const consoleSpy = jest.spyOn(console, "log").mockImplementation();
+
+      // Act
+      await getOrdersController(req, res);
+
+      // Assert
+      expect(consoleSpy).toHaveBeenCalledWith(timeoutError);
+      expect(res.status).toHaveBeenCalledWith(500);
+      expect(res.send).toHaveBeenCalledWith({
+        success: false,
+        message: "Error While Getting Orders",
+        error: timeoutError,
+      });
+
+      consoleSpy.mockRestore();
+    });
+
+    it("should handle generic errors gracefully", async () => {
+      // Arrange
+      const genericError = new Error("Something went wrong");
+      orderModel.find.mockReturnValue({
+        populate: jest.fn().mockReturnThis(),
+        sort: jest.fn().mockRejectedValue(genericError),
+      });
+      const consoleSpy = jest.spyOn(console, "log").mockImplementation();
+
+      // Act
+      await getOrdersController(req, res);
+
+      // Assert
+      expect(res.status).toHaveBeenCalledWith(500);
+      expect(res.send).toHaveBeenCalledWith({
+        success: false,
+        message: "Error While Getting Orders",
+        error: genericError,
+      });
+
+      consoleSpy.mockRestore();
+    });
+  });
+
+  // ===== RESPONSE FORMAT TESTS =====
+  // Testing Style: State-based
+
+  describe("Response format consistency", () => {
+    beforeEach(() => {
+      orderModel.find.mockReturnValue(mockQueryChain);
+    });
+
+    it("should return consistent success response structure", async () => {
+      // Act
+      await getOrdersController(req, res);
+
+      // Assert
+      const response = res.send.mock.calls[0][0];
+      expect(response).toHaveProperty("success");
+      expect(response).toHaveProperty("orders");
+      expect(response.success).toBe(true);
+      expect(Array.isArray(response.orders)).toBe(true);
+    });
+
+    it("should use 200 status code for successful retrieval", async () => {
+      // Act
+      await getOrdersController(req, res);
+
+      // Assert
+      expect(res.status).toHaveBeenCalledWith(200);
+      expect(res.status).toHaveBeenCalledTimes(1);
+    });
+
+    it("should use 500 status code for errors", async () => {
+      // Arrange
+      const error = new Error("Test error");
+      orderModel.find.mockImplementation(() => {
+        throw error;
+      });
+      jest.spyOn(console, "log").mockImplementation();
+
+      // Act
+      await getOrdersController(req, res);
+
+      // Assert
+      expect(res.status).toHaveBeenCalledWith(500);
+      console.log.mockRestore();
+    });
+
+    it("should include error details in error response", async () => {
+      // Arrange
+      const error = new Error("Specific error message");
+      mockQueryChain.sort.mockRejectedValue(error);
+      orderModel.find.mockReturnValue(mockQueryChain);
+      const consoleSpy = jest.spyOn(console, "log").mockImplementation();
+
+      // Act
+      await getOrdersController(req, res);
+
+      // Assert
+      const response = res.send.mock.calls[0][0];
+      expect(response).toHaveProperty("success", false);
+      expect(response).toHaveProperty("message");
+      expect(response).toHaveProperty("error");
+      expect(response.error).toBe(error);
+
+      consoleSpy.mockRestore();
+    });
+  });
+
+  // ===== SORTING BEHAVIOR TESTS =====
+  // Testing Style: Communication-based + Output-based
+
+  describe("Sorting behavior", () => {
+    it("should sort orders by createdAt in descending order (newest first)", async () => {
+      // Arrange
+      const ordersNewestFirst = [
+        {
+          _id: "order1",
+          createdAt: new Date("2026-02-22"),
+          status: "Processing",
+        },
+        {
+          _id: "order2",
+          createdAt: new Date("2026-02-21"),
+          status: "Shipped",
+        },
+        {
+          _id: "order3",
+          createdAt: new Date("2026-02-20"),
+          status: "Delivered",
+        },
+      ];
+      mockQueryChain.sort.mockResolvedValue(ordersNewestFirst);
+      orderModel.find.mockReturnValue(mockQueryChain);
+
+      // Act
+      await getOrdersController(req, res);
+
+      // Assert - Verify sort parameter
+      expect(mockQueryChain.sort).toHaveBeenCalledWith({ createdAt: -1 });
+
+      // Assert - Verify orders are in correct order
+      const returnedOrders = res.send.mock.calls[0][0].orders;
+      expect(returnedOrders[0].createdAt >= returnedOrders[1].createdAt).toBe(
+        true,
+      );
+      expect(returnedOrders[1].createdAt >= returnedOrders[2].createdAt).toBe(
+        true,
+      );
+    });
+  });
+
+  // ===== EDGE CASES & BOUNDARY CONDITIONS =====
+  // Testing Style: Output-based
+
+  describe("Edge cases and boundary conditions", () => {
+    it("should handle very long user ID", async () => {
+      // Arrange
+      req.user._id = "a".repeat(1000);
+      orderModel.find.mockReturnValue(mockQueryChain);
+
+      // Act
+      await getOrdersController(req, res);
+
+      // Assert
+      expect(orderModel.find).toHaveBeenCalledWith({ buyer: req.user._id });
+      expect(res.status).toHaveBeenCalledWith(200);
+    });
+
+    it("should handle special characters in user ID", async () => {
+      // Arrange
+      req.user._id = "user@#$%^&*()123";
+      orderModel.find.mockReturnValue(mockQueryChain);
+
+      // Act
+      await getOrdersController(req, res);
+
+      // Assert
+      expect(orderModel.find).toHaveBeenCalledWith({ buyer: req.user._id });
+      expect(res.status).toHaveBeenCalledWith(200);
+    });
+
+    it("should handle empty string user ID (treated as falsy)", async () => {
+      // Arrange
+      req.user._id = "";
+
+      // Act
+      await getOrdersController(req, res);
+
+      // Assert - Should be caught by authentication check
+      expect(res.status).toHaveBeenCalledWith(401);
+      expect(orderModel.find).not.toHaveBeenCalled();
+    });
+
+    it("should handle orders with all possible status values", async () => {
+      // Arrange
+      const ordersWithAllStatuses = [
+        { _id: "o1", status: "Not Process" },
+        { _id: "o2", status: "Processing" },
+        { _id: "o3", status: "Shipped" },
+        { _id: "o4", status: "deliverd" },
+        { _id: "o5", status: "cancel" },
+      ];
+      mockQueryChain.sort.mockResolvedValue(ordersWithAllStatuses);
+      orderModel.find.mockReturnValue(mockQueryChain);
+
+      // Act
+      await getOrdersController(req, res);
+
+      // Assert
+      expect(res.status).toHaveBeenCalledWith(200);
+      const returnedOrders = res.send.mock.calls[0][0].orders;
+      expect(returnedOrders).toHaveLength(5);
+    });
+
+    it("should handle large number of orders", async () => {
+      // Arrange
+      const manyOrders = Array.from({ length: 1000 }, (_, i) => ({
+        _id: `order${i}`,
+        buyer: { _id: "user123" },
+        products: [],
+        status: "Processing",
+      }));
+      mockQueryChain.sort.mockResolvedValue(manyOrders);
+      orderModel.find.mockReturnValue(mockQueryChain);
+
+      // Act
+      await getOrdersController(req, res);
+
+      // Assert
+      expect(res.status).toHaveBeenCalledWith(200);
+      const returnedOrders = res.send.mock.calls[0][0].orders;
+      expect(returnedOrders).toHaveLength(1000);
     });
   });
 });
