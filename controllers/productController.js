@@ -1,21 +1,9 @@
 import productModel from "../models/productModel.js";
 import categoryModel from "../models/categoryModel.js";
 import orderModel from "../models/orderModel.js";
-
+import gateway from "../config/braintree.js";
 import fs from "fs";
 import slugify from "slugify";
-import braintree from "braintree";
-import dotenv from "dotenv";
-
-dotenv.config();
-
-//payment gateway
-var gateway = new braintree.BraintreeGateway({
-	environment: braintree.Environment.Sandbox,
-	merchantId: process.env.BRAINTREE_MERCHANT_ID,
-	publicKey: process.env.BRAINTREE_PUBLIC_KEY,
-	privateKey: process.env.BRAINTREE_PRIVATE_KEY,
-});
 
 export const createProductController = async (req, res) => {
 	try {
@@ -33,7 +21,6 @@ export const createProductController = async (req, res) => {
 			errors.push("photo is Required and should be less than 1mb");
 		if (errors.length > 0) {
 			return res.status(400).send({ success: false, errors });
-		}
 
 		const products = new productModel({ ...req.fields, slug: slugify(name) });
 		if (photo) {
@@ -96,7 +83,7 @@ export const getSingleProductController = async (req, res) => {
 		console.log(error);
 		res.status(500).send({
 			success: false,
-			message: "Eror while getting single product",
+			message: "Error while getting single product",
 			error,
 		});
 	}
@@ -381,11 +368,12 @@ export const braintreeTokenController = async (req, res) => {
 			if (err) {
 				res.status(500).send(err);
 			} else {
-				res.send(response);
+				return res.status(200).json(response);
 			}
 		});
 	} catch (error) {
 		console.log(error);
+		res.status(500).json({ error: "Something went wrong" });
 	}
 };
 
@@ -393,32 +381,46 @@ export const braintreeTokenController = async (req, res) => {
 export const brainTreePaymentController = async (req, res) => {
 	try {
 		const { nonce, cart } = req.body;
+
+		if (!nonce || !cart || cart.length === 0) {
+			return res.status(400).json({ error: "Invalid payment data" });
+		}
 		let total = 0;
 		cart.map((i) => {
 			total += i.price;
 		});
-		let newTransaction = gateway.transaction.sale(
+
+		gateway.transaction.sale(
 			{
-				amount: total,
+				amount: total.toFixed(2),
 				paymentMethodNonce: nonce,
 				options: {
 					submitForSettlement: true,
 				},
 			},
-			function (error, result) {
-				if (result) {
-					const order = new orderModel({
-						products: cart,
-						payment: result,
-						buyer: req.user._id,
-					}).save();
-					res.json({ ok: true });
-				} else {
-					res.status(500).send(error);
+			async (error, result) => {
+				try {
+					if (error) {
+						return res.status(500).json({ error: error.message });
+					}
+
+					if (result.success) {
+						await new orderModel({
+							products: cart,
+							payment: result,
+							buyer: req.user._id,
+						}).save();
+
+						return res.status(200).json({ ok: true });
+					} else {
+						return res.status(500).json({ error: result.message });
+					}
+				} catch (err) {
+					res.status(500).json({ error: "Save failed" });
 				}
 			},
 		);
 	} catch (error) {
-		console.log(error);
+		return res.status(500).json({ error: "Payment failed" });
 	}
 };

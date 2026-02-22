@@ -9,7 +9,8 @@ const Spinner = ({ path = "login" }) => {
     const interval = setInterval(() => {
       setCount((prevValue) => --prevValue);
     }, 1000);
-    count === 0 && navigate(`/${path}`, {
+    count === 0 &&
+      navigate(`/${path}`, {
         state: location.pathname,
       });
     return () => clearInterval(interval);
@@ -20,7 +21,10 @@ const Spinner = ({ path = "login" }) => {
         className="d-flex flex-column justify-content-center align-items-center"
         style={{ height: "100vh" }}
       >
-        <h1 className="Text-center">redirecting to you in {count} second </h1>
+        <h1 className="Text-center">
+          redirecting to you in {count}{" "}
+          {count === 1 ? "second" : "seconds"}{" "}
+        </h1>
         <div className="spinner-border" role="status">
           <span className="visually-hidden">Loading...</span>
         </div>
