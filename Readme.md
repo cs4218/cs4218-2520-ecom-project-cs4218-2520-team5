@@ -270,13 +270,13 @@ All test files below were written with the assistance of AI.
 
 ## Frontend Pages
 
-### 5. **HomePage Component** (20 tests, 97.33% coverage)
+### 5. **HomePage Component** (20 tests)
    - **Tested:** Product display (3), category filters (2), cart functionality (2), navigation (1), pagination (2), error handling (3), price filters (3), load more (3), reset filters (1)
    - **Key Features:** USD formatting, description truncation, filter API calls, localStorage sync, conditional Load More button, comprehensive error handling
    - **Mocking:** axios, cart context, toast, useNavigate, custom renderHomePage() helper
    - **Style:** Output-based (display), State-based (pagination), Communication-based (API/navigation)
 
-### 6. **CartPage Component** (22 tests, 75.51% coverage)
+### 6. **CartPage Component** (22 tests)
    - **Tested:** Guest/auth states (2), empty cart (1), cart display (5), item management (2), address handling (4), navigation (1), payment UI (7)
    - **Key Features:** Auth-based rendering, total price calculation, localStorage sync, conditional payment UI, comprehensive error handling
    - **Mocking:** axios, auth/cart contexts, useNavigate, localStorage, custom renderCartPage() helper (eliminates act warnings)
