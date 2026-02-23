@@ -147,7 +147,8 @@ To begin unit testing with Jest in your project, follow these steps:
 
 ## 6. Milestone 1 - Contributions
 
-**Passing Jest CI:** //insert link here
+### MS1 CI URL
+**Jest CI:** //insert link here
 
 ### 6.1 Ang Yi Jie, Ivan
 
