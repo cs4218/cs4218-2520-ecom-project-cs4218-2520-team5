@@ -231,19 +231,78 @@ To begin unit testing with Jest in your project, follow these steps:
 All test files below were written with the assistance of AI.
 
 #### Frontend Unit Tests
-- `client/src/context/auth.test.js` — Tests for the AuthProvider context (rendering children, default state, loading auth from localStorage, skipping update when no stored data, setting axios Authorization header)
-- `client/src/pages/Auth/Login.test.js` — Tests for the Login page (form rendering, input handling, successful login with auth context and localStorage update, error handling, navigation to forgot-password)
-- `client/src/pages/Auth/Register.test.js` — Tests for the Register page (form rendering, field input, successful registration with navigation, server-side and network error handling)
-- `client/src/pages/user/Profile.test.js` — Tests for the Profile page (pre-filled user data, disabled email field, field editing, successful profile update, API error handling)
-- `client/src/pages/user/Dashboard.test.js` — Tests for the Dashboard page (user details display, UserMenu navigation rendering, h3 element verification)
-- `client/src/components/UserMenu.test.js` — Tests for the UserMenu component (Dashboard heading, Profile link, Orders link)
-- `client/src/components/Routes/Private.test.js` — Tests for the PrivateRoute component (authenticated access, API rejection, missing/null auth token)
+
+**1. Auth Context (6 tests)**
+- Tested: children rendering (1), default state with null user and empty token (1), localStorage loading on mount (1), no-op when no stored data (1), axios Authorization header sync (2)
+- Key Features: localStorage-driven auth hydration, axios default header injection, graceful handling of missing stored data
+- Mocking: Storage.prototype.getItem (jest.spyOn)
+- Style: State-based (auth state values), Communication-based (axios header, localStorage interaction)
+
+**2. Login Page (8 tests)**
+- Tested: form rendering with heading/fields (1), initial empty inputs (1), input typing (1), successful login with auth context + localStorage update + navigation (1), error toast on `success: false` (1), generic error toast on network failure (1), forgot-password navigation (1), submit button attributes (1)
+- Key Features: Auth context update via `setAuth`, localStorage persistence of login response, toast notifications with custom styling, route navigation on forgot-password click
+- Mocking: axios, react-hot-toast, useAuth, useCart, useSearch, useCategory, localStorage, matchMedia; custom `renderLogin()` helper with MemoryRouter
+- Style: Output-based (form display), State-based (input values), Communication-based (API calls, auth context, localStorage, navigation)
+
+**3. Register Page (7 tests)**
+- Tested: form rendering with all 7 fields (1), initial empty inputs (1), field input typing (1), successful registration with navigation to login (1), error toast on `success: false` (1), generic error toast on network failure (1), submit button attributes (1)
+- Key Features: `fillForm` helper for consistent test data setup (name, email, password, phone, address, DOB, answer), API payload verification, navigation to `/login` on success
+- Mocking: axios, react-hot-toast, useAuth, useCart, useSearch, useCategory, localStorage, matchMedia; custom `renderRegister()` helper with MemoryRouter
+- Style: Output-based (form rendering), Communication-based (API calls, toast, navigation)
+
+**4. Profile Page (7 tests)**
+- Tested: pre-filled user data from auth context (1), disabled email field (1), field editing (1), successful update with auth context refresh + localStorage sync (1), error toast on `data.error` response (1), generic error toast on network failure (1), heading and button rendering (1)
+- Key Features: Auth-context-driven form pre-fill, disabled email prevents editing, `setAuth` + `localStorage.setItem` called on successful update, `axios.put` payload verification
+- Mocking: axios, react-hot-toast, useAuth, useCart, useSearch, useCategory, localStorage (with pre-populated user data), matchMedia; custom `renderProfile()` helper
+- Style: Output-based (display), State-based (field editing), Communication-based (API, auth context, localStorage)
+
+**5. Dashboard Page (3 tests)**
+- Tested: user details display in card (name, email, address) (1), UserMenu navigation links rendering (1), h3 element verification for all 3 user fields (1)
+- Mocking: useAuth (with mock user data), useCart, useSearch, useCategory, localStorage, matchMedia
+- Style: Output-based
+
+**6. UserMenu Component (3 tests)**
+- Tested: Dashboard heading renders (1), Profile link with correct `/dashboard/user/profile` route (1), Orders link with correct `/dashboard/user/orders` route (1)
+- Mocking: MemoryRouter for react-router-dom
+- Style: Output-based
+
+**7. PrivateRoute Component (4 tests)**
+- Tested: authenticated access renders protected outlet (1), spinner on API authorization rejection (1), spinner and no API call on missing auth token (1), spinner and no API call on null auth (1)
+- Key Features: Auth-gated rendering via `/api/v1/auth/user-auth` check, conditional Outlet vs Spinner display, API call skipped when token is empty or auth is null
+- Mocking: axios, useAuth, useCart, useSearch, Spinner (replaced with MockSpinner), localStorage, matchMedia; custom `renderPrivateRoute()` helper with nested routes
+- Style: State-based (conditional rendering), Communication-based (API verification)
 
 #### Backend Unit Tests
-- `controllers/authController.test.js` — Tests for registerController (field validation, duplicate user, successful registration, 500 error), loginController (missing credentials, user not found, wrong password, successful login with JWT, 500 error), forgotPasswordController (missing fields, wrong email/answer, successful reset, 500 error), testController (success and error paths)
-- `helpers/authHelper.test.js` — Tests for hashPassword (successful hash, error handling) and comparePassword (match and mismatch)
-- `middlewares/authMiddleware.test.js` — Tests for requireSignIn (valid token, invalid token, missing header) and isAdmin (admin role, non-admin role, DB lookup failure)
-- `models/userModel.test.js` — Tests for the User model schema (field types, required constraints, trim, unique, default role value, timestamps, model name)
+
+**8. Auth Controller (24 tests)**
+- **registerController (9 tests):** Tested field validation for all 6 required fields (name, email, password, phone, address, answer), duplicate user handling (200 with `success: false`), successful registration with password hashing (201), database error handling (500)
+- **loginController (7 tests):** Tested missing email (404), missing password (404), both missing (404), user not found (404), wrong password (200 with `success: false`), successful login with JWT token generation and 7-day expiry (200), database error handling (500)
+- **forgotPasswordController (6 tests):** Tested missing email (400), missing answer (400), missing newPassword (400), wrong email/answer combination (404), successful password reset with hashing + `findByIdAndUpdate` (200), database error handling (500)
+- **testController (2 tests):** Tested "Protected Routes" success response, error handling when `res.send` throws
+- Key Features: JWT signing with `expiresIn: "7d"`, password hashing via `hashPassword`, user lookup via `findOne`, password update via `findByIdAndUpdate`
+- Mocking: userModel (jest.unstable_mockModule with constructor + findOne + findById + findByIdAndUpdate), authHelper (hashPassword, comparePassword), jsonwebtoken (sign, verify), req/res objects with chainable mocks
+- Style: State-based (response objects), Communication-based (model method calls, hashing, JWT)
+
+**9. Auth Helper (4 tests)**
+- **hashPassword (2 tests):** Tested successful hash with 10 salt rounds, error returns undefined
+- **comparePassword (2 tests):** Tested match returns true, mismatch returns false
+- Mocking: bcrypt (jest.unstable_mockModule for hash, compare)
+- Style: Output-based (return values)
+
+**10. Auth Middleware (6 tests)**
+- **requireSignIn (3 tests):** Tested valid token decode sets `req.user` and calls next, invalid token does not call next, missing authorization header does not call next
+- **isAdmin (3 tests):** Tested admin role (`role: 1`) calls next, non-admin role (`role: 0`) returns 401 with "UnAuthorized Access", database lookup failure returns 401 with error
+- Key Features: JWT verification via `jsonwebtoken.verify`, role-based access control via `userModel.findById`
+- Mocking: jsonwebtoken (jest.unstable_mockModule), userModel (jest.unstable_mockModule), req/res/next objects
+- Style: Communication-based (next, verify calls), State-based (response objects)
+
+**11. User Model (9 tests)**
+- Tested: name field (String, required, trim) (1), email field (String, required, unique) (1), password field (String, required) (1), phone field (String, required) (1), address field (required) (1), answer field (String, required) (1), role field (Number, default 0) (1), timestamps enabled (1), model name `'users'` (1)
+- Mocking: None (direct schema/model testing)
+- Style: Output-based (schema validation)
+
+#### Others
+- Organised discussions, work delegation for sprint and for AI-Driven Testing Plan
 
 ### 6.3 Alyssa Ong Yi Xian
 
