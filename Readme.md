@@ -355,8 +355,6 @@ All test files below were written with the assistance of AI.
 
 ### 6.4 Premakumar Meenu Lekha
 
-## Product Controllers
-
 **productController**
 
 - Tested all major controller methods (create, read, update, delete, list, filter, search, related products, category-based listing).
@@ -367,8 +365,6 @@ All test files below were written with the assistance of AI.
 - Validated correct HTTP status codes, JSON responses, and error handling for failure scenarios.
 
 
-## AdminOrders.js (Frontend)
-
 **AdminOrders Component**
 
 - Tested component rendering and successful order data display.
@@ -376,8 +372,6 @@ All test files below were written with the assistance of AI.
 - Mocked `axios`, `useAuth`, `AdminMenu`, `Layout`, and `antd.Select` for stable tests.
 - Resolved Ant Design portal issues by mocking `Select` to a native `<select>`.
 
-
-## Users.js (Frontend)
 
 **Users Component**
 
