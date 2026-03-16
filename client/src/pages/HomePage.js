@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Checkbox, Radio } from "antd";
+import { Checkbox } from "antd";
 import { Prices } from "../components/Prices";
 import { useCart } from "../context/cart";
 import axios from "axios";
@@ -49,7 +49,7 @@ const HomePage = () => {
     }
   };
 
-  //getTOtal COunt
+  //getT0tal COunt
   const getTotal = async () => {
     try {
       const { data } = await axios.get("/api/v1/product/product-count");
@@ -86,6 +86,17 @@ const HomePage = () => {
     }
     setChecked(all);
   };
+
+  // filter by price
+  const handlePriceFilter = (value, priceArray) => {
+    let all = [...radio];
+    if (value) {
+      all.push(priceArray);
+    } else {
+      all = all.filter((r) => r[0] !== priceArray[0] || r[1] !== priceArray[1]);
+    }
+    setRadio(all);
+  };
   useEffect(() => {
     if (!checked.length || !radio.length) getAllProducts();
   }, [checked.length, radio.length]);
@@ -121,24 +132,26 @@ const HomePage = () => {
           <h4 className="text-center">Filter By Category</h4>
           <div className="d-flex flex-column">
             {categories?.map((c) => (
-              <Checkbox
-                key={c._id}
-                onChange={(e) => handleFilter(e.target.checked, c._id)}
-              >
-                {c.name}
-              </Checkbox>
+              <div key={c._id} className="mb-2">
+                <Checkbox
+                  onChange={(e) => handleFilter(e.target.checked, c._id)}
+                >
+                  {c.name}
+                </Checkbox>
+              </div>
             ))}
           </div>
           {/* price filter */}
           <h4 className="text-center mt-4">Filter By Price</h4>
           <div className="d-flex flex-column">
-            <Radio.Group onChange={(e) => setRadio(e.target.value)}>
-              {Prices?.map((p) => (
-                <div key={p._id}>
-                  <Radio value={p.array}>{p.name}</Radio>
-                </div>
-              ))}
-            </Radio.Group>
+            {Prices?.map((p) => (
+              <Checkbox
+                key={p._id}
+                onChange={(e) => handlePriceFilter(e.target.checked, p.array)}
+              >
+                {p.name}
+              </Checkbox>
+            ))}
           </div>
           <div className="d-flex flex-column">
             <button
@@ -185,7 +198,7 @@ const HomePage = () => {
                         setCart([...cart, p]);
                         localStorage.setItem(
                           "cart",
-                          JSON.stringify([...cart, p])
+                          JSON.stringify([...cart, p]),
                         );
                         toast.success("Item Added to cart");
                       }}

@@ -1,27 +1,38 @@
 export default {
-	transform: {},
-	// display name
 	displayName: "backend",
 
-	// inject jest globals for ES modules
 	injectGlobals: true,
 
-	// when testing backend
 	testEnvironment: "node",
 
-	// which test to run
-	testMatch: ["<rootDir>/controllers/*.test.js"],
+	transform: {},
+	moduleNameMapper: {
+		"^(\\.{1,2}/.*)\\.js$": "$1",
+	},
 
-	// jest code coverage
+	testMatch: [
+		"<rootDir>/controllers/*.test.js",
+		"<rootDir>/middlewares/*.test.js",
+		"<rootDir>/helpers/*.test.js",
+		"<rootDir>/models/*.test.js",
+		"<rootDir>/config/db.test.js",
+	],
+
 	collectCoverage: true,
-	collectCoverageFrom: ["controllers/**"],
+	collectCoverageFrom: [
+		"controllers/authController.js",
+		"controllers/orderController.js",
+		"controllers/categoryController.js",
+		"middlewares/authMiddleware.js",
+		"helpers/authHelper.js",
+		"models/userModel.js",
+		"models/orderModel.js",
+		"config/db.js",
+	],
 	coverageThreshold: {
 		global: {
 			lines: 100,
 			functions: 100,
 		},
-	},
-	moduleNameMapper: {
-		"^(\\.{1,2}/.*)\\.js$": "$1",
 	},
 };
