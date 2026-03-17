@@ -144,7 +144,12 @@ To begin unit testing with Jest in your project, follow these steps:
      ```bash
      npm run test
      ```
-## 6. Contributions
+
+## 6. Milestone 1 - Contributions
+
+### MS1 CI URL
+**Jest CI:** https://github.com/cs4218/cs4218-2520-ecom-project-cs4218-2520-team5/actions/runs/22290909547/job/64477870057
+
 ### 6.1 Ang Yi Jie, Ivan
 
 **Category Controllers (categoryController.js)**
@@ -222,11 +227,218 @@ To begin unit testing with Jest in your project, follow these steps:
 **CI Setup**
 - Configured GitHub Actions workflow for automated testing pipeline
 
-### 6.2 Lynnette Ong Xin Hui
+### 6.2 Ong Xin Hui Lynnette (A0257058X)
+
+All test files below were written with the assistance of AI.
+
+#### Frontend Unit Tests
+
+**1. Auth Context (6 tests)**
+- Tested: children rendering (1), default state with null user and empty token (1), localStorage loading on mount (1), no-op when no stored data (1), axios Authorization header sync (2)
+- Key Features: localStorage-driven auth hydration, axios default header injection, graceful handling of missing stored data
+- Mocking: Storage.prototype.getItem (jest.spyOn)
+- Style: State-based (auth state values), Communication-based (axios header, localStorage interaction)
+
+**2. Login Page (8 tests)**
+- Tested: form rendering with heading/fields (1), initial empty inputs (1), input typing (1), successful login with auth context + localStorage update + navigation (1), error toast on `success: false` (1), generic error toast on network failure (1), forgot-password navigation (1), submit button attributes (1)
+- Key Features: Auth context update via `setAuth`, localStorage persistence of login response, toast notifications with custom styling, route navigation on forgot-password click
+- Mocking: axios, react-hot-toast, useAuth, useCart, useSearch, useCategory, localStorage, matchMedia; custom `renderLogin()` helper with MemoryRouter
+- Style: Output-based (form display), State-based (input values), Communication-based (API calls, auth context, localStorage, navigation)
+
+**3. Register Page (7 tests)**
+- Tested: form rendering with all 7 fields (1), initial empty inputs (1), field input typing (1), successful registration with navigation to login (1), error toast on `success: false` (1), generic error toast on network failure (1), submit button attributes (1)
+- Key Features: `fillForm` helper for consistent test data setup (name, email, password, phone, address, DOB, answer), API payload verification, navigation to `/login` on success
+- Mocking: axios, react-hot-toast, useAuth, useCart, useSearch, useCategory, localStorage, matchMedia; custom `renderRegister()` helper with MemoryRouter
+- Style: Output-based (form rendering), Communication-based (API calls, toast, navigation)
+
+**4. Profile Page (7 tests)**
+- Tested: pre-filled user data from auth context (1), disabled email field (1), field editing (1), successful update with auth context refresh + localStorage sync (1), error toast on `data.error` response (1), generic error toast on network failure (1), heading and button rendering (1)
+- Key Features: Auth-context-driven form pre-fill, disabled email prevents editing, `setAuth` + `localStorage.setItem` called on successful update, `axios.put` payload verification
+- Mocking: axios, react-hot-toast, useAuth, useCart, useSearch, useCategory, localStorage (with pre-populated user data), matchMedia; custom `renderProfile()` helper
+- Style: Output-based (display), State-based (field editing), Communication-based (API, auth context, localStorage)
+
+**5. Dashboard Page (3 tests)**
+- Tested: user details display in card (name, email, address) (1), UserMenu navigation links rendering (1), h3 element verification for all 3 user fields (1)
+- Mocking: useAuth (with mock user data), useCart, useSearch, useCategory, localStorage, matchMedia
+- Style: Output-based
+
+**6. UserMenu Component (3 tests)**
+- Tested: Dashboard heading renders (1), Profile link with correct `/dashboard/user/profile` route (1), Orders link with correct `/dashboard/user/orders` route (1)
+- Mocking: MemoryRouter for react-router-dom
+- Style: Output-based
+
+**7. PrivateRoute Component (4 tests)**
+- Tested: authenticated access renders protected outlet (1), spinner on API authorization rejection (1), spinner and no API call on missing auth token (1), spinner and no API call on null auth (1)
+- Key Features: Auth-gated rendering via `/api/v1/auth/user-auth` check, conditional Outlet vs Spinner display, API call skipped when token is empty or auth is null
+- Mocking: axios, useAuth, useCart, useSearch, Spinner (replaced with MockSpinner), localStorage, matchMedia; custom `renderPrivateRoute()` helper with nested routes
+- Style: State-based (conditional rendering), Communication-based (API verification)
+
+#### Backend Unit Tests
+
+**8. Auth Controller (24 tests)**
+- **registerController (9 tests):** Tested field validation for all 6 required fields (name, email, password, phone, address, answer), duplicate user handling (200 with `success: false`), successful registration with password hashing (201), database error handling (500)
+- **loginController (7 tests):** Tested missing email (404), missing password (404), both missing (404), user not found (404), wrong password (200 with `success: false`), successful login with JWT token generation and 7-day expiry (200), database error handling (500)
+- **forgotPasswordController (6 tests):** Tested missing email (400), missing answer (400), missing newPassword (400), wrong email/answer combination (404), successful password reset with hashing + `findByIdAndUpdate` (200), database error handling (500)
+- **testController (2 tests):** Tested "Protected Routes" success response, error handling when `res.send` throws
+- Key Features: JWT signing with `expiresIn: "7d"`, password hashing via `hashPassword`, user lookup via `findOne`, password update via `findByIdAndUpdate`
+- Mocking: userModel (jest.unstable_mockModule with constructor + findOne + findById + findByIdAndUpdate), authHelper (hashPassword, comparePassword), jsonwebtoken (sign, verify), req/res objects with chainable mocks
+- Style: State-based (response objects), Communication-based (model method calls, hashing, JWT)
+
+**9. Auth Helper (4 tests)**
+- **hashPassword (2 tests):** Tested successful hash with 10 salt rounds, error returns undefined
+- **comparePassword (2 tests):** Tested match returns true, mismatch returns false
+- Mocking: bcrypt (jest.unstable_mockModule for hash, compare)
+- Style: Output-based (return values)
+
+**10. Auth Middleware (6 tests)**
+- **requireSignIn (3 tests):** Tested valid token decode sets `req.user` and calls next, invalid token does not call next, missing authorization header does not call next
+- **isAdmin (3 tests):** Tested admin role (`role: 1`) calls next, non-admin role (`role: 0`) returns 401 with "UnAuthorized Access", database lookup failure returns 401 with error
+- Key Features: JWT verification via `jsonwebtoken.verify`, role-based access control via `userModel.findById`
+- Mocking: jsonwebtoken (jest.unstable_mockModule), userModel (jest.unstable_mockModule), req/res/next objects
+- Style: Communication-based (next, verify calls), State-based (response objects)
+
+**11. User Model (9 tests)**
+- Tested: name field (String, required, trim) (1), email field (String, required, unique) (1), password field (String, required) (1), phone field (String, required) (1), address field (required) (1), answer field (String, required) (1), role field (Number, default 0) (1), timestamps enabled (1), model name `'users'` (1)
+- Mocking: None (direct schema/model testing)
+- Style: Output-based (schema validation)
+
+#### Others
+- Organised discussions, work delegation for sprint and for AI-Driven Testing Plan
 
 ### 6.3 Alyssa Ong Yi Xian
+#### 1. **Header Component**(20 tests, 100% coverage)
+   - **Tested:** Brand name (1), search input (1), navigation links (3), auth state rendering (6), logout functionality (3), cart badge (3), categories dropdown (6)
+   - **Key Features:** Role-based dashboard routing (admin vs user), auth-conditional rendering (guest vs authenticated), cart count badge, dynamic categories, logout clears auth/localStorage/shows toast
+   - **Mocking:** useAuth, useCart, useCategory, toast, SearchInput, Badge (antd), localStorage
+   - **Style:** Output-based (display), Communication-based (logout interactions)
+
+#### 2. **Footer Component** (9 tests)
+   - Tested copyright display and navigation links (About, Contact, Privacy Policy)
+   - Verified all links point to correct paths (/about, /contact, /policy)
+   - **Mocking:** MemoryRouter for react-router-dom
+   - **Style:** Output-based
+
+#### 3. **Layout Component** (15 tests)
+   - Tested children rendering, Header/Footer/Toaster integration, and meta tags
+   - Verified default vs custom props (title, description, keywords, author)
+   - **Mocking:** Header, Footer, Toaster components; react-helmet
+   - **Style:** Output-based
+
+#### 4. **Spinner Component** (12 tests)
+   - Tested 3-second countdown, navigation on completion, timer cleanup on unmount
+   - Verified accessibility text, custom path support, layout rendering
+   - **Mocking:** jest.useFakeTimers(), useNavigate, useLocation
+   - **Style:** State-based (countdown) and Communication-based (navigation)
+
+---
+
+#### Frontend Pages
+
+#### 5. **HomePage Component** (20 tests)
+   - **Tested:** Product display (3), category filters (2), cart functionality (2), navigation (1), pagination (2), error handling (3), price filters (3), load more (3), reset filters (1)
+   - **Key Features:** USD formatting, description truncation, filter API calls, localStorage sync, conditional Load More button, comprehensive error handling
+   - **Mocking:** axios, cart context, toast, useNavigate, custom renderHomePage() helper
+   - **Style:** Output-based (display), State-based (pagination), Communication-based (API/navigation)
+
+#### 6. **CartPage Component** (22 tests)
+   - **Tested:** Guest/auth states (2), empty cart (1), cart display (5), item management (2), address handling (4), navigation (1), payment UI (7)
+   - **Key Features:** Auth-based rendering, total price calculation, localStorage sync, conditional payment UI, comprehensive error handling
+   - **Mocking:** axios, auth/cart contexts, useNavigate, localStorage, custom renderCartPage() helper (eliminates act warnings)
+   - **Style:** Output-based (display), State-based (cart updates), Communication-based (API/navigation)
+   - **Coverage Gap:** Lines 63-77, 182 (Braintree DropIn integration)
+
+#### 7. **About Page** (6 tests)
+   - Tested page title, image attributes, company messages (welcome, service commitment, shopping experience)
+   - **Mocking:** Layout component
+   - **Style:** Output-based
+
+#### 8. **Contact Page** (9 tests)
+   - Tested page title, heading, contact methods (email, phone, toll-free), image, icons
+   - **Mocking:** Layout component
+   - **Style:** Output-based
+
+#### 9. **Policy Page** (10 tests)
+   - Tested page title, image, 7 policy sections (privacy value, data collection, sharing, payment security, user rights, cookies, contact)
+   - **Mocking:** Layout component
+   - **Style:** Output-based
+
+#### 10. **Pagenotfound (404) Page** (6 tests)
+   - Tested page title, 404 code, error message, "Go Back" link to home page
+   - **Mocking:** Layout and Link components
+   - **Style:** Output-based
+
+#### 11. **Orders Page (User)** (9 tests)
+   - Tested auth-gated rendering, API calls only with token, order display, payment status (Success/Failed), error handling
+   - **Mocking:** axios, auth context, UserMenu, moment, custom async helper
+   - **Style:** State-based (conditional rendering), Communication-based (API), Output-based (display)
+
+---
+
+#### Frontend Context
+
+#### 12. **Cart Context** (11 tests, 100% coverage)
+   - **Tested:** Initial state (4) - empty cart, localStorage loading, invalid JSON, errors; State updates (4) - setCart, add/remove items, clear cart; Context behavior (3) - return value, children rendering
+   - **Key Features:** localStorage sync, error resilience, proper context API
+   - **Mocking:** localStorage with Object.defineProperty
+   - **Style:** State-based (cart changes), Output-based (context value)
+   - **Fixed Brittleness:** Removed localStorage.getItem call verification
+
+---
+
+#### Backend Controllers
+
+#### 13. **Order Controller** (100+ tests, 2813 lines)
+   - **Controllers:** updateProfileController, getOrdersController, getAllOrdersController, orderStatusController
+   - **Tested:** Authentication (401), input validation (400), success paths (200), error handling (500), password hashing, mongoose query chaining
+   - **Mocking:** userModel, orderModel, hashPassword, req/res objects
+   - **Style:** State-based (response objects), Communication-based (model method calls)
+
+---
+
+#### Backend Models
+
+#### 14. **Order Model** (4 tests)
+   - Tested default status ("Not Process"), enum validation (5 statuses), invalid status rejection, ObjectId array
+   - **Mocking:** None (direct model testing)
+   - **Style:** Output-based (schema validation)
+
+---
+
+#### Backend Configuration
+
+#### 15. **Database Connection (db.js)** (4 tests)
+   - Tested mongoose.connect with MONGO_URL, success/error logging, non-throwing error handling
+   - **Mocking:** mongoose (unstable_mockModule), console.log, String.prototype.bgMagenta/bgRed (colors library)
+   - **Style:** Communication-based (verify interactions and logs)
+
+---
 
 ### 6.4 Premakumar Meenu Lekha
+
+**productController**
+
+- Tested all major controller methods (create, read, update, delete, list, filter, search, related products, category-based listing).
+- Tested input validation, missing fields, and file/photo handling (presence, size, content-type).
+- Verified successful CRUD flows, pagination, filtering, product counts, and search behaviour.
+- Tested related products and category-based retrieval.
+- Mocked `productModel`, `categoryModel`, `fs`, and `slugify` to isolate controller logic.
+- Validated correct HTTP status codes, JSON responses, and error handling for failure scenarios.
+
+
+**AdminOrders Component**
+
+- Tested component rendering and successful order data display.
+- Verified order status update flow triggers correct API call and payload.
+- Mocked `axios`, `useAuth`, `AdminMenu`, `Layout`, and `antd.Select` for stable tests.
+- Resolved Ant Design portal issues by mocking `Select` to a native `<select>`.
+
+
+**Users Component**
+
+- Tested successful component rendering.
+- Verified presence of key static UI elements (e.g. “All Users” heading).
+- Mocked `AdminMenu` and `Layout` to isolate component behaviour.
+
 
 ### 6.5 Koo Zhuo Hui
 
@@ -247,7 +459,7 @@ To begin unit testing with Jest in your project, follow these steps:
    - Validated form submission behavior (e.g. number of API calls)
    - Verified number of results returned by API
    - Tested edge cases such as empty input search, multiple form submissions, error handling.
-3. **Search.js**
+3. **Context/Search.js**
    - Made use of sample products for testing
    - Fixed erroneous attributes, and missing button functionality to
    'Add to Cart' and 'More Details'
@@ -266,3 +478,26 @@ To begin unit testing with Jest in your project, follow these steps:
    - Verified state persistence across mulitple children components.
 5. **Other bug fixes**
    - Fixed 'Add to Cart' functionality in ProductDetails.js
+
+## 7. Milestone 2 (Sprint 3) — Contributions
+
+### 7.1 Ang Yi Jie, Ivan — UI Tests (Playwright, black-box)
+
+**Story 3: Admin Create/Edit/Delete Category (`tests/ui/admin-category.spec.js`)**
+- End-to-end flow: log in as admin → navigate to Create Category → create a new category → edit its name → delete it
+- Verifies the category list updates correctly after each action
+- Uses a test-only API route (`/api/v1/test/setup-admin`) to seed admin user for Playwright
+
+**Story 4: User Category Browsing (`tests/ui/category-browsing.spec.js`)**
+- End-to-end flow: navigate to Categories page → click a category link → verify CategoryProduct page loads with the correct products for that category
+- Also tests navigation via the dropdown "All Categories" link
+
+**Story 5: Admin Dashboard Access Control (`tests/ui/admin-access-control.spec.js`)**
+- End-to-end flow: verifies admin-only pages are accessible to admin users, redirect regular users, and redirect unauthenticated users to login
+
+**Supporting files:**
+- `playwright.config.js` — Playwright config (Chromium, sequential, webServer for backend + frontend)
+- `tests/ui/global-setup.js` — Global setup: seeds test admin and regular user via test API before all tests
+- `routes/testRoutes.js` — Test-only Express routes for seeding users (guarded against production)
+- Added `test:ui`, `test:ui:headed`, `test:ui:debug` scripts to `package.json`
+
