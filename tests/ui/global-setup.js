@@ -8,8 +8,25 @@ import { request } from "@playwright/test";
 
 const BACKEND_BASE = "http://localhost:6060";
 
+// Poll /api/v1/test/health until MongoDB is connected (readyState === 1).
+// Retries up to maxAttempts times with delayMs between each attempt.
+async function waitForDb(ctx, maxAttempts = 15, delayMs = 2000) {
+  for (let i = 0; i < maxAttempts; i++) {
+    const res = await ctx.get("/api/v1/test/health");
+    if (res.ok()) return;
+    await new Promise((r) => setTimeout(r, delayMs));
+  }
+  throw new Error(
+    `MongoDB did not become ready after ${(maxAttempts * delayMs) / 1000}s. ` +
+      "Check your MONGO_URL in .env."
+  );
+}
+
 async function globalSetup() {
   const ctx = await request.newContext({ baseURL: BACKEND_BASE });
+
+  // Wait for the DB to be connected before running any Mongoose operations.
+  await waitForDb(ctx);
 
   // --- Create / reset test admin user (role=1) ---
   const adminRes = await ctx.post("/api/v1/test/setup-admin");
