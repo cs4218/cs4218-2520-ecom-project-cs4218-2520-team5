@@ -67,7 +67,7 @@ const ProductDetails = () => {
 							localStorage.setItem("cart", JSON.stringify([...cart, product]));
 							toast.success("Item Added to cart");
 						}}
-						class="btn btn-secondary ms-1"
+						className="btn btn-secondary ms-1"
 					>
 						ADD TO CART
 					</button>
