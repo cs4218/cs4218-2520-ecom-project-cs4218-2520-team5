@@ -10,7 +10,7 @@ const BACKEND_BASE = "http://localhost:6060";
 
 // Poll /api/v1/test/health until MongoDB is connected (readyState === 1).
 // Retries up to maxAttempts times with delayMs between each attempt.
-async function waitForDb(ctx, maxAttempts = 15, delayMs = 2000) {
+async function waitForDb(ctx, maxAttempts = 30, delayMs = 2000) {
   for (let i = 0; i < maxAttempts; i++) {
     const res = await ctx.get("/api/v1/test/health");
     if (res.ok()) return;
