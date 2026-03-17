@@ -26,11 +26,13 @@ export default defineConfig({
 
   webServer: [
     {
-      // Backend: Express on port 6060
+      // Backend: Express on port 6060.
+      // Use the /health endpoint so Playwright waits until MongoDB is
+      // connected before running global-setup (avoids buffering timeouts).
       command: "node server.js",
-      url: "http://localhost:6060",
+      url: "http://localhost:6060/api/v1/test/health",
       reuseExistingServer: true,
-      timeout: 15000,
+      timeout: 30000,
     },
     {
       // Frontend: CRA dev server on port 3000

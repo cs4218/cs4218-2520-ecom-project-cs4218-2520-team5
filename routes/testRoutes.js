@@ -4,6 +4,7 @@
 // These endpoints are guarded against production use.
 
 import express from "express";
+import mongoose from "mongoose";
 import userModel from "../models/userModel.js";
 import { hashPassword } from "../helpers/authHelper.js";
 import JWT from "jsonwebtoken";
@@ -17,6 +18,17 @@ const devOnly = (_req, res, next) => {
   }
   next();
 };
+
+// GET /api/v1/test/health
+// Returns 200 only when MongoDB is connected. Used by playwright.config.js
+// webServer.url so Playwright waits for the DB before running global-setup.
+router.get("/health", (_req, res) => {
+  if (mongoose.connection.readyState === 1) {
+    res.json({ ok: true });
+  } else {
+    res.status(503).json({ ok: false, state: mongoose.connection.readyState });
+  }
+});
 
 // POST /api/v1/test/setup-admin
 // Upserts a test admin user (role=1) and returns a JWT token.
