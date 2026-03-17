@@ -266,3 +266,23 @@ To begin unit testing with Jest in your project, follow these steps:
    - Verified state persistence across mulitple children components.
 5. **Other bug fixes**
    - Fixed 'Add to Cart' functionality in ProductDetails.js
+
+## 7. Milestone 2 (Sprint 3) — Contributions
+
+### 7.1 Ang Yi Jie, Ivan — Integration Tests (Jest, white-box, bottom-up)
+
+**Story 1: Category API Integration (`tests/integration/categoryApiIntegration.test.js`)**
+- Tests the full chain: route → `requireSignIn` → `isAdmin` → `categoryController` → `categoryModel`
+- Approach: bottom-up integration using `mongodb-memory-server` (in-memory MongoDB; no real DB needed)
+- Covers: create, update, delete categories via API with valid admin JWT; 401 for unauthenticated/non-admin requests
+- No mocking of controller or model layers; only external MongoDB is replaced
+
+**Story 2: Category–Product Relationship (`tests/integration/categoryProductIntegration.test.js`)**
+- Tests slug-based lookups: `singleCategoryController` and `productCategoryController`
+- Verifies correct category and associated products returned by slug
+- Approach: bottom-up integration; routes + controllers + both models run together
+- Bug fix: corrected missing closing brace in `createProductController` (`controllers/productController.js`)
+
+**Supporting files:**
+- `jest.integration.config.js` — Jest config for integration tests (ESM, node environment, 30s timeout)
+- Added `test:integration` script, `mongodb-memory-server`, and `supertest` to `package.json`
