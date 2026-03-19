@@ -479,3 +479,42 @@ All test files below were written with the assistance of AI.
 5. **Other bug fixes**
    - Fixed 'Add to Cart' functionality in ProductDetails.js
 
+## 7. Milestone 2 (Sprint 3) — Contributions
+
+### 7.1 Ang Yi Jie, Ivan — Integration Tests (Jest, white-box, bottom-up)
+
+**Story 1: Category API Integration (`tests/integration/categoryApiIntegration.test.js`)**
+- Tests the full chain: route → `requireSignIn` → `isAdmin` → `categoryController` → `categoryModel`
+- Approach: bottom-up integration using `mongodb-memory-server` (in-memory MongoDB; no real DB needed)
+- Covers: create, update, delete categories via API with valid admin JWT; 401 for unauthenticated/non-admin requests
+- No mocking of controller or model layers; only external MongoDB is replaced
+
+**Story 2: Category–Product Relationship (`tests/integration/categoryProductIntegration.test.js`)**
+- Tests slug-based lookups: `singleCategoryController` and `productCategoryController`
+- Verifies correct category and associated products returned by slug
+- Approach: bottom-up integration; routes + controllers + both models run together
+- Bug fix: corrected missing closing brace in `createProductController` (`controllers/productController.js`)
+
+**Supporting files:**
+- `jest.integration.config.js` — Jest config for integration tests (ESM, node environment, 30s timeout)
+- Added `test:integration` script, `mongodb-memory-server`, and `supertest` to `package.json`
+
+### 7.2 Ang Yi Jie, Ivan — UI Tests (Playwright, black-box)
+
+**Story 3: Admin Create/Edit/Delete Category (`tests/ui/admin-category.spec.js`)**
+- End-to-end flow: log in as admin → navigate to Create Category → create a new category → edit its name → delete it
+- Verifies the category list updates correctly after each action
+- Uses a test-only API route (`/api/v1/test/setup-admin`) to seed admin user for Playwright
+
+**Story 4: User Category Browsing (`tests/ui/category-browsing.spec.js`)**
+- End-to-end flow: navigate to Categories page → click a category link → verify CategoryProduct page loads with the correct products for that category
+- Also tests navigation via the dropdown "All Categories" link
+
+**Story 5: Admin Dashboard Access Control (`tests/ui/admin-access-control.spec.js`)**
+- End-to-end flow: verifies admin-only pages are accessible to admin users, redirect regular users, and redirect unauthenticated users to login
+
+**Supporting files:**
+- `playwright.config.js` — Playwright config (Chromium, sequential, webServer for backend + frontend)
+- `tests/ui/global-setup.js` — Global setup: seeds test admin and regular user via test API before all tests
+- `routes/testRoutes.js` — Test-only Express routes for seeding users (guarded against production)
+- Added `test:ui`, `test:ui:headed`, `test:ui:debug` scripts to `package.json`
