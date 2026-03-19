@@ -9,9 +9,13 @@ export default {
 
   moduleNameMapper: {
     "\\.(css|scss)$": "identity-obj-proxy",
+    "^react$": "<rootDir>/client/node_modules/react",
+    "^react/(.*)$": "<rootDir>/client/node_modules/react/$1",
+    "^react-dom$": "<rootDir>/client/node_modules/react-dom",
+    "^react-dom/(.*)$": "<rootDir>/client/node_modules/react-dom/$1",
   },
 
-  transformIgnorePatterns: ["/node_modules/(?!(styleMock\\.js)$)"],
+  transformIgnorePatterns: ["/node_modules/(?!(styleMock\\.js|antd|@ant-design)$)"],
 
   testMatch: [
     "<rootDir>/client/src/pages/**/*.test.js",
@@ -21,6 +25,8 @@ export default {
   ],
 
   collectCoverage: true,
+  coverageDirectory: "coverage/frontend",
+  coverageReporters: ["lcov", "text"],
   collectCoverageFrom: [
     "client/src/pages/About.js",
     "client/src/pages/Contact.js",

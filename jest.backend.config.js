@@ -19,6 +19,8 @@ export default {
   ],
 
   collectCoverage: true,
+  coverageDirectory: "coverage/backend",
+  coverageReporters: ["lcov", "text"],
   collectCoverageFrom: [
     "controllers/authController.js",
     "controllers/orderController.js",
