@@ -16,14 +16,18 @@ jobs:
         with:
           node-version: 20
 
-      - name: Install dependencies
-        run: npm install
+      - name: Install frontend dependencies
+        run: |
+          cd client
+          npm install
 
-      - name: Run Jest coverage
-        run: npm test -- --coverage --coverageReporters=json-summary --coverageReporters=json
+      - name: Run frontend Jest coverage
+        run: |
+          cd client
+          npm test -- --coverage --coverageReporters=json-summary --coverageReporters=json
 
       - name: Upload coverage summary
         uses: actions/upload-artifact@v4
         with:
           name: coverage-summary
-          path: coverage/coverage-summary.json
+          path: client/coverage/coverage-summary.json
