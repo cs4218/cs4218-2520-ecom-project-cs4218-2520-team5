@@ -12,6 +12,11 @@ export const requireSignIn = async (req, res, next) => {
         next();
     } catch (error) {
         console.log(error);
+        return res.status(401).send({
+            success: false,
+            message: "Unauthorized",
+            error: "Invalid or missing token",
+        });
     }
 };
 
