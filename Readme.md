@@ -498,3 +498,23 @@ All test files below were written with the assistance of AI.
 **Supporting files:**
 - `jest.integration.config.js` — Jest config for integration tests (ESM, node environment, 30s timeout)
 - Added `test:integration` script, `mongodb-memory-server`, and `supertest` to `package.json`
+
+### 7.2 Ang Yi Jie, Ivan — UI Tests (Playwright, black-box)
+
+**Story 3: Admin Create/Edit/Delete Category (`tests/ui/admin-category.spec.js`)**
+- End-to-end flow: log in as admin → navigate to Create Category → create a new category → edit its name → delete it
+- Verifies the category list updates correctly after each action
+- Uses a test-only API route (`/api/v1/test/setup-admin`) to seed admin user for Playwright
+
+**Story 4: User Category Browsing (`tests/ui/category-browsing.spec.js`)**
+- End-to-end flow: navigate to Categories page → click a category link → verify CategoryProduct page loads with the correct products for that category
+- Also tests navigation via the dropdown "All Categories" link
+
+**Story 5: Admin Dashboard Access Control (`tests/ui/admin-access-control.spec.js`)**
+- End-to-end flow: verifies admin-only pages are accessible to admin users, redirect regular users, and redirect unauthenticated users to login
+
+**Supporting files:**
+- `playwright.config.js` — Playwright config (Chromium, sequential, webServer for backend + frontend)
+- `tests/ui/global-setup.js` — Global setup: seeds test admin and regular user via test API before all tests
+- `routes/testRoutes.js` — Test-only Express routes for seeding users (guarded against production)
+- Added `test:ui`, `test:ui:headed`, `test:ui:debug` scripts to `package.json`
