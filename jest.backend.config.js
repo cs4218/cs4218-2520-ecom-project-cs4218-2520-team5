@@ -1,38 +1,38 @@
 export default {
-  displayName: "backend",
+	displayName: "backend",
 
-  injectGlobals: true,
+	injectGlobals: true,
 
-  testEnvironment: "node",
+	testEnvironment: "node",
 
-  transform: {},
-  moduleNameMapper: {
-    "^(\\.{1,2}/.*)\\.js$": "$1",
-  },
+	transform: {},
+	moduleNameMapper: {
+		"^(\\.{1,2}/.*)\\.js$": "$1",
+	},
 
-  testMatch: [
-    "<rootDir>/controllers/*.test.js",
-    "<rootDir>/middlewares/*.test.js",
-    "<rootDir>/helpers/*.test.js",
-    "<rootDir>/models/*.test.js",
-    "<rootDir>/config/db.test.js",
-  ],
+	testMatch: [
+		"<rootDir>/controllers/*.test.js",
+		"<rootDir>/middlewares/*.test.js",
+		"<rootDir>/helpers/*.test.js",
+		"<rootDir>/models/*.test.js",
+		"<rootDir>/config/db.test.js",
+	],
 
-  collectCoverage: true,
-  collectCoverageFrom: [
-    "controllers/authController.js",
-    "controllers/orderController.js",
-    "controllers/categoryController.js",
-    "middlewares/authMiddleware.js",
-    "helpers/authHelper.js",
-    "models/userModel.js",
-    "models/orderModel.js",
-    "config/db.js",
-  ],
-  coverageThreshold: {
-    global: {
-      lines: 100,
-      functions: 100,
-    },
-  },
+	collectCoverage: true,
+	collectCoverageFrom: [
+		"controllers/authController.js",
+		"controllers/orderController.js",
+		"controllers/categoryController.js",
+		"middlewares/authMiddleware.js",
+		"helpers/authHelper.js",
+		"models/userModel.js",
+		"models/orderModel.js",
+		"config/db.js",
+	],
+	coverageThreshold: {
+		global: {
+			lines: 100,
+			functions: 100,
+		},
+	},
 };

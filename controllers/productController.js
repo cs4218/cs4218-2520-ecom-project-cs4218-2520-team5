@@ -7,8 +7,7 @@ import slugify from "slugify";
 
 export const createProductController = async (req, res) => {
 	try {
-		const { name, description, price, category, quantity, shipping } =
-			req.fields;
+		const { name, description, price, category, quantity, shipping } = req.fields;
 		const { photo } = req.files;
 		//validation
 		const errors = [];
@@ -17,12 +16,10 @@ export const createProductController = async (req, res) => {
 		if (!price) errors.push("Price is Required");
 		if (!category) errors.push("Category is Required");
 		if (!quantity) errors.push("Quantity is Required");
-		if (photo && photo.size > 1000000)
-			errors.push("photo is Required and should be less than 1mb");
+		if (photo && photo.size > 1000000) errors.push("photo is Required and should be less than 1mb");
 		if (errors.length > 0) {
 			return res.status(400).send({ success: false, errors });
 		}
-
 		const products = new productModel({ ...req.fields, slug: slugify(name) });
 		if (photo) {
 			products.photo.data = fs.readFileSync(photo.path);
@@ -47,12 +44,7 @@ export const createProductController = async (req, res) => {
 //get all products
 export const getProductController = async (req, res) => {
 	try {
-		const products = await productModel
-			.find({})
-			.populate("category")
-			.select("-photo")
-			.limit(12)
-			.sort({ createdAt: -1 });
+		const products = await productModel.find({}).populate("category").select("-photo").limit(12).sort({ createdAt: -1 });
 		res.status(200).send({
 			success: true,
 			countTotal: products.length,
@@ -71,10 +63,7 @@ export const getProductController = async (req, res) => {
 // get single product
 export const getSingleProductController = async (req, res) => {
 	try {
-		const product = await productModel
-			.findOne({ slug: req.params.slug })
-			.select("-photo")
-			.populate("category");
+		const product = await productModel.findOne({ slug: req.params.slug }).select("-photo").populate("category");
 		res.status(200).send({
 			success: true,
 			message: "Single Product Fetched",
@@ -135,8 +124,7 @@ export const deleteProductController = async (req, res) => {
 //upate producta
 export const updateProductController = async (req, res) => {
 	try {
-		const { name, description, price, category, quantity, shipping } =
-			req.fields;
+		const { name, description, price, category, quantity, shipping } = req.fields;
 		const { photo } = req.files;
 		//validation
 		const errors = [];
@@ -145,17 +133,12 @@ export const updateProductController = async (req, res) => {
 		if (!price) errors.push("Price is Required");
 		if (!category) errors.push("Category is Required");
 		if (!quantity) errors.push("Quantity is Required");
-		if (photo && photo.size > 1000000)
-			errors.push("photo is Required and should be less than 1mb");
+		if (photo && photo.size > 1000000) errors.push("photo is Required and should be less than 1mb");
 		if (errors.length > 0) {
 			return res.status(400).send({ success: false, errors });
 		}
 
-		const products = await productModel.findByIdAndUpdate(
-			req.params.pid,
-			{ ...req.fields, slug: slugify(name) },
-			{ new: true },
-		);
+		const products = await productModel.findByIdAndUpdate(req.params.pid, { ...req.fields, slug: slugify(name) }, { new: true });
 		if (photo) {
 			products.photo.data = fs.readFileSync(photo.path);
 			products.photo.contentType = photo.type;
@@ -265,11 +248,7 @@ export const searchProductController = async (req, res) => {
 			}
 
 			// Singular -> plural
-			if (
-				w.endsWith("y") &&
-				w.length > 2 &&
-				!"aeiou".includes(w[w.length - 2])
-			) {
+			if (w.endsWith("y") && w.length > 2 && !"aeiou".includes(w[w.length - 2])) {
 				variations.add(w.slice(0, -1) + "ies"); // battery -> batteries
 			} else if (!w.endsWith("s")) {
 				variations.add(w + "s"); // book -> books
@@ -291,9 +270,7 @@ export const searchProductController = async (req, res) => {
 		// Split into individual words and collect all variations
 		const words = keyword.trim().split(/\s+/);
 		const allPatterns = new Set([keyword]); // always include full phrase
-		words.forEach((word) =>
-			generateVariations(word).forEach((v) => allPatterns.add(v)),
-		);
+		words.forEach((word) => generateVariations(word).forEach((v) => allPatterns.add(v)));
 
 		// Build $or conditions across name and description for every pattern
 		const searchConditions = [...allPatterns].flatMap((pattern) => [
@@ -301,9 +278,7 @@ export const searchProductController = async (req, res) => {
 			{ description: { $regex: pattern, $options: "i" } },
 		]);
 
-		const results = await productModel
-			.find({ $or: searchConditions })
-			.select("-photo");
+		const results = await productModel.find({ $or: searchConditions }).select("-photo");
 		res.json(results);
 	} catch (error) {
 		console.log(error);
