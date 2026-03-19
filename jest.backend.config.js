@@ -25,6 +25,7 @@ export default {
     "controllers/authController.js",
     "controllers/orderController.js",
     "controllers/categoryController.js",
+    "controllers/productController.js",
     "middlewares/authMiddleware.js",
     "helpers/authHelper.js",
     "models/userModel.js",
