@@ -18,16 +18,16 @@ jobs:
 
       - name: Install frontend dependencies
         run: |
+          npm ci
           cd client
-          npm install
+          npm ci
 
       - name: Run frontend Jest coverage
         run: |
-          cd client
-          npm test -- --coverage --coverageReporters=json-summary --coverageReporters=json
+          npm run test:frontend -- --coverage --coverageReporters=json-summary --coverageReporters=json
 
       - name: Upload coverage summary
         uses: actions/upload-artifact@v4
         with:
           name: coverage-summary
-          path: client/coverage/coverage-summary.json
+          path: coverage/coverage-summary.json
