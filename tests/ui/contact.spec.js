@@ -28,7 +28,9 @@ test.describe("Story: Contact Page E2E Journeys", () => {
     await expectContactCoreContent(page);
   });
 
-  test("guest journey: About -> Contact -> Privacy Policy via footer links", async ({ page }) => {
+  test("guest journey: About -> Contact -> Privacy Policy via footer links", async ({
+    page,
+  }) => {
     await page.goto("/about");
     await expect(page).toHaveURL("/about");
     await expect(page.getByRole("img", { name: "aboutus" })).toBeVisible();
@@ -39,12 +41,18 @@ test.describe("Story: Contact Page E2E Journeys", () => {
     await page.getByRole("link", { name: "Privacy Policy" }).click();
     await expect(page).toHaveURL("/policy");
     await expect(page).toHaveTitle("Privacy Policy");
-    await expect(page.getByRole("img", { name: "privacy policy" })).toBeVisible();
+    await expect(
+      page.getByRole("img", { name: "privacy policy" }),
+    ).toBeVisible();
   });
 
-  test("support path after failed login: Login (invalid) -> Contact", async ({ page }) => {
+  test("support path after failed login: Login (invalid) -> Contact", async ({
+    page,
+  }) => {
     await page.goto("/login");
-    await expect(page.getByRole("heading", { name: "LOGIN FORM" })).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: "LOGIN FORM" }),
+    ).toBeVisible();
 
     await page
       .getByRole("textbox", { name: "Enter Your Email" })
@@ -60,13 +68,17 @@ test.describe("Story: Contact Page E2E Journeys", () => {
     await expectContactCoreContent(page);
   });
 
-  test("authenticated user continuity: Dashboard -> Contact -> Orders", async ({ page }) => {
+  test("authenticated user continuity: Dashboard -> Contact -> Orders", async ({
+    page,
+  }) => {
     const userAuth = JSON.parse(process.env.USER_AUTH);
     await injectAuth(page, userAuth);
 
     await page.goto("/dashboard/user");
     await expect(page).toHaveURL("/dashboard/user");
-    await expect(page.getByRole("heading", { name: userAuth.user.name })).toBeVisible({
+    await expect(
+      page.getByRole("heading", { name: userAuth.user.name }),
+    ).toBeVisible({
       timeout: 15000,
     });
 
@@ -75,12 +87,16 @@ test.describe("Story: Contact Page E2E Journeys", () => {
 
     await page.goto("/dashboard/user/orders");
     await expect(page).toHaveURL("/dashboard/user/orders");
-    await expect(page.getByRole("heading", { name: "All Orders" })).toBeVisible({
-      timeout: 15000,
-    });
+    await expect(page.getByRole("heading", { name: "All Orders" })).toBeVisible(
+      {
+        timeout: 15000,
+      },
+    );
   });
 
-  test("cart continuity: Add item -> Contact -> Cart retains item", async ({ page }) => {
+  test("cart continuity: Add item -> Contact -> Cart retains item", async ({
+    page,
+  }) => {
     await page.goto("/");
     await expect(page.locator(".card").first()).toBeVisible({ timeout: 15000 });
 
@@ -93,33 +109,43 @@ test.describe("Story: Contact Page E2E Journeys", () => {
 
     await page.getByRole("link", { name: "Cart" }).click();
     await expect(page).toHaveURL("/cart");
-    await expect(page.getByRole("button", { name: "Remove" }).first()).toBeVisible();
+    await expect(
+      page.getByRole("button", { name: "Remove" }).first(),
+    ).toBeVisible();
   });
 
-  test("product exploration interruption: Product Details -> Contact -> browser back", async ({ page }) => {
+  test("product exploration interruption: Product Details -> Contact -> browser back", async ({
+    page,
+  }) => {
     await page.goto("/");
     await expect(page.locator(".card").first()).toBeVisible({ timeout: 15000 });
 
     await page.getByRole("button", { name: "More Details" }).first().click();
     await expect(page).toHaveURL(/\/product\//);
-    await expect(page.getByRole("heading", { name: "Product Details" })).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: "Product Details" }),
+    ).toBeVisible();
 
     await page.getByRole("link", { name: "Contact" }).click();
     await expectContactCoreContent(page);
 
     await page.goBack();
     await expect(page).toHaveURL(/\/product\//);
-    await expect(page.getByRole("heading", { name: "Product Details" })).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: "Product Details" }),
+    ).toBeVisible();
   });
 
-  test("admin continuity: Admin Dashboard -> Contact -> Manage Category", async ({ page }) => {
+  test("admin continuity: Admin Dashboard -> Contact -> Manage Category", async ({
+    page,
+  }) => {
     const adminAuth = JSON.parse(process.env.ADMIN_AUTH);
     await injectAuth(page, adminAuth);
 
     await page.goto("/dashboard/admin");
     await expect(page).toHaveURL("/dashboard/admin");
     await expect(
-      page.locator("h3").filter({ hasText: "Admin Name" })
+      page.locator("h3").filter({ hasText: "Admin Name" }),
     ).toBeVisible({ timeout: 15000 });
 
     await page.getByRole("link", { name: "Contact" }).click();
@@ -127,12 +153,16 @@ test.describe("Story: Contact Page E2E Journeys", () => {
 
     await page.goto("/dashboard/admin/create-category");
     await expect(page).toHaveURL("/dashboard/admin/create-category");
-    await expect(page.getByRole("heading", { name: "Manage Category" })).toBeVisible({
+    await expect(
+      page.getByRole("heading", { name: "Manage Category" }),
+    ).toBeVisible({
       timeout: 15000,
     });
   });
 
-  test("deep-link path: /contact directly -> search journey", async ({ page }) => {
+  test("deep-link path: /contact directly -> search journey", async ({
+    page,
+  }) => {
     await page.goto("/contact");
     await expectContactCoreContent(page);
 
@@ -140,11 +170,15 @@ test.describe("Story: Contact Page E2E Journeys", () => {
     await page.getByRole("button", { name: "Search" }).click();
 
     await expect(page).toHaveURL("/search");
-    await expect(page.getByRole("heading", { name: "Search Resuts" })).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: "Search Resuts" }),
+    ).toBeVisible();
     await expect(page.locator("h6")).toContainText("Found");
   });
 
-  test("mobile responsive journey: Contact -> open nav -> Categories", async ({ page }) => {
+  test("mobile responsive journey: Contact -> open nav -> Categories", async ({
+    page,
+  }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto("/contact");
     await expectContactCoreContent(page);
@@ -160,11 +194,15 @@ test.describe("Story: Contact Page E2E Journeys", () => {
   test("recovery journey: 404 page -> Home -> Contact", async ({ page }) => {
     await page.goto("/missing-route-for-contact-e2e");
     await expect(page.getByRole("heading", { name: "404" })).toBeVisible();
-    await expect(page.getByRole("heading", { name: "Oops ! Page Not Found" })).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: "Oops ! Page Not Found" }),
+    ).toBeVisible();
 
     await page.getByRole("link", { name: "Go Back" }).click();
     await expect(page).toHaveURL("/");
-    await expect(page.getByRole("heading", { name: "All Products" })).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: "All Products" }),
+    ).toBeVisible();
 
     await page.getByRole("link", { name: "Contact" }).click();
     await expectContactCoreContent(page);
