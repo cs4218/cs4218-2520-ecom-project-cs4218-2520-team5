@@ -8,6 +8,7 @@ import morgan from "morgan";
 import authRoutes from "./routes/authRoute.js";
 import categoryRoutes from "./routes/categoryRoutes.js";
 import productRoutes from "./routes/productRoutes.js";
+import testRoutes from "./routes/testRoutes.js";
 
 /**
  * Express application instance (no listen, no DB connect).
@@ -24,6 +25,7 @@ if (process.env.NODE_ENV !== "test") {
 app.use("/api/v1/auth", authRoutes);
 app.use("/api/v1/category", categoryRoutes);
 app.use("/api/v1/product", productRoutes);
+app.use("/api/v1/test", testRoutes);
 
 app.get("/", (req, res) => {
   res.send("<h1>Welcome to ecommerce app</h1>");

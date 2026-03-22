@@ -527,7 +527,19 @@ All Milestone 2 work below was done with the assistance of AI.
 
 ### 7.2.1 UI testing (Playwright, black-box)
 
-- **To be added** in a follow-up (same sprint / documentation pass as other MS2 UI tests).
+**File:** `tests/ui/ms2-user-auth-e2e.spec.js` (five end-to-end user journeys). Helpers: `tests/ui/helpers/ms2UserUiHelpers.js`.
+
+| Rubric story | Playwright `test.describe` | What the user does (black-box) |
+|--------------|----------------------------|--------------------------------|
+| Story 1 — Successful registration | `Story 1: Successful User Registration` | Open `/register`, submit a unique new account, see success toast, land on `/login` with login form visible |
+| Story 2 — Login + dashboard | `Story 2: Successful Login and Dashboard Access` | Log in with seeded user, open Dashboard from header, see personal details in dashboard card |
+| Story 3 — Profile management | `Story 3: Profile Management for Authenticated User` | Log in → sidebar **Profile** → check prefilled fields → update name/phone/address → success toast → values stay after reload |
+| Story 4 — Unauthorized routes | `Story 4: Unauthorized Access Blocking for Protected Routes` | As guest, hit `/dashboard/user` and `/dashboard/user/profile`; see countdown redirect UI, no protected content, end on home with **All Products** |
+| Story 5 — In-dashboard navigation | `Story 5: User Navigation Within Protected Dashboard` | Log in → dashboard → **Profile** → **Orders** → **Profile** again; account menu still shows Logout (session kept) |
+
+Seeded credentials come from `tests/ui/global-setup.js` (`POST /api/v1/test/setup-user`); password for that user is `Test@12345` (same as existing admin/user seed helpers).
+
+**Run:** `npm run test:ui` (all UI specs) or `npx playwright test tests/ui/ms2-user-auth-e2e.spec.js` (this file only). **Per story:** `npx playwright test tests/ui/ms2-user-auth-e2e.spec.js -g "Story N"` (replace N with 1–5).
 
 
 ### 7.2.2 Frontend integration tests (Jest + React Testing Library, white-box, bottom-up partial integration)

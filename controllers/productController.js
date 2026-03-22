@@ -340,6 +340,12 @@ export const productCategoryController = async (req, res) => {
 //token
 export const braintreeTokenController = async (req, res) => {
 	try {
+		if (!gateway) {
+			return res.status(503).json({
+				success: false,
+				error: "Payment gateway not configured",
+			});
+		}
 		gateway.clientToken.generate({}, function (err, response) {
 			if (err) {
 				res.status(500).send(err);
@@ -356,6 +362,12 @@ export const braintreeTokenController = async (req, res) => {
 //payment
 export const brainTreePaymentController = async (req, res) => {
 	try {
+		if (!gateway) {
+			return res.status(503).json({
+				success: false,
+				error: "Payment gateway not configured",
+			});
+		}
 		const { nonce, cart } = req.body;
 
 		if (!nonce || !cart || cart.length === 0) {
