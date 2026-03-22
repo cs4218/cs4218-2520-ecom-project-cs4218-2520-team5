@@ -87,6 +87,7 @@ describe("Auth Middleware Integration Tests — Story 3: Route Protection", () =
     expect(res.send).toHaveBeenCalledWith({
       success: false,
       message: "Unauthorized: invalid or expired token",
+      error: "Invalid or missing token",
     });
   });
 
@@ -104,6 +105,7 @@ describe("Auth Middleware Integration Tests — Story 3: Route Protection", () =
     expect(res.send).toHaveBeenCalledWith({
       success: false,
       message: "Unauthorized: invalid or expired token",
+      error: "Invalid or missing token",
     });
   });
 
@@ -123,6 +125,7 @@ describe("Auth Middleware Integration Tests — Story 3: Route Protection", () =
     expect(res.send).toHaveBeenCalledWith({
       success: false,
       message: "Unauthorized: invalid or expired token",
+      error: "Invalid or missing token",
     });
   });
 
