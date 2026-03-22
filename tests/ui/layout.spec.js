@@ -17,10 +17,14 @@ async function expectLayoutShell(page) {
   await expect(header(page).getByRole("link", { name: /Cart/i })).toBeVisible();
 }
 
-async function injectAuth(page, authData) {
-  await page.addInitScript((auth) => {
-    localStorage.setItem("auth", JSON.stringify(auth));
-  }, authData);
+async function loginViaUI(page, email, password) {
+  await page.goto("/login");
+  await expect(page.getByRole("heading", { name: "LOGIN FORM" })).toBeVisible();
+  await page.getByRole("textbox", { name: "Enter Your Email" }).fill(email);
+  await page.getByRole("textbox", { name: "Enter Your Password" }).fill(password);
+  await page.getByRole("button", { name: "LOGIN" }).click();
+  // Wait for successful login redirect
+  await expect(page).not.toHaveURL("/login", { timeout: 15000 });
 }
 
 test.describe("Story: Layout Component E2E Journeys", () => {
@@ -94,16 +98,15 @@ test.describe("Story: Layout Component E2E Journeys", () => {
     await expectLayoutShell(page);
   });
 
-  test("auth-aware layout transition: authenticated menu visible and logout restores guest nav", async ({ page }) => {
-    const userAuth = JSON.parse(process.env.USER_AUTH);
-    await injectAuth(page, userAuth);
+  test("auth-aware layout transition: Login -> authenticated menu visible and logout restores guest nav", async ({ page }) => {
+    await loginViaUI(page, "ivan.playwright.user@test.com", "Test@12345");
 
     await page.goto("/dashboard/user");
     await expect(page).toHaveURL("/dashboard/user", { timeout: 15000 });
     await expectLayoutShell(page);
 
     const userMenu = header(page).locator("a.nav-link.dropdown-toggle").last();
-    await expect(userMenu).toContainText(userAuth.user.name);
+    await expect(userMenu).toContainText("Ivan PW User");
     await expect(header(page).getByRole("link", { name: "Login" })).not.toBeVisible();
     await expect(header(page).getByRole("link", { name: "Register" })).not.toBeVisible();
 
@@ -212,14 +215,13 @@ test.describe("Story: Layout Component E2E Journeys", () => {
     await expectLayoutShell(page);
   });
 
-  test("authenticated user layout continuity: Dashboard -> Profile -> Orders", async ({ page }) => {
-    const userAuth = JSON.parse(process.env.USER_AUTH);
-    await injectAuth(page, userAuth);
+  test("authenticated user layout continuity: Login -> Dashboard -> Profile -> Orders", async ({ page }) => {
+    await loginViaUI(page, "ivan.playwright.user@test.com", "Test@12345");
 
     await page.goto("/dashboard/user");
     await expect(page).toHaveURL("/dashboard/user", { timeout: 15000 });
     await expect(page).toHaveTitle("Dashboard - Ecommerce App");
-    await expect(page.locator(".card h3").first()).toContainText(userAuth.user.name);
+    await expect(page.locator(".card h3").first()).toContainText("Ivan PW User");
     await expectLayoutShell(page);
 
     await page.goto("/dashboard/user/profile");

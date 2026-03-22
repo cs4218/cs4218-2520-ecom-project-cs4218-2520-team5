@@ -18,10 +18,14 @@ async function openCategoriesDropdown(page) {
     .click();
 }
 
-async function injectAuth(page, authData) {
-  await page.addInitScript((auth) => {
-    localStorage.setItem("auth", JSON.stringify(auth));
-  }, authData);
+async function loginViaUI(page, email, password) {
+  await page.goto("/login");
+  await expect(page.getByRole("heading", { name: "LOGIN FORM" })).toBeVisible();
+  await page.getByRole("textbox", { name: "Enter Your Email" }).fill(email);
+  await page.getByRole("textbox", { name: "Enter Your Password" }).fill(password);
+  await page.getByRole("button", { name: "LOGIN" }).click();
+  // Wait for successful login redirect
+  await expect(page).not.toHaveURL("/login", { timeout: 15000 });
 }
 
 test.describe("Story: Header E2E User Journeys", () => {
@@ -111,11 +115,10 @@ test.describe("Story: Header E2E User Journeys", () => {
     }
   });
 
-  test("header auth content transition: user menu + logout switches to login/register", async ({
+  test("header auth content transition: Login -> user menu + logout switches to login/register", async ({
     page,
   }) => {
-    const userAuth = JSON.parse(process.env.USER_AUTH);
-    await injectAuth(page, userAuth);
+    await loginViaUI(page, "ivan.playwright.user@test.com", "Test@12345");
 
     await page.goto("/dashboard/user");
     await expect(page).toHaveURL("/dashboard/user", { timeout: 15000 });
@@ -127,7 +130,7 @@ test.describe("Story: Header E2E User Journeys", () => {
       .locator("a.nav-link.dropdown-toggle")
       .last();
     await expect(userMenuToggle).toBeVisible();
-    await expect(userMenuToggle).toContainText(userAuth.user.name);
+    await expect(userMenuToggle).toContainText("Ivan PW User");
 
     await userMenuToggle.click();
     await expect(
@@ -276,16 +279,15 @@ test.describe("Story: Header E2E User Journeys", () => {
     await expect(page).toHaveURL("/categories");
   });
 
-  test("authenticated user: Header user dropdown -> dashboard -> orders", async ({
+  test("authenticated user: Login -> Header user dropdown -> dashboard -> orders", async ({
     page,
   }) => {
-    const userAuth = JSON.parse(process.env.USER_AUTH);
-    await injectAuth(page, userAuth);
+    await loginViaUI(page, "ivan.playwright.user@test.com", "Test@12345");
 
     await page.goto("/dashboard/user");
     await expect(page).toHaveURL("/dashboard/user", { timeout: 15000 });
     await expect(
-      page.getByRole("heading", { name: userAuth.user.name }),
+      page.getByRole("heading", { name: "Ivan PW User" }),
     ).toBeVisible({
       timeout: 15000,
     });
@@ -305,11 +307,10 @@ test.describe("Story: Header E2E User Journeys", () => {
     );
   });
 
-  test("authenticated admin: Header user dropdown -> dashboard -> manage category", async ({
+  test("authenticated admin: Login -> Header user dropdown -> dashboard -> manage category", async ({
     page,
   }) => {
-    const adminAuth = JSON.parse(process.env.ADMIN_AUTH);
-    await injectAuth(page, adminAuth);
+    await loginViaUI(page, "ivan.playwright.admin@test.com", "Test@12345");
 
     await page.goto("/dashboard/admin");
     await expect(page).toHaveURL("/dashboard/admin", { timeout: 15000 });
@@ -332,11 +333,10 @@ test.describe("Story: Header E2E User Journeys", () => {
     ).toBeVisible({ timeout: 15000 });
   });
 
-  test("authenticated user: Header logout -> guest nav restored", async ({
+  test("authenticated user: Login -> Header logout -> guest nav restored", async ({
     page,
   }) => {
-    const userAuth = JSON.parse(process.env.USER_AUTH);
-    await injectAuth(page, userAuth);
+    await loginViaUI(page, "ivan.playwright.user@test.com", "Test@12345");
 
     await page.goto("/dashboard/user");
     await expect(page).toHaveURL("/dashboard/user", { timeout: 15000 });

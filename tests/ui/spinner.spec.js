@@ -91,13 +91,11 @@ test.describe("Story: Spinner Component E2E Journeys", () => {
   test("guest deep-link to admin, login as regular user, and get blocked again by spinner", async ({
     page,
   }) => {
-    const userAuth = JSON.parse(process.env.USER_AUTH);
-
     await page.goto("/dashboard/admin");
     await expectSpinnerVisible(page);
     await expect(page).toHaveURL(/\/login/, { timeout: 10000 });
 
-    await loginWithCredentials(page, userAuth.user.email);
+    await loginWithCredentials(page, "ivan.playwright.user@test.com");
 
     await expect(page).toHaveURL(/\/dashboard\/admin/, { timeout: 10000 });
     await expectSpinnerVisible(page);
@@ -107,14 +105,12 @@ test.describe("Story: Spinner Component E2E Journeys", () => {
   test("guest redirected home from private route can login and continue to user orders", async ({
     page,
   }) => {
-    const userAuth = JSON.parse(process.env.USER_AUTH);
-
     await page.goto("/dashboard/user/orders");
     await expectSpinnerVisible(page);
     await expect(page).toHaveURL(/\/$/, { timeout: 10000 });
 
     await page.getByRole("link", { name: "Login" }).click();
-    await loginWithCredentials(page, userAuth.user.email);
+    await loginWithCredentials(page, "ivan.playwright.user@test.com");
 
     await expect(page).toHaveURL("/");
     const userMenu = page.locator("a.nav-link.dropdown-toggle").last();
