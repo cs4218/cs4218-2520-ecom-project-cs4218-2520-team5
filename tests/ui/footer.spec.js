@@ -7,10 +7,14 @@ function footerLink(page, name) {
   return page.locator(".footer").getByRole("link", { name }).first();
 }
 
-async function injectAuth(page, authData) {
-  await page.addInitScript((auth) => {
-    localStorage.setItem("auth", JSON.stringify(auth));
-  }, authData);
+async function loginViaUI(page, email, password) {
+  await page.goto("/login");
+  await expect(page.getByRole("heading", { name: "LOGIN FORM" })).toBeVisible();
+  await page.getByRole("textbox", { name: "Enter Your Email" }).fill(email);
+  await page.getByRole("textbox", { name: "Enter Your Password" }).fill(password);
+  await page.getByRole("button", { name: "LOGIN" }).click();
+  // Wait for successful login redirect
+  await expect(page).not.toHaveURL("/login", { timeout: 15000 });
 }
 
 async function expectFooterVisible(page) {
@@ -253,16 +257,15 @@ test.describe("Story: Footer E2E User Journeys", () => {
     await expectAboutCoreContent(page);
   });
 
-  test("authenticated user continuity: Dashboard -> Footer Policy -> Orders", async ({
+  test("authenticated user continuity: Login -> Dashboard -> Footer Policy -> Orders", async ({
     page,
   }) => {
-    const userAuth = JSON.parse(process.env.USER_AUTH);
-    await injectAuth(page, userAuth);
+    await loginViaUI(page, "ivan.playwright.user@test.com", "Test@12345");
 
     await page.goto("/dashboard/user");
     await expect(page).toHaveURL("/dashboard/user");
     await expect(
-      page.getByRole("heading", { name: userAuth.user.name }),
+      page.getByRole("heading", { name: "Ivan PW User" }),
     ).toBeVisible({
       timeout: 15000,
     });
@@ -279,11 +282,10 @@ test.describe("Story: Footer E2E User Journeys", () => {
     );
   });
 
-  test("admin continuity: Admin Dashboard -> Footer Contact -> Manage Category", async ({
+  test("admin continuity: Login -> Admin Dashboard -> Footer Contact -> Manage Category", async ({
     page,
   }) => {
-    const adminAuth = JSON.parse(process.env.ADMIN_AUTH);
-    await injectAuth(page, adminAuth);
+    await loginViaUI(page, "ivan.playwright.admin@test.com", "Test@12345");
 
     await page.goto("/dashboard/admin");
     await expect(page).toHaveURL("/dashboard/admin");

@@ -3,10 +3,14 @@
 
 import { test, expect } from "@playwright/test";
 
-async function injectAuth(page, authData) {
-  await page.addInitScript((auth) => {
-    localStorage.setItem("auth", JSON.stringify(auth));
-  }, authData);
+async function loginViaUI(page, email, password) {
+  await page.goto("/login");
+  await expect(page.getByRole("heading", { name: "LOGIN FORM" })).toBeVisible();
+  await page.getByRole("textbox", { name: "Enter Your Email" }).fill(email);
+  await page.getByRole("textbox", { name: "Enter Your Password" }).fill(password);
+  await page.getByRole("button", { name: "LOGIN" }).click();
+  // Wait for successful login redirect
+  await expect(page).not.toHaveURL("/login", { timeout: 15000 });
 }
 
 async function expectAboutCoreContent(page) {
@@ -186,16 +190,15 @@ test.describe("Story: About Page E2E Journeys", () => {
     ).toBeVisible();
   });
 
-  test("authenticated user continuity: Dashboard -> About -> Orders", async ({
+  test("authenticated user continuity: Login -> Dashboard -> About -> Orders", async ({
     page,
   }) => {
-    const userAuth = JSON.parse(process.env.USER_AUTH);
-    await injectAuth(page, userAuth);
+    await loginViaUI(page, "ivan.playwright.user@test.com", "Test@12345");
 
     await page.goto("/dashboard/user");
     await expect(page).toHaveURL("/dashboard/user");
     await expect(
-      page.getByRole("heading", { name: userAuth.user.name }),
+      page.getByRole("heading", { name: "Ivan PW User" }),
     ).toBeVisible({
       timeout: 15000,
     });
@@ -212,11 +215,10 @@ test.describe("Story: About Page E2E Journeys", () => {
     );
   });
 
-  test("admin continuity: Admin Dashboard -> About -> Manage Category", async ({
+  test("admin continuity: Login -> Admin Dashboard -> About -> Manage Category", async ({
     page,
   }) => {
-    const adminAuth = JSON.parse(process.env.ADMIN_AUTH);
-    await injectAuth(page, adminAuth);
+    await loginViaUI(page, "ivan.playwright.admin@test.com", "Test@12345");
 
     await page.goto("/dashboard/admin");
     await expect(page).toHaveURL("/dashboard/admin");
