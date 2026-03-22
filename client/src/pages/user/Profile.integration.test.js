@@ -118,8 +118,15 @@ describe("Profile frontend integration flow", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     localStorage.clear();
+    jest.spyOn(console, "log").mockImplementation(() => {});
+    jest.spyOn(console, "warn").mockImplementation(() => {});
+    jest.spyOn(console, "error").mockImplementation(() => {});
 
     localStorage.setItem("auth", JSON.stringify(buildAuthState()));
+  });
+
+  afterEach(() => {
+    jest.restoreAllMocks();
   });
 
   it("pre-fills Profile fields from real auth context and keeps email disabled", async () => {
