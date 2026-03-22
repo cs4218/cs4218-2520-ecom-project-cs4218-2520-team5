@@ -616,3 +616,77 @@ Approach: integrate **real** `AuthProvider` / `CartProvider` / `SearchProvider`,
 - **With Ivan:** base `testMatch` for `tests/integration/*.test.js` (e.g. category API tests, `mongodb-memory-server`)
 - **Added:** `projects` for **`frontend-integration`** (`client/src/**/*.integration.test.js`, jsdom + Babel) and **`backend-integration`** (`controllers/*.integration.test.js`, `middlewares/*.integration.test.js`, `*.supertest.integration.test.js`, node environment)
 - **Run:** `npm run test:integration` — Supertest auth suite needs valid Mongo URI in `.env` / `.env.example` (`MONGO_URL` or `MONGO_URL_TEST`)
+
+### 7.3 Koo Zhuo Hui (A0253417H)
+### 7.3.1 UI Testing
+| Rubric story | Playwright `test.describe` | What the user does (black-box) |
+|--------------|----------------------------|--------------------------------|
+| E2E Payment (Logged In), User Search   | searchToCheckout.spec.js | Authenticated user searches for a product, adds products to cart, and navigates to cart, and makes payment |
+| Failed Payment | negativeTestPayment.spec.js | Unauthenticated user adds a product, and attempts to checkout. Logs in and provides invalid payment credentials, get prompted with invalid card details |
+| Failed Search, No Related Products | searchNoResults.spec.js | Users searches for an invalid product, and gets prompted to 'No Resuls Found'. Test scenario includes page rendering product(s) with no related products |
+| Product Details | searchProductDetails.spec.js | User navigates to the product details page of a product. And clicks on 'More Details' of a product, and clicks 'Add to Cart' from the Product Details page. Followed by removal of items in the Checkout page |
+
+### 7.3.2 Ingration Testing
+## Overview
+
+A bottom-up integration testing strategy was adopted across three test files, covering both
+backend (Node.js/Express) and frontend (React) layers. External dependencies such as the
+Braintree gateway, Mongoose models, Axios, and React Router were mocked at the outermost
+boundary, while all internal component interactions were tested with real implementations.
+
+Test cases were derived using Equivalence Partitioning (EP), Boundary Value Analysis (BVA),
+State-based testing, and Communication-based testing (mock verification)
+
+## Test Files
+
+### 1. `braintreeIntegration.test.js` — Backend (20 tests)
+Tests `braintreeTokenController` and `brainTreePaymentController` against mocked Braintree
+gateway and `orderModel`.
+
+| Describe Block | Tests | Techniques |
+|---|---|---|
+| Token generation | 3 | State-based |
+| Input validation (nonce, cart) | 7 | EP, BVA |
+| Cart total calculation | 4 | BVA |
+| Gateway & OrderModel integration | 5 | Communication-based, State-based |
+| Payment gateway options | 1 | Communication-based |
+
+### 2. `productDetailsIntegration.test.js` — Frontend (29 tests)
+Bottom-up across 5 layers: `CartContext` → `useParams`/Axios → chained API → related
+products rendering → `CartContext` write-back.
+
+| Describe Block | Tests | Techniques |
+|---|---|---|
+| `getProduct` API call & product field rendering | 10 | EP, State-based, Communication-based |
+| Chained `getProduct` → `getSimilarProduct` | 3 | Communication-based, State-based |
+| Related products count (BVA: 0, 1, 2) | 3 | BVA |
+| Related product card fields & navigation | 5 | State-based, Communication-based |
+| Description truncation at 60 chars (BVA) | 3 | BVA |
+| ADD TO CART ↔ CartContext | 5 | State-based, Communication-based |
+
+### 3. `searchIntegration.test.js` — Frontend (31 tests)
+Bottom-up across 5 layers: `SearchContext` → `SearchInput`+context → `Search` page+context
+→ full pipeline → `CartContext`. 
+
+  &nbsp;&nbsp;&nbsp;&nbsp; 3.1 SearchContext & SearchInput Integration (13 tests)
+  
+  Tested the search input with edge cases like empty keywords,alphanumeric keytwords, special chars. Applied BVA techniques to test API calls, tested the success
+and failure of API calls, and the return of the result(s) of getProduct API.
+
+  &nbsp;&nbsp;&nbsp;&nbsp;  3.2 Search Context & Search Page Integration (11 tests)
+
+For Search page, tests were generated using EP technique
+to verify product description is truncated properly, and product fields such as name, price, and image was rendered from the API result. Test if page correct renders the number of products found at various levels (0/1/>1).
+
+  &nbsp;&nbsp;&nbsp;&nbsp; 3.3 Full Pipeline: SearchInput → API → SearchContext → Search (4 tests)
+
+  Tested all 3 components in totality, which included successful and unsuccessful searching of products, API call errors and handling.
+
+  &nbsp;&nbsp;&nbsp;&nbsp; 3.4 Search Page ↔ CartContext (4 tests)
+
+Verified functionality of 'Add To Cart' in the Search page to properly verify functionality across the CartContext, which includes correct addition of products to the context itself, and localStorage.
+For example, add 1 item to initially empty cart, add 1 item to existing cart, and add 2 differnt items to cart etc. Other tests includes accurate page navigation to the product site when enters a search.
+
+
+
+
