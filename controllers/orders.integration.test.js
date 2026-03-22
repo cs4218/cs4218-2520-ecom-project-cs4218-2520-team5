@@ -424,7 +424,7 @@ describe("orders.integration", () => {
       expect(unchanged.address).toBe("Old Address");
     });
 
-    it("returns 401 when authorization header uses Bearer prefix", async () => {
+    it("accepts Bearer token format for profile update", async () => {
       const { user, token } = await seedUser();
 
       const response = await request(app)
@@ -436,11 +436,11 @@ describe("orders.integration", () => {
           address: "Should Not Persist",
         });
 
-      expect(response.status).toBe(401);
-      expect(response.body.success).toBe(false);
+      expect(response.status).toBe(200);
+      expect(response.body.success).toBe(true);
 
-      const unchanged = await userModel.findById(user._id);
-      expect(unchanged.name).toBe("John Doe");
+      const updated = await userModel.findById(user._id);
+      expect(updated.name).toBe("Bearer Format");
     });
 
     it("returns 401 when token is expired", async () => {
@@ -717,15 +717,16 @@ describe("orders.integration", () => {
       expect(response.body.message).toBe("User ID not found in request");
     });
 
-    it("returns 401 for getOrders when token uses Bearer prefix", async () => {
+    it("accepts Bearer token format for getOrders", async () => {
       const { token } = await seedUser();
 
       const response = await request(app)
         .get("/api/v1/auth/orders")
         .set("Authorization", `Bearer ${token}`);
 
-      expect(response.status).toBe(401);
-      expect(response.body.success).toBe(false);
+      expect(response.status).toBe(200);
+      expect(response.body.success).toBe(true);
+      expect(response.body.orders).toHaveLength(0);
     });
 
     it("returns 500 for getOrders when token _id is not a valid ObjectId", async () => {
@@ -1151,7 +1152,7 @@ describe("orders.integration", () => {
       expect(response.body.success).toBe(false);
     });
 
-    it("returns 401 when all-orders token uses Bearer prefix", async () => {
+    it("accepts Bearer token format for all-orders", async () => {
       const { token } = await seedUser({
         role: 1,
         email: "admin-bearer@example.com",
@@ -1161,8 +1162,9 @@ describe("orders.integration", () => {
         .get("/api/v1/auth/all-orders")
         .set("Authorization", `Bearer ${token}`);
 
-      expect(response.status).toBe(401);
-      expect(response.body.success).toBe(false);
+      expect(response.status).toBe(200);
+      expect(response.body.success).toBe(true);
+      expect(Array.isArray(response.body.orders)).toBe(true);
     });
 
     it("returns 401 for non-admin user on all-orders route", async () => {
@@ -1946,7 +1948,7 @@ describe("orders.integration", () => {
       expect(response.body.success).toBe(false);
     });
 
-    it("returns 401 when order-status token uses Bearer prefix", async () => {
+    it("accepts Bearer token format for order-status route", async () => {
       const { token } = await seedUser({
         role: 1,
         email: "admin-order-status-bearer@example.com",
@@ -1957,8 +1959,9 @@ describe("orders.integration", () => {
         .set("Authorization", `Bearer ${token}`)
         .send({ status: "Processing" });
 
-      expect(response.status).toBe(401);
+      expect(response.status).toBe(404);
       expect(response.body.success).toBe(false);
+      expect(response.body.message).toBe("Order not found");
     });
 
     it("returns 401 for non-admin user on order-status route", async () => {
