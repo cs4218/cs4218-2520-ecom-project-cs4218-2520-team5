@@ -1,5 +1,7 @@
-// Ivan Ang, A0259256U
-// Assisted with AI
+// MS2 — Jest config for frontend + backend integration tests
+// Written by: Ong Xin Hui Lynnette, A0257058X; Ivan Ang, A0259256U
+// Assisted by AI
+
 export default {
   transform: {},
   displayName: "integration",

@@ -1,5 +1,6 @@
 // Test cases written by: Ong Xin Hui Lynnette, A0257058X
 // Assisted by AI
+// MS1: primary unit tests for Register. MS2: refactored/split success-path tests; end-to-end integration for Register is in Register.integration.test.js.
 import React from "react";
 import { render, fireEvent, waitFor } from "@testing-library/react";
 import axios from "axios";

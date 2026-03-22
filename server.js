@@ -1,3 +1,7 @@
+// MS2 — server entry refactored to use app.js
+// Written by: Ong Xin Hui Lynnette, A0257058X
+// Assisted by AI
+
 import colors from "colors";
 import dotenv from "dotenv";
 import connectDB from "./config/db.js";

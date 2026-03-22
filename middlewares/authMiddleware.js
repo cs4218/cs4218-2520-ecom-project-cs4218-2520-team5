@@ -1,3 +1,7 @@
+// MS2 — requireSignIn: 401 responses, optional Bearer prefix
+// Written by: Ong Xin Hui Lynnette, A0257058X
+// Assisted by AI
+
 import JWT from "jsonwebtoken";
 import userModel from "../models/userModel.js";
 

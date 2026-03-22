@@ -1,5 +1,6 @@
 // Test cases written by: Ong Xin Hui Lynnette, A0257058X
 // Assisted by AI
+// MS1: primary unit tests for PrivateRoute (mocked useAuth/Spinner). MS2: added axios failure case for 401; integration-style coverage is in Private.integration.test.js.
 import React from "react";
 import { render, waitFor } from "@testing-library/react";
 import { MemoryRouter, Routes, Route } from "react-router-dom";

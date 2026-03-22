@@ -1,3 +1,7 @@
+// MS2 — MongoDB test DB helpers for Supertest integration
+// Written by: Ong Xin Hui Lynnette, A0257058X
+// Assisted by AI
+
 /**
  * MongoDB helpers for backend integration tests (Supertest + real persistence).
  *

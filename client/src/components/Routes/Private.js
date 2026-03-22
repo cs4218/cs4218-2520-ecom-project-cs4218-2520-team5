@@ -1,3 +1,7 @@
+// MS2 — PrivateRoute: handle axios failures (e.g. 401) from user-auth
+// Written by: Ong Xin Hui Lynnette, A0257058X
+// Assisted by AI
+
 import React, { useState,useEffect } from "react";
 import { useAuth } from "../../context/auth";
 import { Outlet } from "react-router-dom";

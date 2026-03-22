@@ -1,3 +1,7 @@
+// MS2 — Express app extraction for Supertest integration
+// Written by: Ong Xin Hui Lynnette, A0257058X
+// Assisted by AI
+
 import express from "express";
 import cors from "cors";
 import morgan from "morgan";

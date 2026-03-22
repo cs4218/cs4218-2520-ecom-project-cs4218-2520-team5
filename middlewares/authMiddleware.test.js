@@ -1,5 +1,6 @@
 // Test cases written by: Ong Xin Hui Lynnette, A0257058X
 // Assisted by AI
+// MS1: primary unit tests for auth middleware (mocked JWT). MS2: updated/added cases for requireSignIn 401/Bearer; complements authMiddleware.integration.test.js and Supertest user-auth tests.
 import { jest, describe, it, expect, beforeEach, afterEach } from "@jest/globals";
 
 const mockVerify = jest.fn();

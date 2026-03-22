@@ -1,3 +1,6 @@
+// MS2 Test cases written by: Ong Xin Hui Lynnette, A0257058X
+// Assisted by AI
+
 /**
  * INTEGRATION TEST: Registration Workflow (Frontend)
  *
