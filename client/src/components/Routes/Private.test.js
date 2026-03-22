@@ -1,5 +1,6 @@
 // Test cases written by: Ong Xin Hui Lynnette, A0257058X
 // Assisted by AI
+// MS1: primary unit tests for PrivateRoute (mocked useAuth/Spinner). MS2: added axios failure case for 401; integration-style coverage is in Private.integration.test.js.
 import React from "react";
 import { render, waitFor } from "@testing-library/react";
 import { MemoryRouter, Routes, Route } from "react-router-dom";
@@ -78,6 +79,18 @@ describe("PrivateRoute Component", () => {
   it("should render the spinner when the API rejects authorization", async () => {
     useAuth.mockReturnValue([{ token: "valid-token" }, jest.fn()]);
     axios.get.mockResolvedValue({ data: { ok: false } });
+
+    const { getByTestId } = renderPrivateRoute();
+
+    await waitFor(() => {
+      expect(axios.get).toHaveBeenCalledWith("/api/v1/auth/user-auth");
+    });
+    expect(getByTestId("spinner")).toBeInTheDocument();
+  });
+
+  it("should render the spinner when the API fails (e.g. 401 Unauthorized)", async () => {
+    useAuth.mockReturnValue([{ token: "valid-token" }, jest.fn()]);
+    axios.get.mockRejectedValue(new Error("Request failed with status code 401"));
 
     const { getByTestId } = renderPrivateRoute();
 

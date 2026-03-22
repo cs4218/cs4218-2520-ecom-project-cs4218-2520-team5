@@ -1,13 +1,16 @@
-import express from "express";
+// MS2 — server entry refactored to use app.js
+// Written by: Ong Xin Hui Lynnette, A0257058X
+// Assisted by AI
+
 import colors from "colors";
 import dotenv from "dotenv";
-import morgan from "morgan";
 import connectDB from "./config/db.js";
 import authRoutes from './routes/authRoute.js'
 import categoryRoutes from './routes/categoryRoutes.js'
 import productRoutes from './routes/productRoutes.js'
 import testRoutes from './routes/testRoutes.js'
 import cors from "cors";
+import app from "./app.js";
 
 // configure env
 dotenv.config();
@@ -37,5 +40,7 @@ app.get('/', (req,res) => {
 const PORT = process.env.PORT || 6060;
 
 app.listen(PORT, () => {
-    console.log(`Server running on ${process.env.DEV_MODE} mode on ${PORT}`.bgCyan.white);
+  console.log(
+    `Server running on ${process.env.DEV_MODE} mode on ${PORT}`.bgCyan.white
+  );
 });

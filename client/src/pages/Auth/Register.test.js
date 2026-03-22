@@ -1,5 +1,6 @@
 // Test cases written by: Ong Xin Hui Lynnette, A0257058X
 // Assisted by AI
+// MS1: primary unit tests for Register. MS2: refactored/split success-path tests; end-to-end integration for Register is in Register.integration.test.js.
 import React from "react";
 import { render, fireEvent, waitFor } from "@testing-library/react";
 import axios from "axios";
@@ -142,14 +143,20 @@ describe("Register Component", () => {
     );
   });
 
-  it("should register the user successfully and navigate to login", async () => {
+  const submitRegisterForm = async () => {
     axios.post.mockResolvedValueOnce({ data: { success: true } });
-    const { getByPlaceholderText, getByText } = renderRegister();
+    const result = renderRegister();
 
-    fillForm(getByPlaceholderText);
-    fireEvent.click(getByText("REGISTER"));
+    fillForm(result.getByPlaceholderText);
+    fireEvent.click(result.getByText("REGISTER"));
 
     await waitFor(() => expect(axios.post).toHaveBeenCalled());
+    return result;
+  };
+
+  it("should call the register API with the correct payload", async () => {
+    await submitRegisterForm();
+
     expect(axios.post).toHaveBeenCalledWith("/api/v1/auth/register", {
       name: "John Doe",
       email: "john@example.com",
@@ -159,9 +166,22 @@ describe("Register Component", () => {
       DOB: "2000-01-01",
       answer: "Football",
     });
+  });
+
+  it("should show a success toast on successful registration", async () => {
+    await submitRegisterForm();
+
     expect(toast.success).toHaveBeenCalledWith(
       "Register Successfully, please login"
     );
+  });
+
+  it("should navigate to the login page on successful registration", async () => {
+    const { getByText } = await submitRegisterForm();
+
+    await waitFor(() => {
+      expect(getByText("Login Page")).toBeInTheDocument();
+    });
   });
 
   it("should show error toast when server returns success false", async () => {
