@@ -1,0 +1,449 @@
+{
+  "name": "cs4218 AI Test Generator (Person 3)",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## Person 3 — AI Test Generation\nAng Yi Jie, Ivan, A0259256U\n\nReceives coverage gap data from Person 2 (Repo Loader + Coverage Analysis).\nFor each file with missing/low coverage:\n  1. Fetch source from GitHub\n  2. Generate Jest tests via OpenAI (MS1)\n  3. Format test file [Code Node]\n  4. Generate edge cases via OpenAI (MS2)\n  5. Merge + validate schema [Code Node]\n  6. Push to GitHub branch",
+        "height": 200,
+        "width": 3400,
+        "color": 3
+      },
+      "id": "sticky-header",
+      "name": "Header Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [-60, 80]
+    },
+    {
+      "parameters": {
+        "content": "## Person 3 MS1\nAI Generation Node\n+\nCode Node (Format Test File)",
+        "height": 380,
+        "width": 480,
+        "color": 5
+      },
+      "id": "sticky-ms1",
+      "name": "MS1 Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [980, 280]
+    },
+    {
+      "parameters": {
+        "content": "## Person 3 MS2\nEdge Case Generation\n+\nCode Node (Validate Schema)",
+        "height": 380,
+        "width": 480,
+        "color": 6
+      },
+      "id": "sticky-ms2",
+      "name": "MS2 Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [1700, 280]
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "ai-test-generator",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "node-webhook",
+      "name": "Webhook (from Person 2)",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [-40, 440],
+      "webhookId": "ai-test-generator-webhook",
+      "notes": "Receives Person 2's Rule based filter output.\nExpected body: { valid_files, rejected_missing_tests, removed_low_coverage }"
+    },
+    {
+      "parameters": {},
+      "id": "node-manual-trigger",
+      "name": "Manual Trigger (Test Only)",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [-40, 600]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "mock-valid",
+              "name": "valid_files",
+              "value": "=[{ \"file\": \"controllers/categoryController.js\", \"avgCoverage\": 88 }]",
+              "type": "array"
+            },
+            {
+              "id": "mock-missing",
+              "name": "rejected_missing_tests",
+              "value": "=[\"controllers/productController.js\"]",
+              "type": "array"
+            },
+            {
+              "id": "mock-removed",
+              "name": "removed_low_coverage",
+              "value": "=[]",
+              "type": "array"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "node-mock-input",
+      "name": "Mock Person 2 Output (Testing)",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [160, 600]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Ang Yi Jie, Ivan, A0259256U\n// Prioritise Files Node:\n// Merges Person 2's output into a single prioritised list.\n// Priority order:\n//   1. rejected_missing_tests (0% coverage) — highest value\n//   2. valid_files below 100% sorted by avgCoverage ascending\n//\n// Input (from Person 2 Rule based filter OR webhook body):\n//   { valid_files: [{file, avgCoverage}], rejected_missing_tests: [string], removed_low_coverage: [...] }\n//\n// Config — edit these:\nconst GITHUB_OWNER = 'cs4218';\nconst GITHUB_REPO = 'cs4218-2520-ecom-project-cs4218-2520-team5';\nconst GITHUB_BRANCH = 'ivan1/ai-testing';\nconst MAX_FILES = 5;  // cap to avoid exceeding OpenAI token budget per run\n\nlet input;\nif ($input.first().json.body) {\n  // Came from Webhook node — body is nested under .body\n  input = $input.first().json.body;\n} else {\n  // Came from Manual Trigger mock\n  input = $input.first().json;\n}\n\nconst missingTests = (input.rejected_missing_tests || []).map(file => ({\n  file: typeof file === 'string' ? file : file.file,\n  avgCoverage: 0,\n  priority: 'missing',\n}));\n\nconst validFiles = (input.valid_files || []).map(f => ({\n  file: f.file,\n  avgCoverage: f.avgCoverage,\n  priority: 'low_coverage',\n}));\n\n// Sort low_coverage ascending (worst first)\nvalidFiles.sort((a, b) => a.avgCoverage - b.avgCoverage);\n\n// missing first, then low_coverage\nconst allFiles = [...missingTests, ...validFiles].slice(0, MAX_FILES);\n\nif (allFiles.length === 0) {\n  throw new Error('No files to generate tests for. Person 2 output had empty valid_files and rejected_missing_tests.');\n}\n\nreturn allFiles.map(f => ({\n  json: {\n    ...f,\n    owner: GITHUB_OWNER,\n    repo: GITHUB_REPO,\n    branch: GITHUB_BRANCH,\n    testOutputPath: 'tests/integration/' + f.file.split('/').pop().replace('.js', '') + '.ai-generated.test.js',\n  }\n}));"
+      },
+      "id": "node-prioritise",
+      "name": "Prioritise Files",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [360, 500]
+    },
+    {
+      "parameters": {
+        "batchSize": 1,
+        "options": {}
+      },
+      "id": "node-loop",
+      "name": "Loop Through Files",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [560, 500]
+    },
+    {
+      "parameters": {
+        "url": "=https://api.github.com/repos/{{ $json.owner }}/{{ $json.repo }}/contents/{{ $json.file }}?ref={{ $json.branch }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBearerAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Accept", "value": "application/vnd.github+json" },
+            { "name": "X-GitHub-Api-Version", "value": "2022-11-28" }
+          ]
+        },
+        "options": {}
+      },
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "TEnpyH2wW306jWY2",
+          "name": "Bearer Auth account"
+        }
+      },
+      "id": "node-fetch-source",
+      "name": "Fetch Source File",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [760, 500]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Ang Yi Jie, Ivan, A0259256U\n// Build Prompt Node (MS1): assemble the OpenAI chat prompt.\n// Decodes the GitHub API base64 response and injects it into the prompt template.\n\nconst fileData = $input.first().json;\nconst loopItem = $('Loop Through Files').item.json;\n\n// Decode base64 source file\nlet sourceCode;\ntry {\n  sourceCode = Buffer.from(fileData.content, 'base64').toString('utf-8');\n} catch (e) {\n  throw new Error(`Failed to decode source for ${loopItem.file}: ${e.message}`);\n}\n\nconst systemPrompt = `You are an expert software engineer writing Jest integration tests for a MERN stack e-commerce application (Virtual Vault).\n\nStack: Node.js, Express, Mongoose, MongoDB.\nTest framework: Jest 29 with Babel (ESM via --experimental-vm-modules).\nIntegration test stack: MongoMemoryServer, Supertest, real Express routes, real Mongoose models.\n\nRules:\n- Do NOT mock the controller or model layer under test.\n- Only replace external dependencies: MongoDB → MongoMemoryServer, Braintree → jest.fn().\n- Use ES module syntax (import/export). No require().\n- Every test() must have at least one expect() assertion.\n- Group tests in describe() blocks by function name.\n- Start the file with exactly: // Ang Yi Jie, Ivan, A0259256U — AI-generated (MS1)\n- Return ONLY the test file code inside a single \\`\\`\\`javascript ... \\`\\`\\` code block.`;\n\nconst userPrompt = `File to test: ${loopItem.file}\nCurrent coverage: ${loopItem.avgCoverage}% (priority: ${loopItem.priority})\n\nSOURCE CODE:\n\\`\\`\\`javascript\n${sourceCode}\n\\`\\`\\`\n\nWrite complete Jest integration tests covering all exported functions.\nFor each controller function write at minimum:\n  1. Happy path (valid inputs, expect 200/success)\n  2. Missing required field (expect 400/error)\n  3. Not found case where applicable (expect 404)\n\nUse this setup pattern:\n\\`\\`\\`javascript\nimport { MongoMemoryServer } from 'mongodb-memory-server';\nimport mongoose from 'mongoose';\nimport request from 'supertest';\nimport jwt from 'jsonwebtoken';\nimport express from 'express';\n// ... routes and models\n\nlet mongoServer, app;\nbeforeAll(async () => {\n  process.env.JWT_SECRET = 'testsecret';\n  mongoServer = await MongoMemoryServer.create();\n  await mongoose.connect(mongoServer.getUri());\n  app = express();\n  app.use(express.json());\n  app.use('/api/v1/...', routes);\n});\nafterAll(async () => { await mongoose.disconnect(); await mongoServer.stop(); });\naftereEach(async () => { await SomeModel.deleteMany({}); });\n\\`\\`\\`\n\nGenerate the complete test file now:`;\n\nreturn [{\n  json: {\n    file: loopItem.file,\n    avgCoverage: loopItem.avgCoverage,\n    priority: loopItem.priority,\n    owner: loopItem.owner,\n    repo: loopItem.repo,\n    branch: loopItem.branch,\n    testOutputPath: loopItem.testOutputPath,\n    sourceCode,\n    systemPrompt,\n    userPrompt,\n  }\n}];"
+      },
+      "id": "node-build-prompt",
+      "name": "Build Prompt",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [960, 500]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.openai.com/v1/chat/completions",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBearerAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={{ JSON.stringify({ model: 'gpt-4o', max_tokens: 4096, temperature: 0.2, messages: [{ role: 'system', content: $json.systemPrompt }, { role: 'user', content: $json.userPrompt }] }) }}",
+        "options": {}
+      },
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "openai-bearer",
+          "name": "OpenAI Bearer Token"
+        }
+      },
+      "id": "node-generate-tests",
+      "name": "Generate Unit Tests (GPT-4o)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [1160, 500],
+      "notes": "Person 3 — AI Generation Node (MS1). Calls OpenAI GPT-4o."
+    },
+    {
+      "parameters": {
+        "jsCode": "// Ang Yi Jie, Ivan, A0259256U\n// Format Test File — Code Node (MS1)\n// Person 3's primary MS1 deliverable.\n//\n// Input: OpenAI chat completion response\n// Output: { formattedTestFile, filename, sourceFile, linesOfCode, generatedAt }\n//\n// Steps:\n//   1. Extract text from OpenAI response (choices[0].message.content)\n//   2. Pull out the ```javascript ... ``` code block\n//   3. Enforce author comment at top of file\n//   4. Normalise line endings and strip trailing whitespace\n//   5. Derive output filename\n\nconst response = $input.first().json;\nconst buildData = $('Build Prompt').item.json;\n\n// Step 1: Extract content from OpenAI response\nlet rawText = '';\nif (response.choices && Array.isArray(response.choices)) {\n  rawText = response.choices[0]?.message?.content || '';\n} else if (typeof response === 'string') {\n  rawText = response;\n}\n\nif (!rawText) {\n  throw new Error(`OpenAI returned empty content for ${buildData.file}. Check API key and prompt.`);\n}\n\n// Step 2: Extract code block  (```javascript ... ``` or ``` ... ```)\nconst codeBlockRegex = /```(?:javascript|js)?\\n([\\s\\S]*?)```/;\nconst match = rawText.match(codeBlockRegex);\nlet testCode = match ? match[1].trim() : rawText.trim();\n\nif (!testCode) {\n  throw new Error('Could not extract code from OpenAI response.');\n}\n\n// Step 3: Enforce author comment\nconst authorLine = '// Ang Yi Jie, Ivan, A0259256U';\nconst generatedMarker = '— AI-generated (MS1)';\n\nif (!testCode.startsWith('//')) {\n  testCode = `${authorLine} ${generatedMarker}\\n${testCode}`;\n} else {\n  const firstLineEnd = testCode.indexOf('\\n');\n  const firstLine = firstLineEnd === -1 ? testCode : testCode.slice(0, firstLineEnd);\n  if (!firstLine.includes('A0259256U')) {\n    testCode = `${authorLine} ${generatedMarker}\\n` +\n      (firstLineEnd === -1 ? '' : testCode.slice(firstLineEnd + 1));\n  } else if (!firstLine.includes('AI-generated') && !firstLine.includes('Assisted with AI')) {\n    testCode = `${firstLine} ${generatedMarker}\\n` +\n      (firstLineEnd === -1 ? '' : testCode.slice(firstLineEnd + 1));\n  }\n}\n\n// Step 4: Normalise\ntestCode = testCode.replace(/\\r\\n/g, '\\n').replace(/\\r/g, '\\n');\ntestCode = testCode.split('\\n').map(l => l.trimEnd()).join('\\n');\ntestCode = testCode.replace(/\\n+$/, '') + '\\n';\n\n// Step 5: Derive filename\nconst filename = buildData.testOutputPath;\n\nreturn [{\n  json: {\n    formattedTestFile: testCode,\n    filename,\n    sourceFile: buildData.file,\n    owner: buildData.owner,\n    repo: buildData.repo,\n    branch: buildData.branch,\n    linesOfCode: testCode.split('\\n').length,\n    generatedAt: new Date().toISOString(),\n  }\n}];"
+      },
+      "id": "node-format-test",
+      "name": "Format Test File",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1360, 500],
+      "notes": "Person 3 — Code Node (Format Test File) MS1."
+    },
+    {
+      "parameters": {
+        "jsCode": "// Ang Yi Jie, Ivan, A0259256U\n// Build Edge Case Prompt (MS2)\n// Takes the MS1 formatted test file and asks OpenAI to add edge cases.\n\nconst formatted = $input.first().json;\n\nconst systemPrompt = `You are an expert software engineer specialising in edge-case and boundary testing for Node.js/Express APIs.`;\n\nconst userPrompt = `You have been given a Jest test file. Add a new describe block with edge-case tests.\n\nEXISTING TEST FILE:\n\\`\\`\\`javascript\n${formatted.formattedTestFile}\n\\`\\`\\`\n\nAdd tests for:\n1. BOUNDARY VALUES — empty string, null, undefined, 0, -1, very long strings for all fields.\n2. MISSING REQUIRED FIELDS — one missing field at a time, expect 4xx.\n3. INVALID TYPES — number where string expected, invalid ObjectId format.\n4. AUTH EDGE CASES — no Authorization header (401), expired JWT (401), user token on admin route (401/403).\n5. DUPLICATE HANDLING — create same resource twice, expect 400/409.\n\nRules:\n- Only ADD a new describe block — do NOT rewrite existing tests.\n- Every test() must have at least one expect().\n- Use the same imports already in the file.\n- Author comment for the new block: // Ang Yi Jie, Ivan, A0259256U — AI-generated edge cases (MS2)\n- Return ONLY the new describe block inside a \\`\\`\\`javascript ... \\`\\`\\` block.`;\n\nreturn [{\n  json: {\n    ...formatted,\n    edgeSystemPrompt: systemPrompt,\n    edgeUserPrompt: userPrompt,\n  }\n}];"
+      },
+      "id": "node-build-edge-prompt",
+      "name": "Build Edge Case Prompt",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1560, 340]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.openai.com/v1/chat/completions",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBearerAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={{ JSON.stringify({ model: 'gpt-4o', max_tokens: 2048, temperature: 0.2, messages: [{ role: 'system', content: $json.edgeSystemPrompt }, { role: 'user', content: $json.edgeUserPrompt }] }) }}",
+        "options": {}
+      },
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "openai-bearer",
+          "name": "OpenAI Bearer Token"
+        }
+      },
+      "id": "node-generate-edge",
+      "name": "Generate Edge Cases (GPT-4o)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [1760, 340],
+      "notes": "Person 3 — AI Generation Node (MS2). Edge cases via GPT-4o."
+    },
+    {
+      "parameters": {
+        "jsCode": "// Ang Yi Jie, Ivan, A0259256U\n// Merge Tests Node (MS2): append the edge-case describe block to the MS1 file.\n\nconst edgeResponse = $input.first().json;\nconst formatted = $('Build Edge Case Prompt').item.json;\n\n// Extract edge-case code block from OpenAI response\nlet edgeRaw = edgeResponse.choices?.[0]?.message?.content || '';\nconst codeBlockRegex = /```(?:javascript|js)?\\n([\\s\\S]*?)```/;\nconst match = edgeRaw.match(codeBlockRegex);\nconst edgeBlock = match ? match[1].trim() : edgeRaw.trim();\n\n// Append to MS1 file (fall back gracefully if edge gen failed)\nlet merged;\nif (edgeBlock) {\n  merged = `${formatted.formattedTestFile}\\n\\n// --- MS2: Edge Cases & Boundary Tests (AI-generated) ---\\n${edgeBlock}\\n`;\n} else {\n  merged = formatted.formattedTestFile;\n}\n\nreturn [{\n  json: {\n    ...formatted,\n    formattedTestFile: merged,\n    linesOfCode: merged.split('\\n').length,\n    hasEdgeCases: !!edgeBlock,\n  }\n}];"
+      },
+      "id": "node-merge",
+      "name": "Merge Tests",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1960, 500]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Ang Yi Jie, Ivan, A0259256U\n// Validate Test Schema — Code Node (MS2)\n// Person 3's primary MS2 deliverable.\n//\n// Schema rules:\n//   Rule 1 — Jest format required: describe() + test()/it() + expect()\n//   Rule 2 — No empty tests: every test body must have ≥1 expect()\n//   Rule 3 — Valid imports only: known packages or relative paths; no require()\n\nconst ALLOWED_PACKAGES = new Set([\n  'mongoose','express','jsonwebtoken','bcrypt','dotenv','slugify',\n  'express-formidable','braintree','cors','morgan',\n  'supertest','mongodb-memory-server','jest','@jest/globals',\n  'babel-jest','@babel/core','@babel/preset-env','@babel/preset-react',\n  'path','fs','crypto','util','os','http','https','stream','events',\n  'buffer','url','assert','child_process',\n]);\n\nconst item = $input.first().json;\nconst code = item.formattedTestFile;\n\nif (!code || typeof code !== 'string') {\n  return [{ json: { ...item, isValid: false, errors: ['formattedTestFile missing'], warnings: [], testCount: 0 } }];\n}\n\nconst errors = [];\nconst warnings = [];\n\n// Rule 1: Jest format\nif (!/describe\\s*\\(/.test(code))\n  errors.push('RULE1: No describe() block — Jest format required.');\nif (!/(?:^|\\s)(?:test|it)\\s*\\(/.test(code))\n  errors.push('RULE1: No test() or it() block — Jest format required.');\nif (!/expect\\s*\\(/.test(code))\n  errors.push('RULE1: No expect() call — tests must have assertions.');\n\n// Rule 2: No empty tests\nconst lines = code.split('\\n');\nlet inTest = false, depth = 0, body = [], testCount = 0, emptyCount = 0, testName = '', startLine = 0;\nfor (let i = 0; i < lines.length; i++) {\n  const ln = lines[i];\n  if (!inTest) {\n    const m = ln.match(/^\\s*(?:test|it)\\s*\\(\\s*(['\"` + '`' + `])(.*?)\\1/);\n    if (m) { testCount++; inTest = true; depth = 0; body = []; testName = m[2]; startLine = i + 1; }\n  }\n  if (inTest) {\n    for (const ch of ln) { if (ch==='{') depth++; if (ch==='}') { depth--; if(depth<0)depth=0; } }\n    body.push(ln);\n    if (/\\{/.test(body.join('')) && depth === 0) {\n      const full = body.join('\\n');\n      if (!/expect\\s*\\(|assert\\s*\\(/.test(full)) {\n        emptyCount++;\n        warnings.push(`RULE2: \"${testName}\" (line ${startLine}) has no assertions.`);\n      }\n      inTest = false; body = [];\n    }\n  }\n}\nif (emptyCount > 0)\n  errors.push(`RULE2: ${emptyCount} test(s) have no assertions — no empty tests allowed.`);\n\n// Rule 3: Valid imports\nif (/\\brequire\\s*\\(/.test(code))\n  errors.push('RULE3: require() found — project uses ESM (import/export only).');\nconst importRe = /^import\\s+.*?from\\s+['\"]([^'\"]+)['\"]/gm;\nlet m;\nwhile ((m = importRe.exec(code)) !== null) {\n  const pkg = m[1];\n  if (pkg.startsWith('.') || pkg.startsWith('/') || pkg.startsWith('node:')) continue;\n  const root = pkg.startsWith('@') ? pkg.split('/').slice(0,2).join('/') : pkg.split('/')[0];\n  if (!ALLOWED_PACKAGES.has(root))\n    warnings.push(`RULE3: Unknown import '${pkg}' — verify it exists in package.json.`);\n}\n\n// Quality checks\nif (!code.includes('A0259256U'))\n  warnings.push('QUALITY: Author comment missing or incomplete.');\nif (testCount < 3)\n  warnings.push(`QUALITY: Only ${testCount} test(s) — consider more coverage.`);\n\nreturn [{ json: {\n  ...item,\n  isValid: errors.length === 0,\n  errors,\n  warnings,\n  testCount,\n  schemaCheckedAt: new Date().toISOString(),\n} }];"
+      },
+      "id": "node-validate",
+      "name": "Validate Test Schema",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2160, 500],
+      "notes": "Person 3 — Code Node (Validate Schema) MS2. Rule 1: Jest format. Rule 2: No empty tests. Rule 3: Valid imports."
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict" },
+          "conditions": [
+            {
+              "id": "cond-valid",
+              "leftValue": "={{ $json.isValid }}",
+              "rightValue": true,
+              "operator": { "type": "boolean", "operation": "true" }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "node-if-valid",
+      "name": "Is Schema Valid?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [2360, 500]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Prepare GitHub PUT payload: base64-encode the test file content.\nconst item = $input.first().json;\nconst content = Buffer.from(item.formattedTestFile).toString('base64');\nreturn [{ json: {\n  ...item,\n  githubPutBody: {\n    message: `test: AI-generated Jest tests for ${item.sourceFile} [Person 3 MS1+MS2]`,\n    content,\n    branch: item.branch,\n  }\n} }];"
+      },
+      "id": "node-prep-push",
+      "name": "Prepare GitHub Push",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2560, 380]
+    },
+    {
+      "parameters": {
+        "method": "PUT",
+        "url": "=https://api.github.com/repos/{{ $json.owner }}/{{ $json.repo }}/contents/{{ $json.filename }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBearerAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Accept", "value": "application/vnd.github+json" },
+            { "name": "X-GitHub-Api-Version", "value": "2022-11-28" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={{ JSON.stringify($json.githubPutBody) }}",
+        "options": {}
+      },
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "TEnpyH2wW306jWY2",
+          "name": "Bearer Auth account"
+        }
+      },
+      "id": "node-push",
+      "name": "Push Test File to GitHub",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [2760, 380]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            { "id": "s1", "name": "status", "value": "success", "type": "string" },
+            { "id": "s2", "name": "file", "value": "={{ $('Validate Test Schema').item.json.filename }}", "type": "string" },
+            { "id": "s3", "name": "testCount", "value": "={{ $('Validate Test Schema').item.json.testCount }}", "type": "number" },
+            { "id": "s4", "name": "linesOfCode", "value": "={{ $('Validate Test Schema').item.json.linesOfCode }}", "type": "number" },
+            { "id": "s5", "name": "warnings", "value": "={{ $('Validate Test Schema').item.json.warnings }}", "type": "object" },
+            { "id": "s6", "name": "hasEdgeCases", "value": "={{ $('Merge Tests').item.json.hasEdgeCases }}", "type": "boolean" }
+          ]
+        },
+        "options": {}
+      },
+      "id": "node-success",
+      "name": "Success — Next File",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [2960, 380]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            { "id": "e1", "name": "status", "value": "schema_invalid", "type": "string" },
+            { "id": "e2", "name": "file", "value": "={{ $json.sourceFile }}", "type": "string" },
+            { "id": "e3", "name": "errors", "value": "={{ $json.errors }}", "type": "object" },
+            { "id": "e4", "name": "warnings", "value": "={{ $json.warnings }}", "type": "object" },
+            { "id": "e5", "name": "generatedCode", "value": "={{ $json.formattedTestFile }}", "type": "string" }
+          ]
+        },
+        "options": {}
+      },
+      "id": "node-error",
+      "name": "Error Output (Schema Failed)",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [2560, 640]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={ \"status\": \"received\", \"files_queued\": $('Prioritise Files').all().length }",
+        "options": {}
+      },
+      "id": "node-webhook-response",
+      "name": "Webhook Response",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [360, 340]
+    }
+  ],
+  "connections": {
+    "Webhook (from Person 2)": {
+      "main": [[
+        { "node": "Prioritise Files", "type": "main", "index": 0 },
+        { "node": "Webhook Response", "type": "main", "index": 0 }
+      ]]
+    },
+    "Manual Trigger (Test Only)": {
+      "main": [[{ "node": "Mock Person 2 Output (Testing)", "type": "main", "index": 0 }]]
+    },
+    "Mock Person 2 Output (Testing)": {
+      "main": [[{ "node": "Prioritise Files", "type": "main", "index": 0 }]]
+    },
+    "Prioritise Files": {
+      "main": [[{ "node": "Loop Through Files", "type": "main", "index": 0 }]]
+    },
+    "Loop Through Files": {
+      "main": [
+        [{ "node": "Fetch Source File", "type": "main", "index": 0 }],
+        []
+      ]
+    },
+    "Fetch Source File": {
+      "main": [[{ "node": "Build Prompt", "type": "main", "index": 0 }]]
+    },
+    "Build Prompt": {
+      "main": [[{ "node": "Generate Unit Tests (GPT-4o)", "type": "main", "index": 0 }]]
+    },
+    "Generate Unit Tests (GPT-4o)": {
+      "main": [[{ "node": "Format Test File", "type": "main", "index": 0 }]]
+    },
+    "Format Test File": {
+      "main": [[{ "node": "Build Edge Case Prompt", "type": "main", "index": 0 }]]
+    },
+    "Build Edge Case Prompt": {
+      "main": [[{ "node": "Generate Edge Cases (GPT-4o)", "type": "main", "index": 0 }]]
+    },
+    "Generate Edge Cases (GPT-4o)": {
+      "main": [[{ "node": "Merge Tests", "type": "main", "index": 0 }]]
+    },
+    "Merge Tests": {
+      "main": [[{ "node": "Validate Test Schema", "type": "main", "index": 0 }]]
+    },
+    "Validate Test Schema": {
+      "main": [[{ "node": "Is Schema Valid?", "type": "main", "index": 0 }]]
+    },
+    "Is Schema Valid?": {
+      "main": [
+        [{ "node": "Prepare GitHub Push", "type": "main", "index": 0 }],
+        [{ "node": "Error Output (Schema Failed)", "type": "main", "index": 0 }]
+      ]
+    },
+    "Prepare GitHub Push": {
+      "main": [[{ "node": "Push Test File to GitHub", "type": "main", "index": 0 }]]
+    },
+    "Push Test File to GitHub": {
+      "main": [[{ "node": "Success — Next File", "type": "main", "index": 0 }]]
+    },
+    "Success — Next File": {
+      "main": [[{ "node": "Loop Through Files", "type": "main", "index": 0 }]]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": false
+  },
+  "versionId": "2.0.0",
+  "meta": {
+    "templateCredsSetupCompleted": false,
+    "instanceId": "518388be4cf0307a673b60e6be7da14d16eee743e17913ddefc676f76e757d95"
+  },
+  "id": "ai-test-generator-person3",
+  "tags": ["ai-testing", "jest", "person3"]
+}

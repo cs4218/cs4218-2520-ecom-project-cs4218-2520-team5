@@ -1,0 +1,490 @@
+{
+  "name": "cs4218 AI Testing Project",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "a8ccc895-3fdd-487a-bea3-2280ef76a818",
+      "name": "Manual Test Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [304, 272]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            { "id": "1", "name": "owner", "value": "cs4218", "type": "string" },
+            { "id": "2", "name": "repo", "value": "cs4218-2520-ecom-project-cs4218-2520-team5", "type": "string" },
+            { "id": "3", "name": "environment", "value": "manual-test", "type": "string" },
+            { "id": "9b309e36-9dd2-4d06-b4a7-ca31b00c8c3f", "name": "branch", "value": "main", "type": "string" },
+            { "id": "236b50df-850d-4e88-ba67-a0b86d0437a8", "name": "triggerType", "value": "manual", "type": "string" },
+            { "id": "3fbd328e-34c0-4c3b-91ea-6192b225ade7", "name": "workflow", "value": "coverage.yml", "type": "string" }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "id": "707669a4-553e-443a-9c8a-43fad6af44c4",
+      "name": "Set Repository Config",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [512, 272]
+    },
+    {
+      "parameters": {
+        "rule": { "interval": [{ "field": "hours" }] }
+      },
+      "id": "937eb451-5ff3-4407-b3f7-6edb726817c1",
+      "name": "Scheduled Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [256, 736]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            { "id": "1", "name": "owner", "value": "<__PLACEHOLDER_VALUE__GitHub repository owner (e.g. n8n-io)__>", "type": "string" },
+            { "id": "2", "name": "repo", "value": "<__PLACEHOLDER_VALUE__GitHub repository name (e.g. n8n)__>", "type": "string" },
+            { "id": "3", "name": "environment", "value": "scheduled-production", "type": "string" }
+          ]
+        },
+        "options": {}
+      },
+      "id": "e447bf85-26f4-42db-94b1-0d5ae1d77044",
+      "name": "Set Repository Config 1",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [512, 736]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "1",
+              "name": "handoff",
+              "value": "={{ { \"owner\": $json.owner, \"repo\": $json.repo, \"environment\": $json.environment, \"timestamp\": $now.toISO() } }}",
+              "type": "object"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "ce61549d-8ea0-4b48-aec4-7396102e3ab4",
+      "name": "Prepare Handoff Payload 1",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [736, 736]
+    },
+    {
+      "parameters": {
+        "content": "## Manual Testing Workflow\n\nClick \"Test workflow\" to run this manually.\nOptionally fetches GitHub metadata for demonstration.",
+        "height": 392,
+        "width": 3124,
+        "color": 2
+      },
+      "id": "eb86fcbd-7ce6-415e-b998-f235e172e211",
+      "name": "Sticky Note 191b9d17",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [192, 128]
+    },
+    {
+      "parameters": {
+        "content": "## Scheduled Production Workflow\n\nRuns automatically every hour.\nPrepares handoff payload for downstream pipeline.",
+        "height": 328,
+        "width": 740,
+        "color": 4
+      },
+      "id": "d6376be4-66ef-4984-b0dc-34d6f5a1309e",
+      "name": "Sticky Note 99baab98",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [208, 592]
+    },
+    {
+      "parameters": {
+        "content": "## Person 3 — AI Test Generation (MS1)\nAng Yi Jie, Ivan, A0259256U\n\nFor each file with missing or low coverage:\n  1. Fetch source file from GitHub\n  2. Build prompt with file context\n  3. Generate Jest tests via GPT-4o  ← AI Node (MS1)\n  4. Format and enforce author header  ← Code Node (MS1)\n\nCredential required: add 'OpenAI Bearer Token' in n8n Settings → Credentials\n(Type: HTTP Bearer Auth, value: your OpenAI API key starting with sk-)",
+        "height": 392,
+        "width": 1224,
+        "color": 5
+      },
+      "id": "sticky-p3-ms1",
+      "name": "Sticky Note P3 MS1",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [3192, 128]
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "resource": "repository",
+        "operation": "get",
+        "owner": { "__rl": true, "mode": "name", "value": "={{ $json.owner }}" },
+        "repository": { "__rl": true, "mode": "name", "value": "={{ $json.repo }}" }
+      },
+      "type": "n8n-nodes-base.github",
+      "typeVersion": 1.1,
+      "position": [704, 272],
+      "id": "0c42c9cd-bd7b-4c4e-8da5-b4c7398ecbac",
+      "name": "Get a repository",
+      "webhookId": "93addb5c-23fa-42eb-ace2-7e419ccad51f",
+      "credentials": {
+        "githubOAuth2Api": { "id": "I9gIao0fyxDIGsLu", "name": "GitHub OAuth2 API" }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            { "id": "835ece18-a031-48b0-ba07-05e7f1440663", "name": "name", "value": "={{ $json.name }}", "type": "string" },
+            { "id": "f45f03cd-2c82-4c5a-9464-d482c65cb252", "name": "owner", "value": "={{ $json.owner.login }}", "type": "string" },
+            { "id": "83c9eff1-f05e-4e9f-9304-cf3ab647e18e", "name": "fullName", "value": "={{ $json.full_name }}", "type": "string" },
+            { "id": "30256a32-46c0-4a62-be11-f9cb8b93fbcc", "name": "branch", "value": "={{$node[\"Set Repository Config\"].json[\"branch\"]}}", "type": "string" },
+            { "id": "2fd1dc03-180a-4e50-8f61-cc91a5dfc97f", "name": "defaultBranch", "value": "={{ $json.source.default_branch }}", "type": "string" },
+            { "id": "d4f1df4c-4ecf-4df1-bad2-2f0c2b5d7235", "name": "repoUrl", "value": "={{ $json.html_url }}", "type": "string" },
+            { "id": "fafe3d17-ab3b-4eb9-a597-150897b26e78", "name": "triggerType", "value": "={{$node[\"Set Repository Config\"].json[\"triggerType\"]}}", "type": "string" },
+            { "id": "1ef6564e-d915-4512-bd34-9904ffd2ff1b", "name": "environment", "value": "={{$node[\"Set Repository Config\"].json[\"environment\"]}}", "type": "string" },
+            { "id": "03bc50d5-b53e-440b-9e26-097a870fd4a0", "name": "source", "value": "n8n-manual", "type": "string" },
+            { "id": "8ff01958-6610-425c-82fa-23df9bde01b5", "name": "timestamp", "value": "={{$now}}", "type": "string" },
+            { "id": "8c8b2461-4140-4973-986c-68078710392e", "name": "pushedAt", "value": "={{ $json.parent.pushed_at }}", "type": "string" },
+            { "id": "de84a7c3-1789-4de7-9608-d18d195d2d2e", "name": "workflow", "value": "coverage.yml", "type": "string" }
+          ]
+        },
+        "options": {}
+      },
+      "id": "4aaeea9b-7300-4ccc-85d6-94d2c13fbf17",
+      "name": "Prepare Payload for File Fetch",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [912, 272]
+    },
+    {
+      "parameters": { "amount": 120 },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [1328, 272],
+      "id": "d0e458db-1dff-4bdd-b02f-c37a5ea10ae2",
+      "name": "Wait",
+      "webhookId": "54b63540-39ad-46c3-8758-6509b4dd265e"
+    },
+    {
+      "parameters": {
+        "url": "=https://api.github.com/repos/{{$('Prepare Payload for File Fetch').first().json.owner}}/{{$('Prepare Payload for File Fetch').first().json.name}}/actions/runs",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBearerAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [{ "name": "Accept", "value": "application/vnd.github+json" }]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [1536, 272],
+      "id": "d96f4e7a-add0-41c1-af0f-1968bd5efd62",
+      "name": "Get Workflow Runs",
+      "credentials": { "httpBearerAuth": { "id": "TEnpyH2wW306jWY2", "name": "Bearer Auth account" } }
+    },
+    {
+      "parameters": {
+        "jsCode": "const input = $input.first().json;\nconst runs = input.workflow_runs || [];\n\n// filter only completed runs\nconst completed = runs.filter(r => r.status === \"completed\");\n\nif (completed.length === 0) {\n  throw new Error(\"No completed workflow runs found\");\n}\n\n// sort latest first\ncompleted.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());\n\nconst latest = completed[0];\n\nreturn [\n  {\n    json: {\n      owner: $('Set Repository Config').first().json.owner,\n      repo: $('Set Repository Config').first().json.repo,\n      run_id: latest.id,\n    },\n  },\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1728, 272],
+      "id": "fbb77a3e-afd7-40a5-a60e-e0720c49b2c9",
+      "name": "Select Latest Run"
+    },
+    {
+      "parameters": {
+        "url": "=https://api.github.com/repos/{{$json.owner}}/{{$json.repo}}/actions/runs/{{$json.run_id}}/artifacts",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBearerAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Accept", "value": "=application/vnd.github+json" },
+            { "name": "X-GitHub-Api-Version", "value": "2022-11-28" }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [1920, 272],
+      "id": "6413b7df-ee4b-44d7-974d-0166f7260707",
+      "name": "Get Artifacts",
+      "credentials": { "httpBearerAuth": { "id": "TEnpyH2wW306jWY2", "name": "Bearer Auth account" } }
+    },
+    {
+      "parameters": {
+        "jsCode": "const input = $input.first().json;\nconst artifacts = input.artifacts || [];\n\nconst coverage = artifacts.find(a => a.name === \"coverage-summary\");\n\nif (!coverage) {\n  throw new Error('Artifact \"coverage-summary\" not found');\n}\n\nreturn [\n  {\n    json: {\n      download_url: coverage.archive_download_url,\n    },\n  },\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2096, 272],
+      "id": "a8ddd927-30f6-4e38-8319-ed733741e998",
+      "name": "Extract Artifact"
+    },
+    {
+      "parameters": {
+        "url": "={{$json.download_url}}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBearerAuth",
+        "options": {
+          "response": { "response": { "responseFormat": "file" } }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [2272, 272],
+      "id": "fa7780a3-40c9-4662-8298-e92b7bac5af0",
+      "name": "Download Artifact",
+      "credentials": { "httpBearerAuth": { "id": "TEnpyH2wW306jWY2", "name": "Bearer Auth account" } }
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.compression",
+      "typeVersion": 1.1,
+      "position": [2448, 272],
+      "id": "bb9ad1e2-01fa-419e-a2ca-e976c96358c5",
+      "name": "Unzip Artifact"
+    },
+    {
+      "parameters": {
+        "operation": "fromJson",
+        "binaryPropertyName": "file_0",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1.1,
+      "position": [2640, 272],
+      "id": "a2d391a4-ad8e-4716-9cc9-6ece7c702b59",
+      "name": "Read Coverage JSON"
+    },
+    {
+      "parameters": {
+        "jsCode": "const input = $input.first().json;\nconst data = input.data || {};\n\nconst result = {\n  missing_tests: [],\n  low_coverage: [],\n  all_files: [],\n};\n\nfor (const [file, stats] of Object.entries(data)) {\n  if (file === 'total') continue;\n  if (!stats || typeof stats !== 'object') continue;\n\n  const lines = Number(stats.lines?.pct ?? 0);\n  const functions = Number(stats.functions?.pct ?? 0);\n  const statements = Number(stats.statements?.pct ?? 0);\n  const branches = Number(stats.branches?.pct ?? 0);\n\n  if (!stats.lines || !stats.functions || !stats.statements || !stats.branches) {\n    continue;\n  }\n\n  const avg = (lines + functions + statements + branches) / 4;\n  result.all_files.push({ file, avgCoverage: avg });\n\n  if (avg === 0) {\n    result.missing_tests.push(file);\n  } else if (avg < 100) {\n    result.low_coverage.push({\n      file,\n      avgCoverage: avg,\n    });\n  }\n}\n\nreturn [{ json: result }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2832, 272],
+      "id": "0d63162a-ef88-48aa-94c0-76d081f2177a",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://api.github.com/repos/{{$json.owner}}/{{$json.name}}/actions/workflows/{{$json.workflow}}/dispatches",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBearerAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Accept", "value": "application/vnd.github+json" },
+            { "name": "X-GitHub-Api-Version", "value": "2022-11-28" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"ref\": \"{{$json.branch}}\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [1136, 272],
+      "id": "98ca34ef-da5c-4bca-a5ec-e3521d147026",
+      "name": "Trigger Coverage Workflow",
+      "credentials": { "httpBearerAuth": { "id": "TEnpyH2wW306jWY2", "name": "Bearer Auth account" } }
+    },
+    {
+      "parameters": {
+        "jsCode": "const input = $input.first().json;\n\nconst low_coverage = input.low_coverage || [];\nconst missing_tests = input.missing_tests || [];\n\nconst COVERAGE_THRESHOLD = 85;\n\n// Rule 1: Remove low coverage gain tests\nconst passing_coverage = low_coverage.filter(f => f.avgCoverage >= COVERAGE_THRESHOLD);\nconst removed_low_coverage = low_coverage.filter(f => f.avgCoverage < COVERAGE_THRESHOLD);\n\n// Rule 2: Remove duplicates by file path\nconst seen = new Set();\nconst deduped = passing_coverage.filter(f => {\n  if (seen.has(f.file)) return false;\n  seen.add(f.file);\n  return true;\n});\n\n// Rule 3: Reject missing tests (0% coverage files)\nconst rejected_missing = missing_tests;\n\nreturn [{\n  json: {\n    valid_files: deduped,\n    removed_low_coverage,\n    rejected_missing_tests: rejected_missing,\n    summary: {\n      total_valid: deduped.length,\n      total_removed_low_coverage: removed_low_coverage.length,\n      total_rejected_missing: rejected_missing.length\n    }\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [3040, 272],
+      "id": "0ed0bdf4-44e1-4b9c-8e05-8dc0dae2cc97",
+      "name": "Rule based filter"
+    },
+
+    {
+      "parameters": {
+        "jsCode": "// Ang Yi Jie, Ivan, A0259256U\n// Prepare Files for AI Test Generation (MS1)\n// Takes Rule based filter output and creates a prioritised list:\n//   1. rejected_missing_tests (0% coverage) — highest priority\n//   2. removed_low_coverage (below 85%) — sorted worst first\n// Caps at MAX_FILES to control OpenAI cost per run.\n\nconst input = $input.first().json;\nconst MAX_FILES = 3;\n\nconst missing = (input.rejected_missing_tests || []).map(f => ({\n  file: typeof f === 'string' ? f : f.file,\n  avgCoverage: 0,\n  priority: 'missing',\n  owner: 'cs4218',\n  repo: 'cs4218-2520-ecom-project-cs4218-2520-team5',\n  branch: 'main',\n  testOutputPath: 'tests/integration/' + (typeof f === 'string' ? f : f.file).split('/').pop().replace('.js', '') + '.ai-generated.test.js',\n}));\n\nconst lowCov = (input.removed_low_coverage || [])\n  .map(f => ({\n    file: f.file,\n    avgCoverage: f.avgCoverage,\n    priority: 'low_coverage',\n    owner: 'cs4218',\n    repo: 'cs4218-2520-ecom-project-cs4218-2520-team5',\n    branch: 'main',\n    testOutputPath: 'tests/integration/' + f.file.split('/').pop().replace('.js', '') + '.ai-generated.test.js',\n  }))\n  .sort((a, b) => a.avgCoverage - b.avgCoverage);\n\nconst files = [...missing, ...lowCov].slice(0, MAX_FILES);\n\nif (files.length === 0) {\n  throw new Error('No files need test generation — all meet the 85% coverage threshold.');\n}\n\nreturn files.map(f => ({ json: f }));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [3240, 272],
+      "id": "p3-prepare-files",
+      "name": "Prepare Files (P3)"
+    },
+    {
+      "parameters": {
+        "batchSize": 1,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [3440, 272],
+      "id": "p3-loop",
+      "name": "Loop Through Files (P3)"
+    },
+    {
+      "parameters": {
+        "url": "=https://api.github.com/repos/{{ $json.owner }}/{{ $json.repo }}/contents/{{ $json.file }}?ref={{ $json.branch }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBearerAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Accept", "value": "application/vnd.github+json" },
+            { "name": "X-GitHub-Api-Version", "value": "2022-11-28" }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [3640, 272],
+      "id": "p3-fetch-source",
+      "name": "Fetch Source File (P3)",
+      "credentials": { "httpBearerAuth": { "id": "TEnpyH2wW306jWY2", "name": "Bearer Auth account" } }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Ang Yi Jie, Ivan, A0259256U\n// Build Prompt (MS1) — assembles the GPT-4o prompt from the fetched source file.\n// References the loop node to recover file metadata (file path, coverage %, etc.)\n// because the Fetch Source File HTTP node replaces $json with the GitHub API response.\n\nconst fileData = $input.first().json;\nconst loopItem = $('Loop Through Files (P3)').item.json;\n\n// Decode the base64-encoded file content from the GitHub Contents API response\nlet sourceCode;\ntry {\n  sourceCode = Buffer.from(fileData.content, 'base64').toString('utf-8');\n} catch (e) {\n  throw new Error(`Failed to decode source for ${loopItem.file}: ${e.message}`);\n}\n\nconst systemPrompt = `You are an expert software engineer writing Jest integration tests for a MERN stack e-commerce application called Virtual Vault.\n\nStack: Node.js, Express, Mongoose, MongoDB.\nTest framework: Jest 29 with Babel (ESM via --experimental-vm-modules).\nIntegration tests use: MongoMemoryServer, Supertest, real Express routes, real Mongoose models.\n\nRules:\n- Do NOT mock the controller or model layer under test. Only replace external dependencies: MongoDB -> MongoMemoryServer, Braintree -> jest.fn().\n- Use ES module syntax (import/export). No require().\n- Every test() must have at least one expect() assertion.\n- Group tests in describe() blocks by function name.\n- Start the file with exactly: // Ang Yi Jie, Ivan, A0259256U -- AI-generated (MS1)\n- Return ONLY the test file code inside a single \\`\\`\\`javascript ... \\`\\`\\` block.`;\n\nconst userPrompt = `File to test: ${loopItem.file}\nCurrent coverage: ${loopItem.avgCoverage}% (priority: ${loopItem.priority})\n\nSOURCE CODE:\n\\`\\`\\`javascript\n${sourceCode}\n\\`\\`\\`\n\nWrite complete Jest integration tests covering all exported functions. For each controller function write at minimum:\n1. Happy path (valid inputs, expect 200/success)\n2. Missing required field (expect 400)\n3. Not found case where applicable (expect 404)\n\nUse this setup pattern:\n\\`\\`\\`javascript\nimport { MongoMemoryServer } from 'mongodb-memory-server';\nimport mongoose from 'mongoose';\nimport request from 'supertest';\nimport jwt from 'jsonwebtoken';\nimport express from 'express';\n\nlet mongoServer, app;\nbeforeAll(async () => {\n  process.env.JWT_SECRET = 'testsecret';\n  mongoServer = await MongoMemoryServer.create();\n  await mongoose.connect(mongoServer.getUri());\n  app = express();\n  app.use(express.json());\n  app.use('/api/v1/...', routes);\n});\nafterAll(async () => { await mongoose.disconnect(); await mongoServer.stop(); });\nafterEach(async () => { await SomeModel.deleteMany({}); });\n\\`\\`\\`\n\nGenerate the complete test file now:`;\n\nreturn [{ json: {\n  file: loopItem.file,\n  avgCoverage: loopItem.avgCoverage,\n  priority: loopItem.priority,\n  owner: loopItem.owner,\n  repo: loopItem.repo,\n  branch: loopItem.branch,\n  testOutputPath: loopItem.testOutputPath,\n  sourceCode,\n  systemPrompt,\n  userPrompt,\n} }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [3840, 272],
+      "id": "p3-build-prompt",
+      "name": "Build Prompt (P3)"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.openai.com/v1/chat/completions",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBearerAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={{ JSON.stringify({ model: 'gpt-4o', max_tokens: 4096, temperature: 0.2, messages: [{ role: 'system', content: $json.systemPrompt }, { role: 'user', content: $json.userPrompt }] }) }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [4040, 272],
+      "id": "p3-generate-tests",
+      "name": "Generate Unit Tests - GPT-4o",
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "openai-bearer",
+          "name": "OpenAI Bearer Token"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Ang Yi Jie, Ivan, A0259256U\n// Format Test File — Code Node (MS1)\n// Person 3's primary MS1 deliverable.\n//\n// Steps:\n//   1. Extract the ```javascript ... ``` code block from GPT-4o's response\n//   2. Enforce author comment at top of file\n//   3. Normalise line endings and strip trailing whitespace\n//   4. Return structured output with filename, source, line count\n\nconst response = $input.first().json;\nconst buildData = $('Build Prompt (P3)').item.json;\n\n// Step 1: Extract content from OpenAI response (choices[0].message.content)\nlet rawText = '';\nif (response.choices && Array.isArray(response.choices)) {\n  rawText = response.choices[0]?.message?.content || '';\n} else if (typeof response === 'string') {\n  rawText = response;\n}\n\nif (!rawText) {\n  throw new Error(`GPT-4o returned empty content for ${buildData.file}. Check your OpenAI API key and credit balance.`);\n}\n\n// Step 2: Extract code block (accepts ```javascript, ```js, or plain ``` blocks)\nconst codeBlockRegex = /```(?:javascript|js)?\\n([\\s\\S]*?)```/;\nconst match = rawText.match(codeBlockRegex);\nlet testCode = match ? match[1].trim() : rawText.trim();\n\nif (!testCode) {\n  throw new Error('Could not extract code block from GPT-4o response.');\n}\n\n// Step 3: Enforce author comment at top\nconst authorLine = '// Ang Yi Jie, Ivan, A0259256U';\nconst generatedMarker = '-- AI-generated (MS1)';\n\nif (!testCode.startsWith('//')) {\n  testCode = `${authorLine} ${generatedMarker}\\n${testCode}`;\n} else {\n  const firstLineEnd = testCode.indexOf('\\n');\n  const firstLine = firstLineEnd === -1 ? testCode : testCode.slice(0, firstLineEnd);\n  if (!firstLine.includes('A0259256U')) {\n    testCode = `${authorLine} ${generatedMarker}\\n` + (firstLineEnd === -1 ? '' : testCode.slice(firstLineEnd + 1));\n  } else if (!firstLine.includes('AI-generated')) {\n    testCode = `${firstLine} ${generatedMarker}\\n` + (firstLineEnd === -1 ? '' : testCode.slice(firstLineEnd + 1));\n  }\n}\n\n// Step 4: Normalise line endings and trailing whitespace\ntestCode = testCode.replace(/\\r\\n/g, '\\n').replace(/\\r/g, '\\n');\ntestCode = testCode.split('\\n').map(l => l.trimEnd()).join('\\n');\ntestCode = testCode.replace(/\\n+$/, '') + '\\n';\n\n// Step 5: Derive output filename\nconst baseName = buildData.file.split('/').pop().replace(/\\.js$/, '');\nconst filename = buildData.testOutputPath || `tests/integration/${baseName}.ai-generated.test.js`;\n\nreturn [{ json: {\n  formattedTestFile: testCode,\n  filename,\n  sourceFile: buildData.file,\n  owner: buildData.owner,\n  repo: buildData.repo,\n  branch: buildData.branch,\n  linesOfCode: testCode.split('\\n').length,\n  generatedAt: new Date().toISOString(),\n} }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [4240, 272],
+      "id": "p3-format-test",
+      "name": "Format Test File (P3)"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Manual Test Trigger": {
+      "main": [[{ "node": "Set Repository Config", "type": "main", "index": 0 }]]
+    },
+    "Set Repository Config": {
+      "main": [[{ "node": "Get a repository", "type": "main", "index": 0 }]]
+    },
+    "Scheduled Trigger": {
+      "main": [[{ "node": "Set Repository Config 1", "type": "main", "index": 0 }]]
+    },
+    "Set Repository Config 1": {
+      "main": [[{ "node": "Prepare Handoff Payload 1", "type": "main", "index": 0 }]]
+    },
+    "Get a repository": {
+      "main": [[{ "node": "Prepare Payload for File Fetch", "type": "main", "index": 0 }]]
+    },
+    "Prepare Payload for File Fetch": {
+      "main": [[{ "node": "Trigger Coverage Workflow", "type": "main", "index": 0 }]]
+    },
+    "Wait": {
+      "main": [[{ "node": "Get Workflow Runs", "type": "main", "index": 0 }]]
+    },
+    "Get Workflow Runs": {
+      "main": [[{ "node": "Select Latest Run", "type": "main", "index": 0 }]]
+    },
+    "Select Latest Run": {
+      "main": [[{ "node": "Get Artifacts", "type": "main", "index": 0 }]]
+    },
+    "Get Artifacts": {
+      "main": [[{ "node": "Extract Artifact", "type": "main", "index": 0 }]]
+    },
+    "Extract Artifact": {
+      "main": [[{ "node": "Download Artifact", "type": "main", "index": 0 }]]
+    },
+    "Download Artifact": {
+      "main": [[{ "node": "Unzip Artifact", "type": "main", "index": 0 }]]
+    },
+    "Unzip Artifact": {
+      "main": [[{ "node": "Read Coverage JSON", "type": "main", "index": 0 }]]
+    },
+    "Read Coverage JSON": {
+      "main": [[{ "node": "Code in JavaScript", "type": "main", "index": 0 }]]
+    },
+    "Trigger Coverage Workflow": {
+      "main": [[{ "node": "Wait", "type": "main", "index": 0 }]]
+    },
+    "Code in JavaScript": {
+      "main": [[{ "node": "Rule based filter", "type": "main", "index": 0 }]]
+    },
+    "Rule based filter": {
+      "main": [[{ "node": "Prepare Files (P3)", "type": "main", "index": 0 }]]
+    },
+    "Prepare Files (P3)": {
+      "main": [[{ "node": "Loop Through Files (P3)", "type": "main", "index": 0 }]]
+    },
+    "Loop Through Files (P3)": {
+      "main": [
+        [{ "node": "Fetch Source File (P3)", "type": "main", "index": 0 }],
+        []
+      ]
+    },
+    "Fetch Source File (P3)": {
+      "main": [[{ "node": "Build Prompt (P3)", "type": "main", "index": 0 }]]
+    },
+    "Build Prompt (P3)": {
+      "main": [[{ "node": "Generate Unit Tests - GPT-4o", "type": "main", "index": 0 }]]
+    },
+    "Generate Unit Tests - GPT-4o": {
+      "main": [[{ "node": "Format Test File (P3)", "type": "main", "index": 0 }]]
+    },
+    "Format Test File (P3)": {
+      "main": [[{ "node": "Loop Through Files (P3)", "type": "main", "index": 0 }]]
+    }
+  },
+  "active": false,
+  "settings": { "availableInMCP": false },
+  "versionId": "ea1a118f-506d-4aff-91fd-9a100f03f710",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "518388be4cf0307a673b60e6be7da14d16eee743e17913ddefc676f76e757d95"
+  },
+  "id": "ZyYvFPYweEXwDGGc",
+  "tags": []
+}
