@@ -639,9 +639,9 @@ State-based testing, and Communication-based testing (mock verification)
 
 ## Test Files
 
-### 1. `braintreeIntegration.test.js` — Backend (20 tests)
+### 1. `braintreeIntegration.test.js` - Backend (20 tests)
 Tests `braintreeTokenController` and `brainTreePaymentController` against mocked Braintree
-gateway and `orderModel`.
+gateway and actual `orderModel`.
 
 | Describe Block | Tests | Techniques |
 |---|---|---|
@@ -651,8 +651,8 @@ gateway and `orderModel`.
 | Gateway & OrderModel integration | 5 | Communication-based, State-based |
 | Payment gateway options | 1 | Communication-based |
 
-### 2. `productDetailsIntegration.test.js` — Frontend (29 tests)
-Bottom-up across 5 layers: `CartContext` → `useParams`/Axios → chained API → related
+### 2. `productDetailsIntegration.test.js` - Frontend (29 tests)
+Bottom-up across 5 layers: `CartContext` → `useParams`/Axios → chained API (getProducts/getRelatedProducts)→ related
 products rendering → `CartContext` write-back.
 
 | Describe Block | Tests | Techniques |
@@ -664,9 +664,9 @@ products rendering → `CartContext` write-back.
 | Description truncation at 60 chars (BVA) | 3 | BVA |
 | ADD TO CART ↔ CartContext | 5 | State-based, Communication-based |
 
-### 3. `searchIntegration.test.js` — Frontend (31 tests)
+### 3. `searchIntegration.test.js` - Frontend (31 tests)
 Bottom-up across 5 layers: `SearchContext` → `SearchInput`+context → `Search` page+context
-→ full pipeline → `CartContext`. 
+→ `CartContext`. 
 
   &nbsp;&nbsp;&nbsp;&nbsp; 3.1 SearchContext & SearchInput Integration (13 tests)
   
