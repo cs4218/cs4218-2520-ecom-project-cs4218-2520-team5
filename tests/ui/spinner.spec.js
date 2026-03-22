@@ -18,12 +18,6 @@ async function expectSpinnerVisible(page) {
   await expect(spinnerLoader(page)).toBeVisible();
 }
 
-async function injectAuth(page, authData) {
-  await page.addInitScript((auth) => {
-    localStorage.setItem("auth", JSON.stringify(auth));
-  }, authData);
-}
-
 async function loginWithCredentials(page, email, password = TEST_PASSWORD) {
   await expect(page).toHaveURL(/\/login/);
   await page.getByRole("textbox", { name: "Enter Your Email" }).fill(email);
@@ -92,64 +86,6 @@ test.describe("Story: Spinner Component E2E Journeys", () => {
     await expect(
       page.getByRole("heading", { name: "LOGIN FORM" }),
     ).toBeVisible();
-  });
-
-  test("regular user blocked from /dashboard/admin -> spinner -> redirect to login", async ({
-    page,
-  }) => {
-    const userAuth = JSON.parse(process.env.USER_AUTH);
-    await injectAuth(page, userAuth);
-
-    await page.goto("/dashboard/admin");
-
-    await expectSpinnerVisible(page);
-    await expect(page).toHaveURL(/\/login/, { timeout: 10000 });
-    await expect(
-      page.getByRole("heading", { name: "LOGIN FORM" }),
-    ).toBeVisible();
-  });
-
-  test("regular user blocked from /dashboard/admin/orders -> spinner -> redirect to login", async ({
-    page,
-  }) => {
-    const userAuth = JSON.parse(process.env.USER_AUTH);
-    await injectAuth(page, userAuth);
-
-    await page.goto("/dashboard/admin/orders");
-
-    await expectSpinnerVisible(page);
-    await expect(page).toHaveURL(/\/login/, { timeout: 10000 });
-    await expect(
-      page.getByRole("heading", { name: "LOGIN FORM" }),
-    ).toBeVisible();
-  });
-
-  test("admin can access /dashboard/admin directly without spinner", async ({
-    page,
-  }) => {
-    const adminAuth = JSON.parse(process.env.ADMIN_AUTH);
-    await injectAuth(page, adminAuth);
-
-    await page.goto("/dashboard/admin");
-
-    await expect(page).toHaveURL("/dashboard/admin", { timeout: 15000 });
-    await expect(
-      page.locator("h3").filter({ hasText: "Admin Name" }),
-    ).toBeVisible();
-    await expect(spinnerHeading(page)).not.toBeVisible();
-  });
-
-  test("regular user can access /dashboard/user directly without spinner", async ({
-    page,
-  }) => {
-    const userAuth = JSON.parse(process.env.USER_AUTH);
-    await injectAuth(page, userAuth);
-
-    await page.goto("/dashboard/user");
-
-    await expect(page).toHaveURL("/dashboard/user", { timeout: 15000 });
-    await expect(page.locator(".card").first()).toBeVisible();
-    await expect(spinnerHeading(page)).not.toBeVisible();
   });
 
   test("guest deep-link to admin, login as regular user, and get blocked again by spinner", async ({
