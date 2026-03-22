@@ -707,11 +707,12 @@ For example, add 1 item to initially empty cart, add 1 item to existing cart, an
 | `tests/ui/spinner.spec.js` | 12 | Protected-route spinner behavior, redirects, countdown, and accessibility |
 | `tests/ui/about.spec.js` | 10 | About page journeys, continuity, and responsive navigation |
 | `tests/ui/pagenotfound.spec.js` | 10 | 404 recovery journeys across guest, user, and admin flows |
+| `tests/ui/admin-users.spec.js` | 13 | Admin Users page journeys, access control, sidebar/header navigation, and recovery flows |
 | `tests/ui/homepage.spec.js` | 8 | Homepage journeys with filters, load more, cart, and authenticated flow |
 | `tests/ui/orders.spec.js` | 12 | User orders journeys, dashboard navigation, continuity, and recovery |
 | `tests/ui/cart.spec.js` | 12 | Cart journeys for guest/auth users, address flow, removal, and recovery |
 
-**UI subtotal: 123 tests**
+**UI subtotal: 136 tests**
 
 ### 7.4.2 Integration testing (Jest, white-box, bottom-up)
 
@@ -728,4 +729,4 @@ For example, add 1 item to initially empty cart, add 1 item to existing cart, an
 
 **Integration subtotal: 232 tests**
 
-**Total tests in Section 7.4: 355**
+**Total tests in Section 7.4: 368**
