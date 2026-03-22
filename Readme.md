@@ -690,3 +690,42 @@ For example, add 1 item to initially empty cart, add 1 item to existing cart, an
 
 
 
+
+### 7.4 Alyssa Ong Yi Xian
+
+### 7.4.1 UI testing (Playwright, black-box)
+
+**Files and test counts:**
+
+| File | Number of Tests | Scope Covered |
+|---|---:|---|
+| `tests/ui/contact.spec.js` | 10 | Contact page user journeys and navigation continuity |
+| `tests/ui/policy.spec.js` | 10 | Policy page journeys, auth/guest flows, and recovery paths |
+| `tests/ui/footer.spec.js` | 13 | Footer navigation journeys across guest, user, and admin flows |
+| `tests/ui/header.spec.js` | 16 | Header interactions, auth transitions, search, cart badge, and responsive flows |
+| `tests/ui/layout.spec.js` | 10 | Shared layout continuity across navigation, auth, and protected-route recovery |
+| `tests/ui/spinner.spec.js` | 12 | Protected-route spinner behavior, redirects, countdown, and accessibility |
+| `tests/ui/about.spec.js` | 10 | About page journeys, continuity, and responsive navigation |
+| `tests/ui/pagenotfound.spec.js` | 10 | 404 recovery journeys across guest, user, and admin flows |
+| `tests/ui/homepage.spec.js` | 8 | Homepage journeys with filters, load more, cart, and authenticated flow |
+| `tests/ui/orders.spec.js` | 12 | User orders journeys, dashboard navigation, continuity, and recovery |
+| `tests/ui/cart.spec.js` | 12 | Cart journeys for guest/auth users, address flow, removal, and recovery |
+
+**UI subtotal: 123 tests**
+
+### 7.4.2 Integration testing (Jest, white-box, bottom-up)
+
+**Files and test counts:**
+
+| File | Number of Tests | Scope Covered |
+|---|---:|---|
+| `controllers/orders.integration.test.js` | 108 | Backend integration across auth middleware, order/profile controllers, routes, and persistence behavior |
+| `client/src/pages/user/Orders.integration.test.js` | 30 | User Orders page integration with real provider/routing interactions and API boundaries |
+| `client/src/pages/user/Profile.integration.test.js` | 23 | Profile page integration including auth context sync, localStorage persistence, and cross-page flows |
+| `client/src/pages/admin/Users.integration.test.js` | 21 | Admin Users page integration with real AdminMenu routing and provider hydration |
+| `client/src/pages/CartPage.integration.test.js` | 28 | Cart page integration across auth/cart state, payment UI states, and flow continuity |
+| `client/src/pages/HomePage.integration.test.js` | 22 | Homepage integration for product/category fetching, filters, pagination, and cart interactions |
+
+**Integration subtotal: 232 tests**
+
+**Total tests in Section 7.4: 355**
