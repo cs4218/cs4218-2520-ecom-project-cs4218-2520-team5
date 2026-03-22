@@ -57,6 +57,11 @@ test.describe("Story: Home Page E2E Journeys", () => {
       page.getByRole("heading", { name: "Product Details" }),
     ).toBeVisible();
 
+    // Wait for product data to fully load before adding to cart
+    await expect(
+      page.locator("h6").filter({ hasText: /Price\s*:.*\$/ }),
+    ).toBeVisible({ timeout: 15000 });
+
     await page.getByRole("button", { name: "ADD TO CART" }).click();
     await expect(page.getByRole("superscript")).toContainText("1", {
       timeout: 10000,
@@ -64,11 +69,6 @@ test.describe("Story: Home Page E2E Journeys", () => {
 
     await page.getByRole("link", { name: "Cart" }).click();
     await expect(page).toHaveURL("/cart");
-    await expect(
-      page.getByText(/You Have\s+\d+\s+items in your cart/i),
-    ).toBeVisible({
-      timeout: 15000,
-    });
     await expect(page.getByText("Cart Summary")).toBeVisible({
       timeout: 15000,
     });

@@ -32,7 +32,7 @@ test.describe("Story: Header E2E User Journeys", () => {
   test("header content (guest): brand, search bar, categories, login/register, cart", async ({
     page,
   }) => {
-    await page.goto("/");
+    await page.goto("/", { waitUntil: "domcontentloaded" });
 
     await expect(
       headerRoot(page).getByRole("link", { name: /Virtual Vault/i }),
@@ -69,7 +69,7 @@ test.describe("Story: Header E2E User Journeys", () => {
   test("header search: keyword + Search button navigates to search results", async ({
     page,
   }) => {
-    await page.goto("/");
+    await page.goto("/", { waitUntil: "domcontentloaded" });
 
     const searchBox = page.getByRole("searchbox", { name: "Search" });
     await searchBox.fill("phone");
@@ -85,7 +85,7 @@ test.describe("Story: Header E2E User Journeys", () => {
   test("header cart badge: shows zero for empty cart on initial load", async ({
     page,
   }) => {
-    await page.goto("/");
+    await page.goto("/", { waitUntil: "domcontentloaded" });
 
     const cartBadge = page.locator(".ant-badge .ant-badge-count").first();
     await expect(cartBadge).toBeVisible();
@@ -95,7 +95,7 @@ test.describe("Story: Header E2E User Journeys", () => {
   test("header categories dropdown content: all categories link and category entries", async ({
     page,
   }) => {
-    await page.goto("/");
+    await page.goto("/", { waitUntil: "domcontentloaded" });
 
     await openCategoriesDropdown(page);
 
@@ -152,7 +152,7 @@ test.describe("Story: Header E2E User Journeys", () => {
   test("guest journey: Header search -> results -> product details", async ({
     page,
   }) => {
-    await page.goto("/");
+    await page.goto("/", { waitUntil: "domcontentloaded" });
     await expect(
       page.getByRole("heading", { name: "All Products" }),
     ).toBeVisible();
@@ -178,7 +178,7 @@ test.describe("Story: Header E2E User Journeys", () => {
   test("guest journey: Header categories dropdown -> all categories -> category page", async ({
     page,
   }) => {
-    await page.goto("/");
+    await page.goto("/", { waitUntil: "domcontentloaded" });
     await expect(
       page.getByRole("heading", { name: "All Products" }),
     ).toBeVisible();
@@ -202,7 +202,7 @@ test.describe("Story: Header E2E User Journeys", () => {
   test("guest journey: Add to cart -> Header cart -> item visible", async ({
     page,
   }) => {
-    await page.goto("/");
+    await page.goto("/", { waitUntil: "domcontentloaded" });
     await expect(page.locator(".card").first()).toBeVisible({ timeout: 15000 });
 
     await page.getByRole("button", { name: "ADD TO CART" }).first().click();
@@ -220,7 +220,7 @@ test.describe("Story: Header E2E User Journeys", () => {
   }) => {
     const runId = Date.now();
 
-    await page.goto("/");
+    await page.goto("/", { waitUntil: "domcontentloaded" });
     await headerLink(page, "Register").click();
     await expect(page).toHaveURL("/register");
 
@@ -254,7 +254,7 @@ test.describe("Story: Header E2E User Journeys", () => {
   test("guest recovery: Header login (invalid) -> Header home -> Header categories", async ({
     page,
   }) => {
-    await page.goto("/");
+    await page.goto("/", { waitUntil: "domcontentloaded" });
     await headerLink(page, "Login").click();
     await expect(page).toHaveURL("/login");
 
@@ -355,7 +355,7 @@ test.describe("Story: Header E2E User Journeys", () => {
   test("cart continuity: Header badge persists across header navigation", async ({
     page,
   }) => {
-    await page.goto("/");
+    await page.goto("/", { waitUntil: "domcontentloaded" });
     await expect(page.locator(".card").first()).toBeVisible({ timeout: 15000 });
 
     await page.getByRole("button", { name: "ADD TO CART" }).first().click();
@@ -384,7 +384,7 @@ test.describe("Story: Header E2E User Journeys", () => {
     page,
   }) => {
     await page.setViewportSize({ width: 390, height: 844 });
-    await page.goto("/");
+    await page.goto("/", { waitUntil: "domcontentloaded" });
     await expect(
       page.getByRole("heading", { name: "All Products" }),
     ).toBeVisible();

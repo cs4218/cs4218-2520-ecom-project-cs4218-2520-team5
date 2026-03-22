@@ -29,7 +29,7 @@ async function loginViaUI(page, email, password) {
 
 test.describe("Story: Layout Component E2E Journeys", () => {
   test("guest navigation shell continuity: Home -> About -> Contact -> Policy -> Home", async ({ page }) => {
-    await page.goto("/");
+    await page.goto("/", { waitUntil: "domcontentloaded" });
     await expectLayoutShell(page);
     await expect(page).toHaveTitle("ALL Products - Best offers ");
     await expect(page.getByRole("heading", { name: "All Products" })).toBeVisible();
@@ -58,7 +58,7 @@ test.describe("Story: Layout Component E2E Journeys", () => {
   });
 
   test("search journey through global header: Home -> Search -> Product Details", async ({ page }) => {
-    await page.goto("/");
+    await page.goto("/", { waitUntil: "domcontentloaded" });
     await expectLayoutShell(page);
 
     const searchInput = page.getByRole("searchbox", { name: "Search" });
@@ -81,7 +81,7 @@ test.describe("Story: Layout Component E2E Journeys", () => {
   });
 
   test("cart continuity across layout links: add item -> navigate -> cart retains item", async ({ page }) => {
-    await page.goto("/");
+    await page.goto("/", { waitUntil: "domcontentloaded" });
     await expect(page.locator(".card").first()).toBeVisible({ timeout: 15000 });
 
     await page.getByRole("button", { name: "ADD TO CART" }).first().click();
@@ -134,7 +134,7 @@ test.describe("Story: Layout Component E2E Journeys", () => {
   });
 
   test("categories journey through shared layout: Home -> Categories -> Category page", async ({ page }) => {
-    await page.goto("/");
+    await page.goto("/", { waitUntil: "domcontentloaded" });
     await expectLayoutShell(page);
 
     await header(page)
@@ -158,7 +158,7 @@ test.describe("Story: Layout Component E2E Journeys", () => {
   test("registration journey via header: Home -> Register -> submit -> Login", async ({ page }) => {
     const runId = Date.now();
 
-    await page.goto("/");
+    await page.goto("/", { waitUntil: "domcontentloaded" });
     await header(page).getByRole("link", { name: "Register" }).click();
 
     await expect(page).toHaveURL("/register");
@@ -198,7 +198,7 @@ test.describe("Story: Layout Component E2E Journeys", () => {
   });
 
   test("guest checkout guard via layout: add item -> cart -> login required", async ({ page }) => {
-    await page.goto("/");
+    await page.goto("/", { waitUntil: "domcontentloaded" });
     await expect(page.locator(".card").first()).toBeVisible({ timeout: 15000 });
 
     await page.getByRole("button", { name: "ADD TO CART" }).first().click();

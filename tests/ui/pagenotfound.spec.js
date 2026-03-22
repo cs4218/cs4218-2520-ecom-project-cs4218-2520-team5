@@ -26,7 +26,7 @@ test.describe("Story: Page Not Found E2E Journeys", () => {
   test("guest journey: Home -> invalid URL -> Go Back -> Home", async ({
     page,
   }) => {
-    await page.goto("/");
+    await page.goto("/", { waitUntil: "domcontentloaded" });
     await expect(
       page.getByRole("heading", { name: "All Products" }),
     ).toBeVisible();
@@ -83,7 +83,7 @@ test.describe("Story: Page Not Found E2E Journeys", () => {
   test("guest journey: cart continuity after 404 interruption", async ({
     page,
   }) => {
-    await page.goto("/");
+    await page.goto("/", { waitUntil: "domcontentloaded" });
     await expect(page.locator(".card").first()).toBeVisible({ timeout: 15000 });
 
     await page.getByRole("button", { name: "ADD TO CART" }).first().click();
@@ -103,7 +103,7 @@ test.describe("Story: Page Not Found E2E Journeys", () => {
   test("guest journey: Search -> invalid URL -> browser back returns to search results", async ({
     page,
   }) => {
-    await page.goto("/");
+    await page.goto("/", { waitUntil: "domcontentloaded" });
     await page.getByRole("searchbox", { name: "Search" }).fill("phone");
     await page.getByRole("button", { name: "Search" }).click();
 
