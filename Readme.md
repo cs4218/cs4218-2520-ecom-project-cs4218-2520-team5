@@ -481,7 +481,9 @@ All test files below were written with the assistance of AI.
 
 ## 7. Milestone 2 (Sprint 3) — Contributions
 
-### 7.1.1 Ang Yi Jie, Ivan — Integration Tests (Jest, white-box, bottom-up)
+### 7.1 Ang Yi Jie, Ivan
+
+### 7.1.1 Integration Tests (Jest, white-box, bottom-up)
 
 **Story 1: Category API Integration (`tests/integration/categoryApiIntegration.test.js`)**
 - Tests the full chain: route → `requireSignIn` → `isAdmin` → `categoryController` → `categoryModel`
@@ -499,7 +501,7 @@ All test files below were written with the assistance of AI.
 - `jest.integration.config.js` — Jest config for integration tests (ESM, node environment, 30s timeout)
 - Added `test:integration` script, `mongodb-memory-server`, and `supertest` to `package.json`
 
-### 7.1.2 Ang Yi Jie, Ivan — UI Tests (Playwright, black-box)
+### 7.1.2 UI Tests (Playwright, black-box)
 
 **Story 3: Admin Create/Edit/Delete Category (`tests/ui/admin-category.spec.js`)**
 - End-to-end flow: log in as admin → navigate to Create Category → create a new category → edit its name → delete it
@@ -523,13 +525,12 @@ All test files below were written with the assistance of AI.
 
 All Milestone 2 work below was done with the assistance of AI.
 
-#### UI testing (Playwright, black-box)
+### 7.2.1 UI testing (Playwright, black-box)
 
 - **To be added** in a follow-up (same sprint / documentation pass as other MS2 UI tests).
 
----
 
-#### Frontend integration tests (Jest + React Testing Library, white-box, bottom-up partial integration)
+### 7.2.2 Frontend integration tests (Jest + React Testing Library, white-box, bottom-up partial integration)
 
 Approach: integrate **real** `AuthProvider` / `CartProvider` / `SearchProvider`, **real** `MemoryRouter` + nested routes, **real** `Layout` / `Header` / `Footer` / `UserMenu` / `Spinner` / `PrivateRoute` where relevant; mock only **external boundaries** (`axios`, `react-hot-toast`, `useCategory`, `matchMedia`).
 
