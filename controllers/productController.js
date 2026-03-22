@@ -7,7 +7,7 @@ import slugify from "slugify";
 
 export const createProductController = async (req, res) => {
 	try {
-		const { name, description, price, category, quantity, shipping } = req.fields;
+		const { name, description, price, category, quantity } = req.fields;
 		const { photo } = req.files;
 		//validation
 		const errors = [];
@@ -124,7 +124,7 @@ export const deleteProductController = async (req, res) => {
 //upate producta
 export const updateProductController = async (req, res) => {
 	try {
-		const { name, description, price, category, quantity, shipping } = req.fields;
+		const { name, description, price, category, quantity } = req.fields;
 		const { photo } = req.files;
 		//validation
 		const errors = [];

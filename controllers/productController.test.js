@@ -65,6 +65,8 @@ const {
   searchProductController,
   realtedProductController,
   productCategoryController,
+  braintreeTokenController,
+  brainTreePaymentController,
 } = await import("./productController.js");
 
 describe("Product Controller", () => {
@@ -1120,6 +1122,31 @@ describe("Product Controller", () => {
         error: mockError,
         message: "Error While Getting products",
       });
+    });
+  });
+
+  // ==================== braintreeTokenController Tests ====================
+  describe("braintreeTokenController", () => {
+    it("should handle error when gateway throws", async () => {
+      // gateway is mocked as {} so gateway.clientToken is undefined,
+      // causing gateway.clientToken.generate() to throw into the catch block
+      await braintreeTokenController(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(500);
+      expect(res.json).toHaveBeenCalledWith({ error: "Something went wrong" });
+    });
+  });
+
+  // ==================== brainTreePaymentController Tests ====================
+  describe("brainTreePaymentController", () => {
+    it("should handle error when gateway throws", async () => {
+      req.body = { nonce: "test-nonce", cart: [{ price: 10 }] };
+      // gateway is mocked as {} so gateway.transaction is undefined,
+      // causing gateway.transaction.sale() to throw into the catch block
+      await brainTreePaymentController(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(500);
+      expect(res.json).toHaveBeenCalledWith({ error: "Payment failed" });
     });
   });
 

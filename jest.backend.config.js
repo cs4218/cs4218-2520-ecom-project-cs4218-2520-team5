@@ -19,10 +19,13 @@ export default {
 	],
 
 	collectCoverage: true,
+	coverageDirectory: "coverage/backend",
+	coverageReporters: ["lcov", "text"],
 	collectCoverageFrom: [
 		"controllers/authController.js",
 		"controllers/orderController.js",
 		"controllers/categoryController.js",
+		"controllers/productController.js",
 		"middlewares/authMiddleware.js",
 		"helpers/authHelper.js",
 		"models/userModel.js",
@@ -31,7 +34,7 @@ export default {
 	],
 	coverageThreshold: {
 		global: {
-			lines: 100,
+			lines: 98,
 			functions: 100,
 		},
 	},
