@@ -87,6 +87,18 @@ describe("PrivateRoute Component", () => {
     expect(getByTestId("spinner")).toBeInTheDocument();
   });
 
+  it("should render the spinner when the API fails (e.g. 401 Unauthorized)", async () => {
+    useAuth.mockReturnValue([{ token: "valid-token" }, jest.fn()]);
+    axios.get.mockRejectedValue(new Error("Request failed with status code 401"));
+
+    const { getByTestId } = renderPrivateRoute();
+
+    await waitFor(() => {
+      expect(axios.get).toHaveBeenCalledWith("/api/v1/auth/user-auth");
+    });
+    expect(getByTestId("spinner")).toBeInTheDocument();
+  });
+
   it("should render the spinner and skip the API call when there is no auth token", () => {
     useAuth.mockReturnValue([{ token: "" }, jest.fn()]);
 
