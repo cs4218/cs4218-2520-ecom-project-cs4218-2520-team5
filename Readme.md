@@ -306,110 +306,32 @@ All test files below were written with the assistance of AI.
 - Organised discussions, work delegation for sprint and for AI-Driven Testing Plan
 
 ### 6.3 Alyssa Ong Yi Xian
-#### 1. **Header Component**(20 tests, 100% coverage)
-   - **Tested:** Brand name (1), search input (1), navigation links (3), auth state rendering (6), logout functionality (3), cart badge (3), categories dropdown (6)
-   - **Key Features:** Role-based dashboard routing (admin vs user), auth-conditional rendering (guest vs authenticated), cart count badge, dynamic categories, logout clears auth/localStorage/shows toast
-   - **Mocking:** useAuth, useCart, useCategory, toast, SearchInput, Badge (antd), localStorage
-   - **Style:** Output-based (display), Communication-based (logout interactions)
 
-#### 2. **Footer Component** (9 tests)
-   - Tested copyright display and navigation links (About, Contact, Privacy Policy)
-   - Verified all links point to correct paths (/about, /contact, /policy)
-   - **Mocking:** MemoryRouter for react-router-dom
-   - **Style:** Output-based
+Contributed integration and UI testing across backend controllers and frontend user/admin flows.
 
-#### 3. **Layout Component** (15 tests)
-   - Tested children rendering, Header/Footer/Toaster integration, and meta tags
-   - Verified default vs custom props (title, description, keywords, author)
-   - **Mocking:** Header, Footer, Toaster components; react-helmet
-   - **Style:** Output-based
+#### Test Files and Number of Tests
 
-#### 4. **Spinner Component** (12 tests)
-   - Tested 3-second countdown, navigation on completion, timer cleanup on unmount
-   - Verified accessibility text, custom path support, layout rendering
-   - **Mocking:** jest.useFakeTimers(), useNavigate, useLocation
-   - **Style:** State-based (countdown) and Communication-based (navigation)
+| File | Number of Tests |
+|---|---:|
+| `controllers/orders.integration.test.js` | 108 |
+| `client/src/pages/user/Orders.integration.test.js` | 30 |
+| `client/src/pages/user/Profile.integration.test.js` | 23 |
+| `client/src/pages/admin/Users.integration.test.js` | 21 |
+| `client/src/pages/CartPage.integration.test.js` | 28 |
+| `client/src/pages/HomePage.integration.test.js` | 22 |
+| `tests/ui/contact.spec.js` | 10 |
+| `tests/ui/policy.spec.js` | 10 |
+| `tests/ui/footer.spec.js` | 13 |
+| `tests/ui/header.spec.js` | 16 |
+| `tests/ui/layout.spec.js` | 10 |
+| `tests/ui/spinner.spec.js` | 12 |
+| `tests/ui/about.spec.js` | 10 |
+| `tests/ui/pagenotfound.spec.js` | 10 |
+| `tests/ui/homepage.spec.js` | 8 |
+| `tests/ui/orders.spec.js` | 12 |
+| `tests/ui/cart.spec.js` | 12 |
 
----
-
-#### Frontend Pages
-
-#### 5. **HomePage Component** (20 tests)
-   - **Tested:** Product display (3), category filters (2), cart functionality (2), navigation (1), pagination (2), error handling (3), price filters (3), load more (3), reset filters (1)
-   - **Key Features:** USD formatting, description truncation, filter API calls, localStorage sync, conditional Load More button, comprehensive error handling
-   - **Mocking:** axios, cart context, toast, useNavigate, custom renderHomePage() helper
-   - **Style:** Output-based (display), State-based (pagination), Communication-based (API/navigation)
-
-#### 6. **CartPage Component** (22 tests)
-   - **Tested:** Guest/auth states (2), empty cart (1), cart display (5), item management (2), address handling (4), navigation (1), payment UI (7)
-   - **Key Features:** Auth-based rendering, total price calculation, localStorage sync, conditional payment UI, comprehensive error handling
-   - **Mocking:** axios, auth/cart contexts, useNavigate, localStorage, custom renderCartPage() helper (eliminates act warnings)
-   - **Style:** Output-based (display), State-based (cart updates), Communication-based (API/navigation)
-   - **Coverage Gap:** Lines 63-77, 182 (Braintree DropIn integration)
-
-#### 7. **About Page** (6 tests)
-   - Tested page title, image attributes, company messages (welcome, service commitment, shopping experience)
-   - **Mocking:** Layout component
-   - **Style:** Output-based
-
-#### 8. **Contact Page** (9 tests)
-   - Tested page title, heading, contact methods (email, phone, toll-free), image, icons
-   - **Mocking:** Layout component
-   - **Style:** Output-based
-
-#### 9. **Policy Page** (10 tests)
-   - Tested page title, image, 7 policy sections (privacy value, data collection, sharing, payment security, user rights, cookies, contact)
-   - **Mocking:** Layout component
-   - **Style:** Output-based
-
-#### 10. **Pagenotfound (404) Page** (6 tests)
-   - Tested page title, 404 code, error message, "Go Back" link to home page
-   - **Mocking:** Layout and Link components
-   - **Style:** Output-based
-
-#### 11. **Orders Page (User)** (9 tests)
-   - Tested auth-gated rendering, API calls only with token, order display, payment status (Success/Failed), error handling
-   - **Mocking:** axios, auth context, UserMenu, moment, custom async helper
-   - **Style:** State-based (conditional rendering), Communication-based (API), Output-based (display)
-
----
-
-#### Frontend Context
-
-#### 12. **Cart Context** (11 tests, 100% coverage)
-   - **Tested:** Initial state (4) - empty cart, localStorage loading, invalid JSON, errors; State updates (4) - setCart, add/remove items, clear cart; Context behavior (3) - return value, children rendering
-   - **Key Features:** localStorage sync, error resilience, proper context API
-   - **Mocking:** localStorage with Object.defineProperty
-   - **Style:** State-based (cart changes), Output-based (context value)
-   - **Fixed Brittleness:** Removed localStorage.getItem call verification
-
----
-
-#### Backend Controllers
-
-#### 13. **Order Controller** (100+ tests, 2813 lines)
-   - **Controllers:** updateProfileController, getOrdersController, getAllOrdersController, orderStatusController
-   - **Tested:** Authentication (401), input validation (400), success paths (200), error handling (500), password hashing, mongoose query chaining
-   - **Mocking:** userModel, orderModel, hashPassword, req/res objects
-   - **Style:** State-based (response objects), Communication-based (model method calls)
-
----
-
-#### Backend Models
-
-#### 14. **Order Model** (4 tests)
-   - Tested default status ("Not Process"), enum validation (5 statuses), invalid status rejection, ObjectId array
-   - **Mocking:** None (direct model testing)
-   - **Style:** Output-based (schema validation)
-
----
-
-#### Backend Configuration
-
-#### 15. **Database Connection (db.js)** (4 tests)
-   - Tested mongoose.connect with MONGO_URL, success/error logging, non-throwing error handling
-   - **Mocking:** mongoose (unstable_mockModule), console.log, String.prototype.bgMagenta/bgRed (colors library)
-   - **Style:** Communication-based (verify interactions and logs)
+**Total tests contributed across these files: 355**
 
 ---
 
@@ -690,3 +612,42 @@ For example, add 1 item to initially empty cart, add 1 item to existing cart, an
 
 
 
+
+### 7.4 Alyssa Ong Yi Xian
+
+### 7.4.1 UI testing (Playwright, black-box)
+
+**Files and test counts:**
+
+| File | Number of Tests | Scope Covered |
+|---|---:|---|
+| `tests/ui/contact.spec.js` | 10 | Contact page user journeys and navigation continuity |
+| `tests/ui/policy.spec.js` | 10 | Policy page journeys, auth/guest flows, and recovery paths |
+| `tests/ui/footer.spec.js` | 13 | Footer navigation journeys across guest, user, and admin flows |
+| `tests/ui/header.spec.js` | 16 | Header interactions, auth transitions, search, cart badge, and responsive flows |
+| `tests/ui/layout.spec.js` | 10 | Shared layout continuity across navigation, auth, and protected-route recovery |
+| `tests/ui/spinner.spec.js` | 12 | Protected-route spinner behavior, redirects, countdown, and accessibility |
+| `tests/ui/about.spec.js` | 10 | About page journeys, continuity, and responsive navigation |
+| `tests/ui/pagenotfound.spec.js` | 10 | 404 recovery journeys across guest, user, and admin flows |
+| `tests/ui/homepage.spec.js` | 8 | Homepage journeys with filters, load more, cart, and authenticated flow |
+| `tests/ui/orders.spec.js` | 12 | User orders journeys, dashboard navigation, continuity, and recovery |
+| `tests/ui/cart.spec.js` | 12 | Cart journeys for guest/auth users, address flow, removal, and recovery |
+
+**UI subtotal: 123 tests**
+
+### 7.4.2 Integration testing (Jest, white-box, bottom-up)
+
+**Files and test counts:**
+
+| File | Number of Tests | Scope Covered |
+|---|---:|---|
+| `controllers/orders.integration.test.js` | 108 | Backend integration across auth middleware, order/profile controllers, routes, and persistence behavior |
+| `client/src/pages/user/Orders.integration.test.js` | 30 | User Orders page integration with real provider/routing interactions and API boundaries |
+| `client/src/pages/user/Profile.integration.test.js` | 23 | Profile page integration including auth context sync, localStorage persistence, and cross-page flows |
+| `client/src/pages/admin/Users.integration.test.js` | 21 | Admin Users page integration with real AdminMenu routing and provider hydration |
+| `client/src/pages/CartPage.integration.test.js` | 28 | Cart page integration across auth/cart state, payment UI states, and flow continuity |
+| `client/src/pages/HomePage.integration.test.js` | 22 | Homepage integration for product/category fetching, filters, pagination, and cart interactions |
+
+**Integration subtotal: 232 tests**
+
+**Total tests in Section 7.4: 355**
