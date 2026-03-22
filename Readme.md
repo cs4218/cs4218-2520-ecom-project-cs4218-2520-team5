@@ -481,7 +481,9 @@ All test files below were written with the assistance of AI.
 
 ## 7. Milestone 2 (Sprint 3) — Contributions
 
-### 7.1 Ang Yi Jie, Ivan — Integration Tests (Jest, white-box, bottom-up)
+### 7.1 Ang Yi Jie, Ivan
+
+### 7.1.1 Integration Tests (Jest, white-box, bottom-up)
 
 **Story 1: Category API Integration (`tests/integration/categoryApiIntegration.test.js`)**
 - Tests the full chain: route → `requireSignIn` → `isAdmin` → `categoryController` → `categoryModel`
@@ -499,7 +501,7 @@ All test files below were written with the assistance of AI.
 - `jest.integration.config.js` — Jest config for integration tests (ESM, node environment, 30s timeout)
 - Added `test:integration` script, `mongodb-memory-server`, and `supertest` to `package.json`
 
-### 7.2 Ang Yi Jie, Ivan — UI Tests (Playwright, black-box)
+### 7.1.2 UI Tests (Playwright, black-box)
 
 **Story 3: Admin Create/Edit/Delete Category (`tests/ui/admin-category.spec.js`)**
 - End-to-end flow: log in as admin → navigate to Create Category → create a new category → edit its name → delete it
@@ -518,3 +520,213 @@ All test files below were written with the assistance of AI.
 - `tests/ui/global-setup.js` — Global setup: seeds test admin and regular user via test API before all tests
 - `routes/testRoutes.js` — Test-only Express routes for seeding users (guarded against production)
 - Added `test:ui`, `test:ui:headed`, `test:ui:debug` scripts to `package.json`
+
+### 7.2 Ong Xin Hui Lynnette (A0257058X)
+
+All Milestone 2 work below was done with the assistance of AI.
+
+### 7.2.1 UI testing (Playwright, black-box)
+
+**File:** `tests/ui/ms2-user-auth-e2e.spec.js` (five end-to-end user journeys). Helpers: `tests/ui/helpers/ms2UserUiHelpers.js`.
+
+| Rubric story | Playwright `test.describe` | What the user does (black-box) |
+|--------------|----------------------------|--------------------------------|
+| Story 1 — Successful registration | `Story 1: Successful User Registration` | Open `/register`, submit a unique new account, see success toast, land on `/login` with login form visible |
+| Story 2 — Login + dashboard | `Story 2: Successful Login and Dashboard Access` | Log in with seeded user, open Dashboard from header, see personal details in dashboard card |
+| Story 3 — Profile management | `Story 3: Profile Management for Authenticated User` | Log in → sidebar **Profile** → check prefilled fields → update name/phone/address → success toast → values stay after reload |
+| Story 4 — Unauthorized routes | `Story 4: Unauthorized Access Blocking for Protected Routes` | As guest, hit `/dashboard/user` and `/dashboard/user/profile`; see countdown redirect UI, no protected content, end on home with **All Products** |
+| Story 5 — In-dashboard navigation | `Story 5: User Navigation Within Protected Dashboard` | Log in → dashboard → **Profile** → **Orders** → **Profile** again; account menu still shows Logout (session kept) |
+
+Seeded credentials come from `tests/ui/global-setup.js` (`POST /api/v1/test/setup-user`); password for that user is `Test@12345` (same as existing admin/user seed helpers).
+
+**Run:** `npm run test:ui` (all UI specs) or `npx playwright test tests/ui/ms2-user-auth-e2e.spec.js` (this file only). **Per story:** `npx playwright test tests/ui/ms2-user-auth-e2e.spec.js -g "Story N"` (replace N with 1–5).
+
+
+### 7.2.2 Frontend integration tests (Jest + React Testing Library, white-box, bottom-up partial integration)
+
+Approach: integrate **real** `AuthProvider` / `CartProvider` / `SearchProvider`, **real** `MemoryRouter` + nested routes, **real** `Layout` / `Header` / `Footer` / `UserMenu` / `Spinner` / `PrivateRoute` where relevant; mock only **external boundaries** (`axios`, `react-hot-toast`, `useCategory`, `matchMedia`).
+
+**1. Registration workflow — `Register.integration.test.js` (6 tests) — Story 1**
+- **Tested:** full form in integrated layout (1), complete `POST /api/v1/auth/register` payload (1), success toast + navigation to `/login` (1), server `success: false` error toast (1), generic toast on network failure (1), no navigation on failure (1)
+- **Key Features:** end-to-end form → API contract → toast → router; failure keeps user on register
+- **Mocking:** axios, react-hot-toast, `useCategory`
+- **Style:** Output-based (form chrome), Communication-based (API, toast, navigation)
+
+**2. Login flow — `Login.integration.test.js` (9 tests) — Story 2**
+- **Tested:** credentials sent to `POST /api/v1/auth/login` (1), success toast (1), **real** `AuthProvider` sync of `axios.defaults.headers.common.Authorization` (1), **real** `localStorage` persistence of `{ user, token }` (1), navigate to home on success (1), failed login does not touch `localStorage` or Authorization header (2), generic error on thrown API (1), remain on login after failure (1)
+- **Key Features:** validates context + storage + header wiring beyond isolated `useAuth` mocks
+- **Mocking:** axios, react-hot-toast, `useCategory`
+- **Style:** State-based (auth header, storage), Communication-based (API, toast, navigation)
+
+**3. Route protection — `Private.integration.test.js` (6 tests) — Story 3**
+- **Tested:** protected outlet when token + `user-auth` returns `ok: true` (1), `GET /api/v1/auth/user-auth` called when token present (1), spinner when unauthenticated (1), no backend call when token missing (1), spinner when `ok: false` (1), protected content gated until async auth resolves (1)
+- **Key Features:** **real** `Spinner` + **real** `AuthProvider` (localStorage hydration) + **real** `PrivateRoute`
+- **Mocking:** axios, toast, cart/search contexts, `useCategory`
+- **Style:** State-based (spinner vs outlet), Communication-based (user-auth call)
+
+**4. Protected dashboard — `Dashboard.integration.test.js` (7 tests) — Story 4**
+- **Tested:** dashboard renders under `PrivateRoute` when authorized (1), user name/email/address from **real** auth context in dashboard card (1), `UserMenu` Profile + Orders links and `href`s (1), in-app navigation to profile/orders routes (2), spinner + no dashboard for unauthenticated users (1), block when user-auth fails (1)
+- **Key Features:** integrates **real** routing hierarchy (guard + nested dashboard + menu), assertions scoped to dashboard `.card` to avoid header text collisions
+- **Mocking:** axios, toast, `useCategory`
+- **Style:** Output-based + Communication-based (navigation, authorization)
+
+---
+
+#### Backend integration tests (non-HTTP and HTTP), production fixes, and app wiring
+
+**5. Auth controller integration — `controllers/authController.integration.test.js` (10 tests)**
+- **registerController (5):** real `bcrypt` hashing before save, all fields passed to model, validation before hash/save, duplicate email skips hashing, 500 on save throw
+- **loginController (5):** real `bcrypt.compare`, JWT from `jsonwebtoken` verifiable with secret, password omitted from response body, wrong password / missing user / missing fields rejected
+- **Key Features:** real crypto + JWT; **`userModel` mocked** to keep DB out of this layer
+- **Mocking:** `userModel` (constructor / `findOne` / `save`), `req` / `res`
+- **Style:** Communication-based (model + bcrypt + JWT), State-based (status + JSON bodies)
+
+**6. Auth middleware integration — `middlewares/authMiddleware.integration.test.js` (6 tests)**
+- **Tested:** `requireSignIn` calls `next` and sets `req.user` for valid real JWT (1), 401 + no `next` for invalid/tampered token (1), wrong signing secret (1), expired token (1), missing `Authorization` (1), `req.user` shape / user id extraction (1)
+- **Key Features:** exercises **real** `jsonwebtoken.verify` + **real** `requireSignIn` implementation
+- **Mocking:** `req` / `res` / `next` only
+- **Style:** Communication-based (`next`, response), State-based (401 JSON)
+
+**7. Auth routes — Supertest + real MongoDB — `tests/integration/authRoutes.supertest.integration.test.js` (16 tests)**
+- **register (5):** missing field errors, `201` + response shape, bcrypt hash persisted (not plaintext), duplicate email against real data
+- **login (5):** success against persisted user, JWT verifiable with `JWT_SECRET`, wrong password / missing user / missing credentials
+- **user-auth (6):** access with raw JWT and with `Bearer <token>`, 401 for missing header, malformed JWT, expired JWT, wrong secret
+- **Approach:** full HTTP stack via Supertest; **no** `userModel` mock; uses helper below for connect / teardown / collection cleanup
+- **Mocking:** none at persistence layer
+- **Style:** End-to-end API contract + persistence
+
+**8. Mongo helper for Supertest — `tests/helpers/integrationMongo.js`**
+- Connects using `MONGO_URL_TEST` or `MONGO_URL`, targets dedicated integration DB name (`cs4218_ecom_integration_test`), exports `connectIntegrationMongo`, `disconnectIntegrationMongo`, `clearUsersCollection` for deterministic tests
+
+**9. Express app extraction — `app.js` + `server.js`**
+- **`app.js`:** exported Express app (middleware + mounted auth/category/product routes + `/`); **no** `listen`, **no** DB connect — usable by Supertest and production `server.js`
+- **`server.js`:** imports `app`, runs `connectDB`, calls `listen`
+- **Supporting:** `supertest` dev dependency, `npm run test:integration` (see shared Jest config below)
+
+**10. Production fixes aligned with tests — `middlewares/authMiddleware.js`, `client/src/components/Routes/Private.js`**
+- **`requireSignIn`:** consistent **401** JSON for missing/invalid JWT; strips optional `Bearer ` prefix so clients and tests can send either form
+- **`PrivateRoute`:** `try/catch` around `user-auth` axios call so HTTP failures (e.g. 401) set blocked state and show **real** `Spinner` instead of leaving UI stuck
+
+**11. MS1 unit suites, MS2-aligned updates (not new integration files)**
+- **`Login.test.js` / `Register.test.js`:** refactored/split former single success-path test into separate cases (API payload, toast, auth context, `localStorage`, navigation) to mirror integration scenarios while keeping mocked `useAuth`
+- **`Private.test.js`:** added spinner case when `axios.get` rejects (e.g. 401)
+- **`authMiddleware.test.js`:** expectations updated for 401 responses and Bearer handling; complements `authMiddleware.integration.test.js` and Supertest `user-auth` tests
+
+**12. Shared Jest integration config — `jest.integration.config.js`**
+- **With Ivan:** base `testMatch` for `tests/integration/*.test.js` (e.g. category API tests, `mongodb-memory-server`)
+- **Added:** `projects` for **`frontend-integration`** (`client/src/**/*.integration.test.js`, jsdom + Babel) and **`backend-integration`** (`controllers/*.integration.test.js`, `middlewares/*.integration.test.js`, `*.supertest.integration.test.js`, node environment)
+- **Run:** `npm run test:integration` — Supertest auth suite needs valid Mongo URI in `.env` / `.env.example` (`MONGO_URL` or `MONGO_URL_TEST`)
+
+### 7.3 Koo Zhuo Hui (A0253417H)
+### 7.3.1 UI Testing
+| Rubric story | Playwright `test.describe` | What the user does (black-box) |
+|--------------|----------------------------|--------------------------------|
+| E2E Payment (Logged In), User Search   | searchToCheckout.spec.js | Authenticated user searches for a product, adds products to cart, and navigates to cart, and makes payment |
+| Failed Payment | negativeTestPayment.spec.js | Unauthenticated user adds a product, and attempts to checkout. Logs in and provides invalid payment credentials, get prompted with invalid card details |
+| Failed Search, No Related Products | searchNoResults.spec.js | Users searches for an invalid product, and gets prompted to 'No Resuls Found'. Test scenario includes page rendering product(s) with no related products |
+| Product Details | searchProductDetails.spec.js | User navigates to the product details page of a product. And clicks on 'More Details' of a product, and clicks 'Add to Cart' from the Product Details page. Followed by removal of items in the Checkout page |
+
+### 7.3.2 Ingration Testing
+## Overview
+
+A bottom-up integration testing strategy was adopted across three test files, covering both
+backend (Node.js/Express) and frontend (React) layers. External dependencies such as the
+Braintree gateway, Mongoose models, Axios, and React Router were mocked at the outermost
+boundary, while all internal component interactions were tested with real implementations.
+
+Test cases were derived using Equivalence Partitioning (EP), Boundary Value Analysis (BVA),
+State-based testing, and Communication-based testing (mock verification)
+
+## Test Files
+
+### 1. `braintreeIntegration.test.js` - Backend (20 tests)
+Tests `braintreeTokenController` and `brainTreePaymentController` against mocked Braintree
+gateway and actual `orderModel`.
+
+| Describe Block | Tests | Techniques |
+|---|---|---|
+| Token generation | 3 | State-based |
+| Input validation (nonce, cart) | 7 | EP, BVA |
+| Cart total calculation | 4 | BVA |
+| Gateway & OrderModel integration | 5 | Communication-based, State-based |
+| Payment gateway options | 1 | Communication-based |
+
+### 2. `productDetailsIntegration.test.js` - Frontend (29 tests)
+Bottom-up across 5 layers: `CartContext` → `useParams`/Axios → chained API (getProducts/getRelatedProducts)→ related
+products rendering → `CartContext` write-back.
+
+| Describe Block | Tests | Techniques |
+|---|---|---|
+| `getProduct` API call & product field rendering | 10 | EP, State-based, Communication-based |
+| Chained `getProduct` → `getSimilarProduct` | 3 | Communication-based, State-based |
+| Related products count (BVA: 0, 1, 2) | 3 | BVA |
+| Related product card fields & navigation | 5 | State-based, Communication-based |
+| Description truncation at 60 chars (BVA) | 3 | BVA |
+| ADD TO CART ↔ CartContext | 5 | State-based, Communication-based |
+
+### 3. `searchIntegration.test.js` - Frontend (31 tests)
+Bottom-up across 5 layers: `SearchContext` → `SearchInput`+context → `Search` page+context
+→ `CartContext`. 
+
+  &nbsp;&nbsp;&nbsp;&nbsp; 3.1 SearchContext & SearchInput Integration (13 tests)
+  
+  Tested the search input with edge cases like empty keywords,alphanumeric keytwords, special chars. Applied BVA techniques to test API calls, tested the success
+and failure of API calls, and the return of the result(s) of getProduct API.
+
+  &nbsp;&nbsp;&nbsp;&nbsp;  3.2 Search Context & Search Page Integration (11 tests)
+
+For Search page, tests were generated using EP technique
+to verify product description is truncated properly, and product fields such as name, price, and image was rendered from the API result. Test if page correct renders the number of products found at various levels (0/1/>1).
+
+  &nbsp;&nbsp;&nbsp;&nbsp; 3.3 Full Pipeline: SearchInput → API → SearchContext → Search (4 tests)
+
+  Tested all 3 components in totality, which included successful and unsuccessful searching of products, API call errors and handling.
+
+  &nbsp;&nbsp;&nbsp;&nbsp; 3.4 Search Page ↔ CartContext (4 tests)
+
+Verified functionality of 'Add To Cart' in the Search page to properly verify functionality across the CartContext, which includes correct addition of products to the context itself, and localStorage.
+For example, add 1 item to initially empty cart, add 1 item to existing cart, and add 2 differnt items to cart etc. Other tests includes accurate page navigation to the product site when enters a search.
+
+
+
+
+
+### 7.4 Alyssa Ong Yi Xian
+
+### 7.4.1 UI testing (Playwright, black-box)
+
+**Files and test counts:**
+
+| File | Number of Tests | Scope Covered |
+|---|---:|---|
+| `tests/ui/contact.spec.js` | 10 | Contact page user journeys and navigation continuity |
+| `tests/ui/policy.spec.js` | 10 | Policy page journeys, auth/guest flows, and recovery paths |
+| `tests/ui/footer.spec.js` | 13 | Footer navigation journeys across guest, user, and admin flows |
+| `tests/ui/header.spec.js` | 16 | Header interactions, auth transitions, search, cart badge, and responsive flows |
+| `tests/ui/layout.spec.js` | 10 | Shared layout continuity across navigation, auth, and protected-route recovery |
+| `tests/ui/spinner.spec.js` | 12 | Protected-route spinner behavior, redirects, countdown, and accessibility |
+| `tests/ui/about.spec.js` | 10 | About page journeys, continuity, and responsive navigation |
+| `tests/ui/pagenotfound.spec.js` | 10 | 404 recovery journeys across guest, user, and admin flows |
+| `tests/ui/admin-users.spec.js` | 13 | Admin Users page journeys, access control, sidebar/header navigation, and recovery flows |
+| `tests/ui/homepage.spec.js` | 8 | Homepage journeys with filters, load more, cart, and authenticated flow |
+| `tests/ui/orders.spec.js` | 12 | User orders journeys, dashboard navigation, continuity, and recovery |
+| `tests/ui/cart.spec.js` | 12 | Cart journeys for guest/auth users, address flow, removal, and recovery |
+
+**UI subtotal: 136 tests**
+
+### 7.4.2 Integration testing (Jest, white-box, bottom-up)
+
+**Files and test counts:**
+
+| File | Number of Tests | Scope Covered |
+|---|---:|---|
+| `controllers/orders.integration.test.js` | 108 | Backend integration across auth middleware, order/profile controllers, routes, and persistence behavior |
+| `client/src/pages/user/Orders.integration.test.js` | 30 | User Orders page integration with real provider/routing interactions and API boundaries |
+| `client/src/pages/user/Profile.integration.test.js` | 23 | Profile page integration including auth context sync, localStorage persistence, and cross-page flows |
+| `client/src/pages/admin/Users.integration.test.js` | 21 | Admin Users page integration with real AdminMenu routing and provider hydration |
+| `client/src/pages/CartPage.integration.test.js` | 28 | Cart page integration across auth/cart state, payment UI states, and flow continuity |
+| `client/src/pages/HomePage.integration.test.js` | 22 | Homepage integration for product/category fetching, filters, pagination, and cart interactions |
+
+**Integration subtotal: 232 tests**
+
+**Total tests in Section 7.4: 368**

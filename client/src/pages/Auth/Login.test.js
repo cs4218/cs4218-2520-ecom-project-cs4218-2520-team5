@@ -1,5 +1,6 @@
 // Test cases written by: Ong Xin Hui Lynnette, A0257058X
 // Assisted by AI
+// MS1: primary unit tests for Login. MS2: refactored/split success-path tests; end-to-end integration for Login is in Login.integration.test.js.
 import React from "react";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import axios from "axios";
@@ -103,16 +104,17 @@ describe("Login Component", () => {
     );
   });
 
-  it("should login successfully, store auth data and navigate", async () => {
-    const mockResponse = {
-      data: {
-        success: true,
-        message: "login successfully",
-        user: { _id: "u1", name: "John", email: "john@test.com" },
-        token: "jwt-token",
-      },
-    };
-    axios.post.mockResolvedValueOnce(mockResponse);
+  const mockLoginResponse = {
+    data: {
+      success: true,
+      message: "login successfully",
+      user: { _id: "u1", name: "John", email: "john@test.com" },
+      token: "jwt-token",
+    },
+  };
+
+  const submitLoginForm = async () => {
+    axios.post.mockResolvedValueOnce(mockLoginResponse);
     renderLogin();
 
     fireEvent.change(screen.getByPlaceholderText("Enter Your Email"), {
@@ -124,23 +126,51 @@ describe("Login Component", () => {
     fireEvent.click(screen.getByText("LOGIN"));
 
     await waitFor(() => expect(axios.post).toHaveBeenCalled());
+  };
+
+  it("should call the login API with the correct payload", async () => {
+    await submitLoginForm();
+
     expect(axios.post).toHaveBeenCalledWith("/api/v1/auth/login", {
       email: "john@test.com",
       password: "pass123",
     });
+  });
+
+  it("should show a success toast on successful login", async () => {
+    await submitLoginForm();
+
     expect(toast.success).toHaveBeenCalledWith("login successfully", {
       duration: 5000,
       icon: "🙏",
       style: { background: "green", color: "white" },
     });
+  });
+
+  it("should update auth context with user and token on successful login", async () => {
+    await submitLoginForm();
+
     expect(mockSetAuth).toHaveBeenCalledWith({
-      user: mockResponse.data.user,
+      user: mockLoginResponse.data.user,
       token: "jwt-token",
     });
+  });
+
+  it("should persist auth data to localStorage on successful login", async () => {
+    await submitLoginForm();
+
     expect(window.localStorage.setItem).toHaveBeenCalledWith(
       "auth",
-      JSON.stringify(mockResponse.data)
+      JSON.stringify(mockLoginResponse.data)
     );
+  });
+
+  it("should navigate to home page on successful login", async () => {
+    await submitLoginForm();
+
+    await waitFor(() => {
+      expect(screen.getByText("Home Page")).toBeInTheDocument();
+    });
   });
 
   it("should show error toast when server returns success false", async () => {

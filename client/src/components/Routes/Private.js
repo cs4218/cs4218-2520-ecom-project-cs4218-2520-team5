@@ -1,3 +1,7 @@
+// MS2 — PrivateRoute: handle axios failures (e.g. 401) from user-auth
+// Written by: Ong Xin Hui Lynnette, A0257058X
+// Assisted by AI
+
 import React, { useState,useEffect } from "react";
 import { useAuth } from "../../context/auth";
 import { Outlet } from "react-router-dom";
@@ -10,10 +14,14 @@ export default function PrivateRoute(){
 
     useEffect(()=> {
         const authCheck = async() => {
-            const res = await axios.get("/api/v1/auth/user-auth");
-            if(res.data.ok){
-                setOk(true);
-            } else {
+            try {
+                const res = await axios.get("/api/v1/auth/user-auth");
+                if(res.data.ok){
+                    setOk(true);
+                } else {
+                    setOk(false);
+                }
+            } catch {
                 setOk(false);
             }
         };

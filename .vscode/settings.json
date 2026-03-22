@@ -1,0 +1,7 @@
+{
+	"jest.jestCommandLine": "node --experimental-vm-modules node_modules/jest/bin/jest.js --config jest.backend.config.js",
+	"jest.shell": {
+		"path": "C:\\Program Files\\Git\\usr\\bin\\bash.exe",
+		"args": ["-i", "-c"]
+	}
+}
