@@ -539,9 +539,6 @@ All Milestone 2 work below was done with the assistance of AI.
 
 Seeded credentials come from `tests/ui/global-setup.js` (`POST /api/v1/test/setup-user`); password for that user is `Test@12345` (same as existing admin/user seed helpers).
 
-**Run:** `npm run test:ui` (all UI specs) or `npx playwright test tests/ui/ms2-user-auth-e2e.spec.js` (this file only). **Per story:** `npx playwright test tests/ui/ms2-user-auth-e2e.spec.js -g "Story N"` (replace N with 1–5).
-
-
 ### 7.2.2 Frontend integration tests (Jest + React Testing Library, white-box, bottom-up partial integration)
 
 Approach: integrate **real** `AuthProvider` / `CartProvider` / `SearchProvider`, **real** `MemoryRouter` + nested routes, **real** `Layout` / `Header` / `Footer` / `UserMenu` / `Spinner` / `PrivateRoute` where relevant; mock only **external boundaries** (`axios`, `react-hot-toast`, `useCategory`, `matchMedia`).
@@ -570,7 +567,6 @@ Approach: integrate **real** `AuthProvider` / `CartProvider` / `SearchProvider`,
 - **Mocking:** axios, toast, `useCategory`
 - **Style:** Output-based + Communication-based (navigation, authorization)
 
----
 
 #### Backend integration tests (non-HTTP and HTTP), production fixes, and app wiring
 
@@ -730,3 +726,56 @@ For example, add 1 item to initially empty cart, add 1 item to existing cart, an
 **Integration subtotal: 232 tests**
 
 **Total tests in Section 7.4: 368**
+
+## 7.5 Premakumar Meenu Lekha
+
+### 7.5.1 UI Testing
+
+| Rubric story | Playwright `test.describe` | What the user does (black-box) |
+|---|---|---|
+| Product API & Search | `productApiIntegration.spec.js` | Admin creates a product via POST; non-admin attempt returns 403. User searches by exact match, partial match, and description keyword; empty query returns zero results |
+| Filtered Product Retrieval | `productApiIntegration.spec.js` | User filters products by category, price range, and combined category + price; results reflect applied filters correctly |
+| Admin Order Status Updates | `search-and-orders.spec.js` | Admin logs in, views all orders, and updates order status to Processing, Shipped, Delivered, or Cancelled; status updates immediately in UI |
+| Search & Navigation | `search-and-orders.spec.js` | User fills search input, clicks Search, is routed to /search, and product cards are rendered; empty query returns zero cards |
+| Description Truncation | `search-and-orders.spec.js` | Product cards show ≤200 char descriptions; clicking through to product detail page shows full description |
+
+### 7.5.2 Integration Testing
+
+#### Overview
+
+A bottom-up integration testing strategy was adopted across three test files, covering the Product API and Admin Order Management layers. Real MongoDB models are exercised via authentic controllers, integrated on top of Express routes and auth middleware. Isolation is achieved via mongodb-memory-server, where each test file spins up a fresh in-memory MongoDB instance. Test cases were derived using Equivalence Partitioning (EP), Boundary Value Analysis (BVA), State-based testing, and Communication-based testing.
+
+#### Test Files
+
+**1. `productApiIntegration.test.js` — Backend (19 tests)**
+
+Tests the product controller against real Mongoose models and Express routes, covering the full product lifecycle from creation to retrieval.
+
+| Describe Block | Tests | Techniques |
+|---|---|---|
+| Product creation (admin vs non-admin) | 2 | EP, State-based |
+| Search logic (exact, partial, description, empty) | 4 | EP, BVA |
+| Filtered retrieval (category, price, combined) | 3 | EP, BVA |
+| Category relationships (populated, non-existent) | 2 | State-based, EP |
+| Related products (up to 3, excluding source) | 3 | BVA, State-based |
+
+**2. `orderApiIntegration.test.js` — Backend (14 tests)**
+
+Tests the admin order controller against real Mongoose models, covering order retrieval, status transitions, and user isolation.
+
+| Describe Block | Tests | Techniques |
+|---|---|---|
+| GET all orders (admin vs non-admin) | 3 | EP, State-based |
+| PUT order status (all four transitions) | 6 | State-based, BVA |
+| GET user orders (isolation across users) | 5 | EP, Communication-based |
+
+**3. `search-and-orders.spec.js` — UI/E2E (13 tests)**
+
+Playwright black-box tests covering search navigation and admin order management workflows.
+
+| Describe Block | Tests | Techniques |
+|---|---|---|
+| Search & navigation flow | 3 | State-based |
+| Description truncation | 2 | BVA |
+| Search context & re-navigation | 3 | State-based, EP |
+| Admin order status updates | 5 | State-based, Communication-based |
