@@ -1,15 +1,17 @@
 //Koo Zhuo Hui, A0253417H
 import { test, expect } from "@playwright/test";
+import { getSeededRegularUserAuth, SEEDED_USER_PASSWORD } from "./helpers/ms2UserUiHelpers.js";
 
 test("Search then Navigate to Product Details", async ({ page }) => {
+	const { user } = getSeededRegularUserAuth();
 	await page.goto("http://localhost:3000/");
 	await page.getByRole("link", { name: "Login" }).click();
 	await page.getByRole("textbox", { name: "Enter Your Email" }).click();
-	await page.getByRole("textbox", { name: "Enter Your Email" }).fill("zhuohui.koo@gmail.com");
+	await page.getByRole("textbox", { name: "Enter Your Email" }).fill(user.email);
 	await page.getByRole("textbox", { name: "Enter Your Email" }).press("Tab");
-	await page.getByRole("textbox", { name: "Enter Your Password" }).fill("123456");
+	await page.getByRole("textbox", { name: "Enter Your Password" }).fill(SEEDED_USER_PASSWORD);
 	await page.getByRole("button", { name: "LOGIN" }).click();
-	await page.waitForURL("**/");
+	await page.waitForURL("**/", { timeout: 15000 });
 	await page.getByRole("searchbox", { name: "Search" }).click();
 	await page.getByRole("searchbox", { name: "Search" }).fill("phone");
 	await page.getByRole("button", { name: "Search" }).click();
@@ -92,14 +94,14 @@ test("Search then Navigate to Product Details", async ({ page }) => {
 	await page.getByRole("button", { name: "Remove" }).first().click();
 	await page.getByRole("button", { name: "Remove" }).first().click();
 
-	await expect(page.getByRole("heading", { name: "Hello Ivan You Have 1 items" })).toBeVisible();
+	await expect(page.getByRole("heading", { name: /Hello.*You Have 1 items/ })).toBeVisible();
 	await expect(page.getByText("LaptopA powerful laptopPrice :")).toBeVisible();
 
 	await page
 		.locator("div")
 		.filter({ hasText: /^Remove$/ })
 		.click();
-	await expect(page.getByRole("heading", { name: "Hello Ivan Your Cart Is Empty" })).toBeVisible();
+	await expect(page.getByRole("heading", { name: /Hello.*Your Cart Is Empty/ })).toBeVisible();
 
 	await page.getByRole("link", { name: "Home" }).click();
 	await expect(page.getByRole("searchbox", { name: "Search" })).toHaveValue("phone");
