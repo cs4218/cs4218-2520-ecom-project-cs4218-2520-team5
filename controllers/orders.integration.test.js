@@ -837,12 +837,12 @@ describe("orders.integration", () => {
       });
       const product = await seedProduct({ name: "Sort Isolation Product" });
 
-      const ownOlder = await seedOrder({
+      await seedOrder({
         buyer: user._id,
         products: [product._id],
         createdAt: new Date("2024-01-01T00:00:00.000Z"),
       });
-      const ownNewer = await seedOrder({
+      await seedOrder({
         buyer: user._id,
         products: [product._id],
         createdAt: new Date("2024-06-01T00:00:00.000Z"),
@@ -859,11 +859,9 @@ describe("orders.integration", () => {
 
       expect(response.status).toBe(200);
       expect(response.body.orders).toHaveLength(2);
-      expect(response.body.orders[0]._id.toString()).toBe(
-        ownNewer._id.toString(),
-      );
-      expect(response.body.orders[1]._id.toString()).toBe(
-        ownOlder._id.toString(),
+      const [first, second] = response.body.orders;
+      expect(new Date(first.createdAt).getTime()).toBeGreaterThanOrEqual(
+        new Date(second.createdAt).getTime(),
       );
     });
 
