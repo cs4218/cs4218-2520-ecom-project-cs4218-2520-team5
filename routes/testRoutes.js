@@ -94,4 +94,31 @@ router.post("/setup-user", devOnly, async (req, res) => {
   }
 });
 
+// POST /api/v1/test/setup-zhuohui-user
+// Upserts Zhuo Hui's test user for Playwright UI tests (search/payment specs).
+router.post("/setup-zhuohui-user", devOnly, async (_req, res) => {
+  try {
+    const hashed = await hashPassword("123456");
+    const user = await userModel.findOneAndUpdate(
+      { email: "zhuohui.koo@gmail.com" },
+      {
+        name: "Ivan",
+        email: "zhuohui.koo@gmail.com",
+        password: hashed,
+        phone: "91234567",
+        address: "Blk 656 Choa Chu Kang Ave 3",
+        answer: "soccer",
+        role: 0,
+      },
+      { upsert: true, new: true }
+    );
+    const token = JWT.sign({ _id: user._id }, process.env.JWT_SECRET, {
+      expiresIn: "1d",
+    });
+    res.json({ success: true, token, user });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
 export default router;

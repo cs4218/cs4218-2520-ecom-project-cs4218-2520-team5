@@ -51,6 +51,16 @@ async function globalSetup() {
   }
   process.env.USER_AUTH = JSON.stringify(userData);
 
+  // --- Create / reset Zhuo Hui's test user (zhuohui.koo@gmail.com) ---
+  const zhRes = await ctx.post("/api/v1/test/setup-zhuohui-user");
+  const zhData = await zhRes.json();
+  if (!zhData.success) {
+    throw new Error(
+      `Failed to create Zhuo Hui test user: ${zhData.message}. ` +
+        "Ensure the backend is running and NODE_ENV !== 'production'."
+    );
+  }
+
   await ctx.dispose();
 }
 

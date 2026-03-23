@@ -34,9 +34,10 @@ test("Search -> Add To Cart -> Checkout", async ({ page }) => {
 	expect(searchButtonTextColor).toBe("rgb(25, 135, 84)");
 
 	await searchButton.hover();
-	await page.waitForTimeout(500);
-	const hoverBgColor = await searchButton.evaluate((el) => getComputedStyle(el).backgroundColor);
-	expect(hoverBgColor).toBe("rgb(25, 135, 84)");
+	await expect(async () => {
+		const hoverBgColor = await searchButton.evaluate((el) => getComputedStyle(el).backgroundColor);
+		expect(hoverBgColor).toBe("rgb(25, 135, 84)");
+	}).toPass({ timeout: 3000 });
 
 	await page.getByRole("searchbox", { name: "Search" }).click();
 	await page.getByRole("searchbox", { name: "Search" }).click();
