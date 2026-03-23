@@ -1,7 +1,9 @@
 //Koo Zhuo Hui, A0253417H
 import { test, expect } from "@playwright/test";
+import { getSeededRegularUserAuth, SEEDED_USER_PASSWORD } from "./helpers/ms2UserUiHelpers.js";
 
 test("Search -> Add To Cart -> Checkout", async ({ page }) => {
+	const { user } = getSeededRegularUserAuth();
 	await page.goto("http://localhost:3000/");
 	await expect(page.getByRole("link", { name: "Login" })).toBeVisible();
 
@@ -12,11 +14,11 @@ test("Search -> Add To Cart -> Checkout", async ({ page }) => {
 	await expect(page.getByRole("button", { name: "LOGIN" })).toBeVisible();
 
 	await page.getByRole("textbox", { name: "Enter Your Email" }).click();
-	await page.getByRole("textbox", { name: "Enter Your Email" }).fill("zhuohui.koo@gmail.com");
+	await page.getByRole("textbox", { name: "Enter Your Email" }).fill(user.email);
 	await page.getByRole("textbox", { name: "Enter Your Email" }).press("Tab");
-	await page.getByRole("textbox", { name: "Enter Your Password" }).fill("123456");
+	await page.getByRole("textbox", { name: "Enter Your Password" }).fill(SEEDED_USER_PASSWORD);
 	await page.getByRole("button", { name: "LOGIN" }).click();
-	await page.waitForURL("**/");
+	await page.waitForURL("**/", { timeout: 15000 });
 
 	await expect(page.getByRole("searchbox", { name: "Search" })).toBeVisible();
 	await expect(page.getByRole("button", { name: "Search" })).toBeVisible();

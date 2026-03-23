@@ -1,8 +1,10 @@
 //Koo Zhuo Hui, A0253417H
 
 import { test, expect } from "@playwright/test";
+import { getSeededRegularUserAuth, SEEDED_USER_PASSWORD } from "./helpers/ms2UserUiHelpers.js";
 
 test("Logged Out User Payment And Invalid Payment Credentials", async ({ page }) => {
+	const { user } = getSeededRegularUserAuth();
 	await page.goto("http://localhost:3000/");
 
 	//Add product to cart
@@ -32,13 +34,13 @@ test("Logged Out User Payment And Invalid Payment Credentials", async ({ page })
 	//User logs in
 	await page.getByRole("button", { name: "Please Login to checkout" }).click();
 	await page.getByRole("textbox", { name: "Enter Your Email" }).click();
-	await page.getByRole("textbox", { name: "Enter Your Email" }).fill("zhuohui.koo@gmail.com");
+	await page.getByRole("textbox", { name: "Enter Your Email" }).fill(user.email);
 	await page.getByRole("textbox", { name: "Enter Your Email" }).press("Tab");
-	await page.getByRole("textbox", { name: "Enter Your Password" }).fill("123456");
+	await page.getByRole("textbox", { name: "Enter Your Password" }).fill(SEEDED_USER_PASSWORD);
 	await page.getByRole("button", { name: "LOGIN" }).click();
 
 	//Logged In
-	await expect(page.getByText("Current AddressBlk 656 Choa")).toBeVisible();
+	await expect(page.getByText("Current Address")).toBeVisible();
 	await expect(page.getByText("Choose a way to pay")).toBeVisible();
 
 	//Keys in invalid card details
