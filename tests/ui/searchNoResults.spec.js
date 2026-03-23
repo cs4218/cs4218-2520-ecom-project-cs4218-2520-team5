@@ -12,12 +12,12 @@ test("Search No Results", async ({ page }) => {
 	await expect(page.locator("h6")).toContainText("No Products Found");
 	await expect(page.getByRole("searchbox", { name: "Search" })).toHaveValue("wergfpowef");
 
-	await page.getByRole("searchbox", { name: "Search" }).press("ControlOrMeta+a");
 	await page.getByRole("searchbox", { name: "Search" }).fill("NUS T-Shirt");
-	await page.getByRole("searchbox", { name: "Search" }).press("Enter");
 	await page.getByRole("button", { name: "Search" }).click();
 	await page.waitForURL("**/search**");
-	await page.getByRole("button", { name: "More Details" }).click();
+	await expect(page.getByRole("button", { name: "More Details" }).first()).toBeVisible();
+	await page.getByRole("button", { name: "More Details" }).first().click();
+	await page.waitForURL("**/product/nus-tshirt");
 
 	await page.waitForURL("**/product/nus-tshirt");
 	await expect(page.getByRole("heading", { name: "Name : NUS T-shirt" })).toBeVisible();
