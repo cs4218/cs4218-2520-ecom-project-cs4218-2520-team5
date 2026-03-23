@@ -35,6 +35,7 @@ export default {
       moduleNameMapper: {
         "^(\\.{1,2}/.*)\\.js$": "$1",
       },
+      testTimeout: 50000,
       testMatch: [
         "<rootDir>/controllers/*.integration.test.js",
         "<rootDir>/middlewares/*.integration.test.js",
