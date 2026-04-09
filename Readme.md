@@ -782,7 +782,7 @@ Playwright black-box tests covering search navigation and admin order management
 
 ---
 
-## 8. Milestone 3 — Non-Functional Tests (Spike Testing)
+## 8. Milestone 3 — Non-Functional Tests
 
 ### Overview
 
@@ -791,10 +791,10 @@ Each team member automated a distinct type of non-functional test. Test types ar
 | Member | Test Type | Tool | Files |
 |--------|-----------|------|-------|
 | Ang Yi Jie, Ivan | **Spike Testing** | Grafana k6 | `tests/spike/` |
-| Ong Xin Hui Lynnette | TBD | TBD | TBD |
-| Alyssa Ong Yi Xian | TBD | TBD | TBD |
-| Premakumar Meenu Lekha | TBD | TBD | TBD |
-| Koo Zhuo Hui | TBD | TBD | TBD |
+| Ong Xin Hui Lynnette | **Load Testing** | TBD | TBD |
+| Alyssa Ong Yi Xian | **Stress Testing** | TBD | TBD |
+| Koo Zhuo Hui | **Volume Testing** | TBD | TBD |
+| Premakumar Meenu Lekha | **Soak Testing** | TBD | TBD |
 
 ---
 
@@ -864,3 +864,27 @@ bash tests/spike/run-spike-tests.sh
 - **Auth (login)**: Highest-value target for traffic spikes — e-commerce sites routinely see sudden login floods after marketing emails or flash sales. bcrypt hashing makes login CPU-intensive; it is the most likely bottleneck under concurrent load.
 - **Categories**: A read-heavy, lightly-protected endpoint hit on every homepage load. Spike behaviour here reflects how well MongoDB query caching and Express handle burst reads.
 - **Product listing + search**: The hot path for any shopping session. Product search involves a MongoDB regex scan; product listing involves sorting and skipping — both are sensitive to concurrency.
+
+---
+
+### 8.2 Ong Xin Hui Lynnette — Load Testing
+
+*(To be filled in by Lynnette)*
+
+---
+
+### 8.3 Alyssa Ong Yi Xian — Stress Testing
+
+*(To be filled in by Alyssa)*
+
+---
+
+### 8.4 Koo Zhuo Hui — Volume Testing
+
+*(To be filled in by Zhuo Hui)*
+
+---
+
+### 8.5 Premakumar Meenu Lekha — Soak Testing
+
+*(To be filled in by Meenu)*
