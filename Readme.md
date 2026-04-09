@@ -779,3 +779,88 @@ Playwright black-box tests covering search navigation and admin order management
 | Description truncation | 2 | BVA |
 | Search context & re-navigation | 3 | State-based, EP |
 | Admin order status updates | 5 | State-based, Communication-based |
+
+---
+
+## 8. Milestone 3 — Non-Functional Tests (Spike Testing)
+
+### Overview
+
+Each team member automated a distinct type of non-functional test. Test types are not repeated across members.
+
+| Member | Test Type | Tool | Files |
+|--------|-----------|------|-------|
+| Ang Yi Jie, Ivan | **Spike Testing** | Grafana k6 | `tests/spike/` |
+| Ong Xin Hui Lynnette | TBD | TBD | TBD |
+| Alyssa Ong Yi Xian | TBD | TBD | TBD |
+| Premakumar Meenu Lekha | TBD | TBD | TBD |
+| Koo Zhuo Hui | TBD | TBD | TBD |
+
+---
+
+### 8.1 Ang Yi Jie, Ivan (A0259256U) — Spike Testing with Grafana k6
+
+#### What is Spike Testing?
+
+Spike testing validates system behaviour under a sudden, extreme surge of traffic — far beyond normal load — then checks that the system recovers gracefully. It is distinct from load or stress testing: the traffic jump is abrupt (seconds, not minutes) and the focus is on resilience and recovery rather than sustained capacity.
+
+#### Tool: Grafana k6
+
+[k6](https://k6.io) is an open-source, developer-friendly performance testing tool. Scripts are written in JavaScript, thresholds are declared as code, and results include per-metric percentile breakdowns. It integrates cleanly into CI and requires no GUI.
+
+Install: `brew install k6`
+
+#### Test Files
+
+All files are in `tests/spike/`. Every file contains `// Ivan Ang, A0259256U` per the authorship requirement.
+
+| File | Endpoints Under Test | Spike Peak |
+|------|---------------------|-----------|
+| `spike-auth.js` | `POST /api/v1/auth/login`, `GET /api/v1/auth/user-auth` | 200 VUs |
+| `spike-categories.js` | `GET /api/v1/category/get-category`, `GET /api/v1/category/single-category/:slug` | 200 VUs |
+| `spike-products.js` | `GET /api/v1/product/product-count`, `GET /api/v1/product/product-list/1`, `GET /api/v1/product/search/:keyword` | 250 VUs |
+| `run-spike-tests.sh` | Orchestrates all three suites; saves JSON results to `tests/spike/results/` | — |
+
+#### Spike Pattern (all tests)
+
+```
+Warm-up  (15 s →  5 VUs)
+Baseline (30 s → 20–25 VUs)
+SPIKE    (10 s → 200–250 VUs)   ← sudden 10× burst
+Recovery (30 s → 20–25 VUs)
+Cool-down(15 s →  0 VUs)
+```
+
+#### Thresholds
+
+| Test | Key Thresholds |
+|------|---------------|
+| Auth | `login_duration p(95) < 800 ms`, `error_rate < 5%`, `login_success_rate > 90%`, `http_req_duration p(99) < 1500 ms` |
+| Categories | `category_list_duration p(95) < 500 ms`, `error_rate < 5%`, `http_req_duration p(99) < 1000 ms` |
+| Products | `product_list_duration p(95) < 600 ms`, `search_duration p(95) < 700 ms`, `error_rate < 5%`, `http_req_duration p(99) < 1200 ms` |
+
+#### How to Run
+
+Prerequisites: k6 installed, server running on port 6060, a test user registered in the database.
+
+```bash
+# Run all spike tests (saves JSON results to tests/spike/results/)
+npm run test:spike
+
+# Run individual suites
+npm run test:spike:auth
+npm run test:spike:categories
+npm run test:spike:products
+
+# Override defaults
+BASE_URL=http://localhost:6060 \
+TEST_EMAIL=user@example.com \
+TEST_PASSWORD=secret123 \
+bash tests/spike/run-spike-tests.sh
+```
+
+#### Rationale for Endpoint Selection
+
+- **Auth (login)**: Highest-value target for traffic spikes — e-commerce sites routinely see sudden login floods after marketing emails or flash sales. bcrypt hashing makes login CPU-intensive; it is the most likely bottleneck under concurrent load.
+- **Categories**: A read-heavy, lightly-protected endpoint hit on every homepage load. Spike behaviour here reflects how well MongoDB query caching and Express handle burst reads.
+- **Product listing + search**: The hot path for any shopping session. Product search involves a MongoDB regex scan; product listing involves sorting and skipping — both are sensitive to concurrency.
