@@ -31,6 +31,16 @@ echo "  BASE_URL : $BASE_URL"
 echo "  TIMESTAMP: $TIMESTAMP"
 echo "=========================================="
 
+# Health check — fail fast if the server is not reachable
+echo ""
+echo "---------- Health check ----------"
+if ! curl -sf "${BASE_URL}/api/v1/product/product-count" -o /dev/null; then
+  echo "ERROR: Server is not reachable at ${BASE_URL}."
+  echo "       Start the server with 'npm run server' and try again."
+  exit 1
+fi
+echo "Server is up."
+
 # Ensure the test user exists (idempotent — silently ignored if already registered)
 echo ""
 echo "---------- Seeding test user ----------"
