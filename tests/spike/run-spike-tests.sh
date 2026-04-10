@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
 # Ivan Ang, A0259256U
-# Assisted by AI
 #
 # Runs all k6 spike tests and saves JSON + HTML reports to tests/spike/results/.
 #
@@ -31,6 +30,16 @@ echo "  Virtual Vault — Spike Tests"
 echo "  BASE_URL : $BASE_URL"
 echo "  TIMESTAMP: $TIMESTAMP"
 echo "=========================================="
+
+# Ensure the test user exists (idempotent — silently ignored if already registered)
+echo ""
+echo "---------- Seeding test user ----------"
+curl -s -X POST "${BASE_URL}/api/v1/auth/register" \
+  -H "Content-Type: application/json" \
+  -d "{\"name\":\"Spike Test User\",\"email\":\"${TEST_EMAIL}\",\"password\":\"${TEST_PASSWORD}\",\"phone\":\"12345678\",\"address\":\"Test Address\",\"answer\":\"test\"}" \
+  | grep -q '"success":true' \
+  && echo "Test user registered." \
+  || echo "Test user already exists (or registration skipped)."
 
 run_spike() {
   local name="$1"

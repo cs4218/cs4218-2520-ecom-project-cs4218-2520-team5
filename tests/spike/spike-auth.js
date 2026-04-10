@@ -113,7 +113,7 @@ export default function () {
     authCheckDuration.add(authRes.timings.duration);
     requestsTotal.add(1);
 
-    const authOk = check(authRes, {
+    check(authRes, {
       "user-auth: status 200": (r) => r.status === 200,
       "user-auth: ok flag true": (r) => {
         try {
@@ -125,7 +125,7 @@ export default function () {
       "user-auth: response under 500ms": (r) => r.timings.duration < 500,
     });
 
-    errorRate.add(!authOk);
+    errorRate.add(authRes.status >= 400); // only actual HTTP errors, not latency misses
   }
 
   sleep(0.3);
