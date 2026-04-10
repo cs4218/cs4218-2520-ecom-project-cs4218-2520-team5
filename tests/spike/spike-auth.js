@@ -74,7 +74,12 @@ export default function () {
   loginDuration.add(loginRes.timings.duration);
   requestsTotal.add(1);
 
-  const loginOk = check(loginRes, {
+  // Track whether login actually succeeded (status + token) — independent of latency
+  const loginSucceeded =
+    loginRes.status === 200 &&
+    (() => { try { return typeof loginRes.json("token") === "string"; } catch (_) { return false; } })();
+
+  check(loginRes, {
     "login: status 200": (r) => r.status === 200,
     "login: has token": (r) => {
       try {
@@ -86,17 +91,15 @@ export default function () {
     "login: response under 800ms": (r) => r.timings.duration < 800,
   });
 
-  loginSuccessRate.add(loginOk);
+  loginSuccessRate.add(loginSucceeded);
   errorRate.add(loginRes.status >= 500); // only server errors count as failures
 
   sleep(0.2);
 
   // ---- 2. Protected auth-check (if login succeeded) ----
   let token = null;
-  try {
-    token = loginRes.json("token");
-  } catch (_) {
-    // token unavailable — skip protected endpoint
+  if (loginSucceeded) {
+    try { token = loginRes.json("token"); } catch (_) {}
   }
 
   if (token) {
