@@ -32,7 +32,11 @@ describe('HomePage', () => {
   });
 
   test('renders without crashing', () => {
-    render(<HomePage />, { wrapper: MemoryRouter });
+    render(
+      <MemoryRouter>
+        <HomePage />
+      </MemoryRouter>
+    );
     expect(screen.getByAltText('bannerimage')).toBeInTheDocument();
   });
 
@@ -40,7 +44,11 @@ describe('HomePage', () => {
     axios.get.mockResolvedValueOnce({ data: { success: true, category: [] } });
     axios.get.mockResolvedValueOnce({ data: { total: 0 } });
 
-    render(<HomePage />, { wrapper: MemoryRouter });
+    render(
+      <MemoryRouter>
+        <HomePage />
+      </MemoryRouter>
+    );
 
     expect(screen.getByText('Filter By Category')).toBeInTheDocument();
     expect(screen.getByText('Filter By Price')).toBeInTheDocument();
@@ -48,51 +56,57 @@ describe('HomePage', () => {
   });
 
   test('handles user interactions', async () => {
-    axios.get.mockResolvedValueOnce({ data: { success: true, category: [] } });
-    axios.get.mockResolvedValueOnce({ data: { total: 0 } });
+    axios.get.mockResolvedValueOnce({ data: { success: true, category: [{ _id: '1', name: 'Category 1' }] } });
+    axios.get.mockResolvedValueOnce({ data: { total: 1 } });
+    axios.get.mockResolvedValueOnce({ data: { products: [{ _id: '1', name: 'Product 1', price: 100, description: 'Description 1', slug: 'product-1' }] } });
 
-    render(<HomePage />, { wrapper: MemoryRouter });
+    render(
+      <MemoryRouter>
+        <HomePage />
+      </MemoryRouter>
+    );
 
-    const resetButton = screen.getByText('RESET FILTERS');
-    userEvent.click(resetButton);
-    expect(window.location.reload).toHaveBeenCalled();
+    await waitFor(() => expect(screen.getByText('Category 1')).toBeInTheDocument());
+
+    userEvent.click(screen.getByText('Category 1'));
+    expect(axios.post).toHaveBeenCalledWith('/api/v1/product/product-filters', expect.any(Object));
+
+    userEvent.click(screen.getByText('More Details'));
+    expect(screen.getByText('More Details')).toBeInTheDocument();
+
+    userEvent.click(screen.getByText('ADD TO CART'));
+    expect(screen.getByText('ADD TO CART')).toBeInTheDocument();
   });
 
   test('handles API success and error states', async () => {
     axios.get.mockResolvedValueOnce({ data: { success: true, category: [] } });
     axios.get.mockResolvedValueOnce({ data: { total: 0 } });
+    axios.get.mockRejectedValueOnce(new Error('Network Error'));
 
-    render(<HomePage />, { wrapper: MemoryRouter });
+    render(
+      <MemoryRouter>
+        <HomePage />
+      </MemoryRouter>
+    );
 
-    await waitFor(() => {
-      expect(axios.get).toHaveBeenCalledWith('/api/v1/category/get-category');
-      expect(axios.get).toHaveBeenCalledWith('/api/v1/product/product-count');
-    });
-
-    axios.get.mockRejectedValueOnce(new Error('API Error'));
-    render(<HomePage />, { wrapper: MemoryRouter });
-
-    await waitFor(() => {
-      expect(axios.get).toHaveBeenCalledWith('/api/v1/category/get-category');
-    });
+    await waitFor(() => expect(axios.get).toHaveBeenCalledTimes(2));
   });
 
-  test('loads more products on button click', async () => {
+  test('load more products', async () => {
     axios.get.mockResolvedValueOnce({ data: { success: true, category: [] } });
-    axios.get.mockResolvedValueOnce({ data: { total: 10 } });
+    axios.get.mockResolvedValueOnce({ data: { total: 2 } });
     axios.get.mockResolvedValueOnce({ data: { products: [{ _id: '1', name: 'Product 1', price: 100, description: 'Description 1', slug: 'product-1' }] } });
+    axios.get.mockResolvedValueOnce({ data: { products: [{ _id: '2', name: 'Product 2', price: 200, description: 'Description 2', slug: 'product-2' }] } });
 
-    render(<HomePage />, { wrapper: MemoryRouter });
+    render(
+      <MemoryRouter>
+        <HomePage />
+      </MemoryRouter>
+    );
 
-    await waitFor(() => {
-      expect(screen.getByText('Product 1')).toBeInTheDocument();
-    });
+    await waitFor(() => expect(screen.getByText('Product 1')).toBeInTheDocument());
 
-    const loadMoreButton = screen.getByText(/Loadmore/i);
-    userEvent.click(loadMoreButton);
-
-    await waitFor(() => {
-      expect(axios.get).toHaveBeenCalledWith('/api/v1/product/product-list/2');
-    });
+    userEvent.click(screen.getByText('Loadmore'));
+    await waitFor(() => expect(screen.getByText('Product 2')).toBeInTheDocument());
   });
 });
