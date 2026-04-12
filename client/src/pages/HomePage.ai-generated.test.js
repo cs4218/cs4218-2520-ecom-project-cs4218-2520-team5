@@ -5,7 +5,7 @@ import HomePage from './HomePage';
 import { useAuth } from '../context/auth';
 import { useCart } from '../context/cart';
 import { useSearch } from '../context/search';
-import useCategory from '../hooks/useCategory';
+import { useCategory } from '../hooks/useCategory';
 import userEvent from '@testing-library/user-event';
 
 jest.mock('axios');
@@ -13,7 +13,6 @@ jest.mock('react-router-dom', () => ({
   ...jest.requireActual('react-router-dom'),
   useNavigate: () => jest.fn(),
   useParams: () => ({}),
-  useLocation: () => ({ pathname: '/' }),
 }));
 
 jest.mock('../context/auth', () => ({
@@ -28,7 +27,9 @@ jest.mock('../context/search', () => ({
   useSearch: () => [{}, jest.fn()],
 }));
 
-jest.mock('../hooks/useCategory', () => () => []);
+jest.mock('../hooks/useCategory', () => ({
+  useCategory: () => [],
+}));
 
 describe('HomePage', () => {
   beforeEach(() => {
@@ -49,9 +50,11 @@ describe('HomePage', () => {
       data: { success: true, category: [{ _id: '1', name: 'Category 1' }] },
     });
     axios.get.mockResolvedValueOnce({
+      data: { total: 10 },
+    });
+    axios.get.mockResolvedValueOnce({
       data: { products: [{ _id: '1', name: 'Product 1', price: 100, description: 'Description 1', slug: 'product-1' }] },
     });
-    axios.get.mockResolvedValueOnce({ data: { total: 1 } });
 
     render(
       <MemoryRouter>
@@ -72,9 +75,11 @@ describe('HomePage', () => {
       data: { success: true, category: [{ _id: '1', name: 'Category 1' }] },
     });
     axios.get.mockResolvedValueOnce({
-      data: { products: [{ _id: '1', name: 'Product 1', price: 100, description: 'Description 1', slug: 'product-1' }] },
+      data: { total: 10 },
     });
-    axios.get.mockResolvedValueOnce({ data: { total: 1 } });
+    axios.get.mockResolvedValueOnce({
+      data: { products: [] },
+    });
 
     render(
       <MemoryRouter>
@@ -102,9 +107,11 @@ describe('HomePage', () => {
       data: { success: true, category: [] },
     });
     axios.get.mockResolvedValueOnce({
-      data: { products: [{ _id: '1', name: 'Product 1', price: 100, description: 'Description 1', slug: 'product-1' }] },
+      data: { total: 10 },
     });
-    axios.get.mockResolvedValueOnce({ data: { total: 1 } });
+    axios.get.mockResolvedValueOnce({
+      data: { products: [] },
+    });
 
     render(
       <MemoryRouter>
@@ -112,30 +119,14 @@ describe('HomePage', () => {
       </MemoryRouter>
     );
 
-    const priceCheckbox = screen.getByText('Filter By Price').closest('input');
+    const priceCheckbox = screen.getByText('Under $50').closest('input');
     fireEvent.click(priceCheckbox);
 
     await waitFor(() => {
       expect(axios.post).toHaveBeenCalledWith('/api/v1/product/product-filters', {
         checked: [],
-        radio: [undefined],
+        radio: [[0, 50]],
       });
-    });
-  });
-
-  test('handles API error states', async () => {
-    axios.get.mockRejectedValueOnce(new Error('Network Error'));
-    axios.get.mockRejectedValueOnce(new Error('Network Error'));
-    axios.get.mockRejectedValueOnce(new Error('Network Error'));
-
-    render(
-      <MemoryRouter>
-        <HomePage />
-      </MemoryRouter>
-    );
-
-    await waitFor(() => {
-      expect(screen.queryByText('All Products')).not.toBeInTheDocument();
     });
   });
 
@@ -144,9 +135,11 @@ describe('HomePage', () => {
       data: { success: true, category: [] },
     });
     axios.get.mockResolvedValueOnce({
+      data: { total: 10 },
+    });
+    axios.get.mockResolvedValueOnce({
       data: { products: [{ _id: '1', name: 'Product 1', price: 100, description: 'Description 1', slug: 'product-1' }] },
     });
-    axios.get.mockResolvedValueOnce({ data: { total: 2 } });
 
     render(
       <MemoryRouter>
@@ -171,9 +164,11 @@ describe('HomePage', () => {
       data: { success: true, category: [] },
     });
     axios.get.mockResolvedValueOnce({
+      data: { total: 10 },
+    });
+    axios.get.mockResolvedValueOnce({
       data: { products: [{ _id: '1', name: 'Product 1', price: 100, description: 'Description 1', slug: 'product-1' }] },
     });
-    axios.get.mockResolvedValueOnce({ data: { total: 1 } });
 
     render(
       <MemoryRouter>
@@ -193,6 +188,20 @@ describe('HomePage', () => {
         'cart',
         JSON.stringify([{ _id: '1', name: 'Product 1', price: 100, description: 'Description 1', slug: 'product-1' }])
       );
+    });
+  });
+
+  test('handles API error states', async () => {
+    axios.get.mockRejectedValueOnce(new Error('Network Error'));
+
+    render(
+      <MemoryRouter>
+        <HomePage />
+      </MemoryRouter>
+    );
+
+    await waitFor(() => {
+      expect(console.log).toHaveBeenCalledWith(new Error('Network Error'));
     });
   });
 });
