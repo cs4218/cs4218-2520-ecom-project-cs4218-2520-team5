@@ -1,0 +1,497 @@
+{
+    "root_group": {
+        "name": "",
+        "path": "",
+        "id": "d41d8cd98f00b204e9800998ecf8427e",
+        "groups": {
+            "GET /auth/user-auth": {
+                "name": "GET /auth/user-auth",
+                "path": "::GET /auth/user-auth",
+                "id": "3d9e1388ca1bea186a83ae1eea3dde9d",
+                "groups": {},
+                "checks": {
+                        "user-auth 200": {
+                            "name": "user-auth 200",
+                            "path": "::GET /auth/user-auth::user-auth 200",
+                            "id": "d9482d420b7e1c4aee1f4fdf8519369b",
+                            "passes": 6358,
+                            "fails": 0
+                        }
+                    }
+            },
+            "GET /auth/admin-auth": {
+                "path": "::GET /auth/admin-auth",
+                "id": "8c30156488b17b81c63d6152db41d04b",
+                "groups": {},
+                "checks": {
+                        "admin-auth 200": {
+                            "id": "f3e731bbb175df4d302538dd7dd612b4",
+                            "passes": 2005,
+                            "fails": 4353,
+                            "name": "admin-auth 200",
+                            "path": "::GET /auth/admin-auth::admin-auth 200"
+                        }
+                    },
+                "name": "GET /auth/admin-auth"
+            },
+            "PUT /auth/profile": {
+                "name": "PUT /auth/profile",
+                "path": "::PUT /auth/profile",
+                "id": "d04aea4101b9f3ef89f9444e6dc08b6f",
+                "groups": {},
+                "checks": {
+                        "profile update 200": {
+                            "name": "profile update 200",
+                            "path": "::PUT /auth/profile::profile update 200",
+                            "id": "7a980774b6c419e68b543c0564e8a170",
+                            "passes": 1350,
+                            "fails": 5008
+                        }
+                    }
+            },
+            "GET /auth/orders": {
+                "name": "GET /auth/orders",
+                "path": "::GET /auth/orders",
+                "id": "11037281abb7b764db82a2a71297187b",
+                "groups": {},
+                "checks": {
+                        "get orders 200": {
+                            "path": "::GET /auth/orders::get orders 200",
+                            "id": "9d91f54a1b124b65b1cf66ff0b6e9b9d",
+                            "passes": 1846,
+                            "fails": 4512,
+                            "name": "get orders 200"
+                        }
+                    }
+            },
+            "GET /auth/all-orders": {
+                "name": "GET /auth/all-orders",
+                "path": "::GET /auth/all-orders",
+                "id": "02faa2b9e6ca4ce8250bbc4495a6bb1d",
+                "groups": {},
+                "checks": {
+                        "all-orders 200": {
+                            "passes": 1022,
+                            "fails": 5336,
+                            "name": "all-orders 200",
+                            "path": "::GET /auth/all-orders::all-orders 200",
+                            "id": "6e8175007a104b3063d7f64f866233c3"
+                        }
+                    }
+            },
+            "PUT /auth/order-status/:orderId": {
+                "name": "PUT /auth/order-status/:orderId",
+                "path": "::PUT /auth/order-status/:orderId",
+                "id": "a757977934d5d1b73bdfb9d04820060e",
+                "groups": {},
+                "checks": {
+                        "order-status update 200": {
+                            "name": "order-status update 200",
+                            "path": "::PUT /auth/order-status/:orderId::order-status update 200",
+                            "id": "4f6b576703cf7b20e6420a53f0993ccd",
+                            "passes": 946,
+                            "fails": 5412
+                        }
+                    }
+            }
+        },
+        "checks": {}
+    },
+    "metrics": {
+        "order_status_duration": {
+            "avg": 4545.369635262681,
+            "p(90)": 5000.536,
+            "p(95)": 5000.79075,
+            "p(99)": 5006.83847,
+            "max": 5107.93,
+            "min": 559.701,
+            "med": 4999.715
+        },
+        "http_req_duration{scenario:orders_stress}": {
+            "min": 0.275,
+            "med": 4999.563,
+            "avg": 3586.2548939131816,
+            "p(90)": 5000.55,
+            "p(95)": 5000.92165,
+            "p(99)": 5004.95853,
+            "max": 5125.639,
+            "thresholds": {
+                "p(95)<5000": true
+            }
+        },
+        "http_req_failed{scenario:orders_stress}": {
+            "passes": 24621,
+            "fails": 13527,
+            "thresholds": {
+                "rate<0.5": true
+            },
+            "value": 0.6454073608052847
+        },
+        "http_req_duration{expected_response:true}": {
+            "min": 0.275,
+            "med": 195.466,
+            "avg": 1012.437187615456,
+            "p(90)": 3642.8374000000003,
+            "p(95)": 4599.4974,
+            "p(99)": 4865.71384,
+            "max": 4999.582
+        },
+        "http_req_receiving": {
+            "min": 0,
+            "med": 0,
+            "avg": 0.030869161817895716,
+            "p(90)": 0.082,
+            "p(95)": 0.107,
+            "p(99)": 0.19,
+            "max": 67.685
+        },
+        "iterations": {
+            "count": 6358,
+            "rate": 11.240848719508744
+        },
+        "admin_auth_duration": {
+            "p(99)": 5005.11512,
+            "max": 5112.384,
+            "min": 181.794,
+            "med": 5000.187,
+            "avg": 4004.280186379365,
+            "p(90)": 5001.070299999999,
+            "p(95)": 5001.25815
+        },
+        "user_auth_duration": {
+            "med": 1.468,
+            "avg": 4.095465712488203,
+            "p(90)": 4.073900000000001,
+            "p(95)": 13.347299999999999,
+            "p(99)": 42.666919999999976,
+            "max": 453.616,
+            "min": 0.275
+        },
+        "checks": {
+            "passes": 13527,
+            "fails": 24621,
+            "value": 0.35459263919471534
+        },
+        "http_reqs": {
+            "count": 38154,
+            "rate": 67.45570022713693
+        },
+        "http_req_waiting": {
+            "min": 0.227,
+            "med": 4999.497,
+            "avg": 3585.6417035697077,
+            "p(90)": 5000.503,
+            "p(95)": 5000.878,
+            "p(99)": 5004.89447,
+            "max": 5125.557
+        },
+        "failed_requests": {
+            "passes": 14856,
+            "fails": 4218,
+            "value": 0.7788612771311734
+        },
+        "all_orders_duration": {
+            "p(95)": 5000.917,
+            "p(99)": 5005.89848,
+            "max": 5125.639,
+            "min": 554.097,
+            "med": 4999.7575,
+            "avg": 4515.3145165146425,
+            "p(90)": 5000.5593
+        },
+        "get_orders_duration": {
+            "med": 4999.553,
+            "avg": 4110.827157439454,
+            "p(90)": 5000.41,
+            "p(95)": 5000.63115,
+            "p(99)": 5004.77773,
+            "max": 5105.173,
+            "min": 178.146
+        },
+        "admin_orders_fail_rate": {
+            "fails": 1022,
+            "passes": 5336,
+            "value": 0.8392576281849639
+        },
+        "vus_max": {
+            "value": 350,
+            "min": 20,
+            "max": 350
+        },
+        "http_req_tls_handshaking": {
+            "med": 0,
+            "avg": 0,
+            "p(90)": 0,
+            "p(95)": 0,
+            "p(99)": 0,
+            "max": 0,
+            "min": 0
+        },
+        "iteration_duration": {
+            "p(90)": 26320.9063832,
+            "p(95)": 26331.141656350002,
+            "p(99)": 26375.56442713,
+            "max": 26765.378083,
+            "min": 3199.805417,
+            "med": 26309.522854,
+            "avg": 22829.066940154727
+        },
+        "http_req_connecting": {
+            "p(90)": 0.937,
+            "p(95)": 1.121,
+            "p(99)": 2.5338799999999986,
+            "max": 93.113,
+            "min": 0,
+            "med": 0.483,
+            "avg": 0.49642967971903734
+        },
+        "data_received": {
+            "count": 7565127,
+            "rate": 13375.031165597833
+        },
+        "update_profile_duration": {
+            "p(90)": 5000.5113,
+            "p(95)": 5000.8103,
+            "p(99)": 5007.1825,
+            "max": 5098.416,
+            "min": 370.127,
+            "med": 4999.6795,
+            "avg": 4337.642402170493
+        },
+        "data_sent": {
+            "rate": 22874.299727213704,
+            "count": 12938062
+        },
+        "http_req_sending": {
+            "med": 0.04,
+            "avg": 0.08611285841589192,
+            "p(90)": 0.094,
+            "p(95)": 0.118,
+            "p(99)": 0.34346999999999966,
+            "max": 80.076,
+            "min": 0.003
+        },
+        "dropped_iterations": {
+            "count": 8206,
+            "rate": 14.508085025525126
+        },
+        "http_req_duration": {
+            "p(99)": 5004.95847,
+            "max": 5125.639,
+            "min": 0.275,
+            "med": 4999.563,
+            "avg": 3585.7586855899785,
+            "p(90)": 5000.55,
+            "p(95)": 5000.92135
+        },
+        "http_req_failed": {
+            "passes": 24621,
+            "fails": 13533,
+            "value": 0.6453058657021544
+        },
+        "group_duration": {
+            "p(95)": 5002.0148954,
+            "p(99)": 5008.98876776,
+            "max": 5149.508875,
+            "min": 0.382333,
+            "med": 5000.5140625,
+            "avg": 3587.350350984283,
+            "p(90)": 5001.6191082
+        },
+        "get_orders_fail_rate": {
+            "fails": 1846,
+            "passes": 4512,
+            "thresholds": {
+                "rate<0.5": true
+            },
+            "value": 0.7096571248820384
+        },
+        "http_req_blocked": {
+            "med": 0.534,
+            "avg": 0.5905051108664964,
+            "p(90)": 1.058,
+            "p(95)": 1.271,
+            "p(99)": 3.2586999999999966,
+            "max": 121.274,
+            "min": 0.001
+        },
+        "vus": {
+            "value": 2,
+            "min": 0,
+            "max": 350
+        },
+        "profile_update_fail_rate": {
+            "passes": 5008,
+            "fails": 1350,
+            "thresholds": {
+                "rate<0.5": true
+            },
+            "value": 0.7876690783265178
+        }
+    },
+    "setup_data": {
+        "adminToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2OWRiZTg2ZDZlMThkMDQxMWMxNTUzZjAiLCJpYXQiOjE3NzYwMTk1NjUsImV4cCI6MTc3NjEwNTk2NX0.Tso4i1XYYcvwVxNM5HKLwGgqGnCSCanRafhwCCC17-I",
+        "categoryIds": [
+            "66db427fdb0119d9234b27ed",
+            "66db427fdb0119d9234b27ef",
+            "66db427fdb0119d9234b27ee",
+            "69dbe86e527b5aad6b68b112"
+        ],
+        "categorySlug": "stresscat-1776019565803",
+        "orderIds": [
+            "67a21938cf4efddf1e5358d1"
+        ],
+        "products": [
+            {
+                "price": 77.77,
+                "quantity": 5,
+                "shipping": true,
+                "slug": "TMP-PROD-1774161079544",
+                "createdAt": "2026-03-22T06:31:20.580Z",
+                "description": "tmp product 1774161079544",
+                "updatedAt": "2026-03-22T06:31:20.580Z",
+                "__v": 0,
+                "_id": "69bf8cb8513d19f15e7d79c6",
+                "category": null,
+                "name": "TMP PROD 1774161079544"
+            },
+            {
+                "quantity": 200,
+                "updatedAt": "2024-09-06T17:57:19.992Z",
+                "__v": 0,
+                "description": "A bestselling novel",
+                "price": 14.99,
+                "shipping": true,
+                "slug": "novel",
+                "_id": "66db427fdb0119d9234b27f9",
+                "category": {
+                    "__v": 0,
+                    "_id": "66db427fdb0119d9234b27ef",
+                    "name": "Book",
+                    "slug": "book"
+                },
+                "createdAt": "2024-09-06T17:57:19.992Z",
+                "name": "Novel"
+            },
+            {
+                "__v": 0,
+                "_id": "67a2171ea6d9e00ef2ac0229",
+                "category": {
+                    "__v": 0,
+                    "_id": "66db427fdb0119d9234b27ef",
+                    "name": "Book",
+                    "slug": "book"
+                },
+                "createdAt": "2024-09-06T17:57:19.992Z",
+                "description": "A bestselling book in Singapore",
+                "price": 54.99,
+                "quantity": 200,
+                "updatedAt": "2024-09-06T17:57:19.992Z",
+                "name": "The Law of Contract in Singapore",
+                "shipping": true,
+                "slug": "the-law-of-contract-in-singapore"
+            },
+            {
+                "name": "NUS T-shirt",
+                "quantity": 200,
+                "shipping": true,
+                "__v": 0,
+                "_id": "67a21772a6d9e00ef2ac022a",
+                "price": 4.99,
+                "slug": "nus-tshirt",
+                "updatedAt": "2024-09-06T17:57:19.992Z",
+                "category": {
+                    "slug": "clothing",
+                    "__v": 0,
+                    "_id": "66db427fdb0119d9234b27ee",
+                    "name": "Clothing"
+                },
+                "createdAt": "2024-09-06T17:57:19.992Z",
+                "description": "Plain NUS T-shirt for sale"
+            },
+            {
+                "category": {
+                    "__v": 0,
+                    "_id": "66db427fdb0119d9234b27ed",
+                    "name": "Electronics",
+                    "slug": "electronics"
+                },
+                "description": "A high-end smartphone",
+                "price": 999.99,
+                "shipping": false,
+                "_id": "66db427fdb0119d9234b27f5",
+                "createdAt": "2024-09-06T17:57:19.978Z",
+                "name": "Smartphone",
+                "quantity": 50,
+                "slug": "smartphone",
+                "updatedAt": "2024-09-06T17:57:19.978Z",
+                "__v": 0
+            },
+            {
+                "description": "A powerful laptop",
+                "name": "Laptop",
+                "shipping": true,
+                "updatedAt": "2024-09-06T17:57:19.971Z",
+                "__v": 0,
+                "_id": "66db427fdb0119d9234b27f3",
+                "category": {
+                    "__v": 0,
+                    "_id": "66db427fdb0119d9234b27ed",
+                    "name": "Electronics",
+                    "slug": "electronics"
+                },
+                "createdAt": "2024-09-06T17:57:19.971Z",
+                "price": 1499.99,
+                "quantity": 30,
+                "slug": "laptop"
+            },
+            {
+                "_id": "66db427fdb0119d9234b27f1",
+                "createdAt": "2024-09-06T17:57:19.963Z",
+                "description": "A comprehensive textbook",
+                "price": 79.99,
+                "shipping": false,
+                "slug": "textbook",
+                "__v": 0,
+                "category": {
+                    "__v": 0,
+                    "_id": "66db427fdb0119d9234b27ef",
+                    "name": "Book",
+                    "slug": "book"
+                },
+                "name": "Textbook",
+                "quantity": 50,
+                "updatedAt": "2024-09-06T17:57:19.963Z"
+            }
+        ],
+        "userPassword": "StressTest@123",
+        "userToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2OWRiZTg2ZDZlMThkMDQxMWMxNTUzZjEiLCJpYXQiOjE3NzYwMTk1NjUsImV4cCI6MTc3NjEwNTk2NX0.a3tuVnYAl7vzKOLQbC927vuhSOdpRL0WwiT-jT0zoyU",
+        "categories": [
+            {
+                "slug": "electronics",
+                "__v": 0,
+                "_id": "66db427fdb0119d9234b27ed",
+                "name": "Electronics"
+            },
+            {
+                "__v": 0,
+                "_id": "66db427fdb0119d9234b27ef",
+                "name": "Book",
+                "slug": "book"
+            },
+            {
+                "__v": 0,
+                "_id": "66db427fdb0119d9234b27ee",
+                "name": "Clothing",
+                "slug": "clothing"
+            },
+            {
+                "__v": 0,
+                "_id": "69dbe86e527b5aad6b68b112",
+                "name": "StressCat-1776019565803",
+                "slug": "stresscat-1776019565803"
+            }
+        ],
+        "userEmail": "stress.user@test.com"
+    }
+}
