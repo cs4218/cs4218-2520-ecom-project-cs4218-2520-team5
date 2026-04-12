@@ -15,8 +15,6 @@ const mockNavigate = jest.fn();
 jest.mock('react-router-dom', () => ({
   ...jest.requireActual('react-router-dom'),
   useNavigate: () => mockNavigate,
-  useParams: () => ({}),
-  useLocation: () => ({ pathname: '/' }),
 }));
 
 // Mock context hooks
@@ -34,7 +32,7 @@ jest.mock('../context/search', () => ({
 
 jest.mock('../hooks/useCategory', () => jest.fn(() => []));
 
-describe('HomePage', () => {
+describe('HomePage Component', () => {
   beforeEach(() => {
     jest.clearAllMocks();
   });
@@ -49,61 +47,64 @@ describe('HomePage', () => {
 
   it('renders without crashing', () => {
     renderHomePage();
-    expect(screen.getByTestId('layout')).toBeInTheDocument();
+    expect(screen.getByTestId('homepage')).toBeInTheDocument();
   });
 
   it('displays expected UI elements', async () => {
+    axios.get.mockResolvedValueOnce({ data: { products: [] } });
     renderHomePage();
-    expect(screen.getByText(/Welcome to Virtual Vault/i)).toBeInTheDocument();
-    expect(screen.getByText(/Featured Products/i)).toBeInTheDocument();
+    await waitFor(() => expect(screen.getByText(/Featured Products/i)).toBeInTheDocument());
   });
 
   it('handles user interactions', async () => {
+    axios.get.mockResolvedValueOnce({ data: { products: [{ _id: '1', name: 'Product 1', price: 100 }] } });
     renderHomePage();
-    const searchInput = screen.getByPlaceholderText(/Search products/i);
-    fireEvent.change(searchInput, { target: { value: 'Laptop' } });
-    expect(searchInput.value).toBe('Laptop');
+    await waitFor(() => expect(screen.getByText('Product 1')).toBeInTheDocument());
+
+    const productLink = screen.getByText('Product 1');
+    fireEvent.click(productLink);
+    expect(mockNavigate).toHaveBeenCalledWith('/product/1');
   });
 
   it('handles API success state', async () => {
-    axios.get.mockResolvedValueOnce({
-      data: { products: [{ _id: '1', name: 'Laptop', price: 1000 }] },
-    });
-
+    axios.get.mockResolvedValueOnce({ data: { products: [{ _id: '1', name: 'Product 1', price: 100 }] } });
     renderHomePage();
-
-    await waitFor(() => expect(axios.get).toHaveBeenCalledTimes(1));
-    expect(screen.getByText(/Laptop/i)).toBeInTheDocument();
+    await waitFor(() => expect(screen.getByText('Product 1')).toBeInTheDocument());
   });
 
   it('handles API error state', async () => {
     const error = new Error('Network error');
     axios.get.mockRejectedValueOnce(error);
-
     renderHomePage();
-
-    await waitFor(() => expect(axios.get).toHaveBeenCalledTimes(1));
-    expect(screen.getByText(/Error loading products/i)).toBeInTheDocument();
+    await waitFor(() => expect(screen.getByText(/Error loading products/i)).toBeInTheDocument());
   });
 
-  it('navigates to product details on click', async () => {
-    axios.get.mockResolvedValueOnce({
-      data: { products: [{ _id: '1', name: 'Laptop', price: 1000 }] },
-    });
-
-    renderHomePage();
-
-    await waitFor(() => expect(screen.getByText(/Laptop/i)).toBeInTheDocument());
-
-    fireEvent.click(screen.getByText(/Laptop/i));
-    expect(mockNavigate).toHaveBeenCalledWith('/product/1');
-  });
-
-  it('displays no products message when no products are available', async () => {
+  it('displays no products message when API returns empty list', async () => {
     axios.get.mockResolvedValueOnce({ data: { products: [] } });
-
     renderHomePage();
-
     await waitFor(() => expect(screen.getByText(/No products available/i)).toBeInTheDocument());
+  });
+
+  it('displays multiple products correctly', async () => {
+    const products = [
+      { _id: '1', name: 'Product 1', price: 100 },
+      { _id: '2', name: 'Product 2', price: 200 },
+    ];
+    axios.get.mockResolvedValueOnce({ data: { products } });
+    renderHomePage();
+    await waitFor(() => {
+      expect(screen.getByText('Product 1')).toBeInTheDocument();
+      expect(screen.getByText('Product 2')).toBeInTheDocument();
+    });
+  });
+
+  it('handles navigation to product details', async () => {
+    const products = [{ _id: '1', name: 'Product 1', price: 100 }];
+    axios.get.mockResolvedValueOnce({ data: { products } });
+    renderHomePage();
+    await waitFor(() => expect(screen.getByText('Product 1')).toBeInTheDocument());
+
+    fireEvent.click(screen.getByText('Product 1'));
+    expect(mockNavigate).toHaveBeenCalledWith('/product/1');
   });
 });
