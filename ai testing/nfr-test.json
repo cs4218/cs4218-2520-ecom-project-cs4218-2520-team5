@@ -1,0 +1,289 @@
+{
+  "name": "AI NFR Test Generator",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "generate-nfr-tests",
+        "responseMode": "onReceived",
+        "options": {}
+      },
+      "id": "webhook-trigger",
+      "name": "Webhook Trigger",
+      "type": "n8n-nodes-base.webhook",
+      "position": [200, 300],
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "jsCode": "// Extract and prepare input for NFR test generation\nconst payload = $input.first().json;\n\nconst repository = payload.repository || 'owner/repo';\nconst branch = payload.branch || 'main';\nconst apiEndpoints = payload.apiEndpoints || [];\nconst baseUrl = payload.baseUrl || 'http://localhost:3000';\nconst existingNfrCode = payload.existingNfrCode || '';\n\nreturn [{\n  json: {\n    repository,\n    branch,\n    owner: repository.split('/')[0],\n    repo: repository.split('/')[1],\n    apiEndpoints,\n    baseUrl,\n    existingNfrCode,\n    timestamp: new Date().toISOString()\n  }\n}];"
+      },
+      "id": "prepare-nfr-input",
+      "name": "Prepare NFR Input",
+      "type": "n8n-nodes-base.code",
+      "position": [420, 300],
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.openai.com/v1/chat/completions",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "openAiApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"model\": \"gpt-4o\",\n  \"temperature\": 0.3,\n  \"max_tokens\": 4000,\n  \"messages\": [\n    {\n      \"role\": \"system\",\n      \"content\": \"You are a performance testing expert. Generate k6 test scripts for FOUR scenarios.\\n\\n1. LOAD TEST:\\n   - Ramp up to 100 VUs over 2 minutes\\n   - Hold at 100 VUs for 5 minutes\\n   - Ramp down over 1 minute\\n   - Thresholds: p95 < 500ms, error rate < 1%\\n\\n2. STRESS TEST:\\n   - Ramp from 0 to 200 VUs over 5 minutes\\n   - Continue ramping to 500 VUs over 5 minutes\\n   - Hold at 500 VUs for 3 minutes\\n   - Ramp down over 2 minutes\\n   - Find the breaking point\\n\\n3. SPIKE TEST:\\n   - Normal load: 50 VUs for 1 minute\\n   - Spike to 500 VUs instantly\\n   - Hold spike for 30 seconds\\n   - Drop back to 50 VUs\\n   - Repeat 3 times\\n\\n4. SOAK TEST:\\n   - Ramp to 100 VUs over 2 minutes\\n   - Hold steady for 30 minutes\\n   - Monitor for memory leaks and degradation\\n\\nFor EACH script include:\\n- Proper checks() for response validation\\n- Custom metrics (Rate, Trend, Counter, Gauge)\\n- Tags for grouping\\n- Think time between requests\\n- handleSummary() for custom reporting\\n- SLA threshold definitions\\n\\nReturn JSON:\\n{\\n  \\\"loadTest\\\": {\\n    \\\"fileName\\\": string,\\n    \\\"filePath\\\": string,\\n    \\\"script\\\": string,\\n    \\\"description\\\": string,\\n    \\\"expectedDuration\\\": string,\\n    \\\"thresholds\\\": object\\n  },\\n  \\\"stressTest\\\": {\\n    \\\"fileName\\\": string,\\n    \\\"filePath\\\": string,\\n    \\\"script\\\": string,\\n    \\\"description\\\": string,\\n    \\\"expectedDuration\\\": string,\\n    \\\"thresholds\\\": object\\n  },\\n  \\\"spikeTest\\\": {\\n    \\\"fileName\\\": string,\\n    \\\"filePath\\\": string,\\n    \\\"script\\\": string,\\n    \\\"description\\\": string,\\n    \\\"expectedDuration\\\": string,\\n    \\\"thresholds\\\": object\\n  },\\n  \\\"soakTest\\\": {\\n    \\\"fileName\\\": string,\\n    \\\"filePath\\\": string,\\n    \\\"script\\\": string,\\n    \\\"description\\\": string,\\n    \\\"expectedDuration\\\": string,\\n    \\\"thresholds\\\": object\\n  },\\n  \\\"summary\\\": {\\n    \\\"totalScripts\\\": number,\\n    \\\"baseUrl\\\": string,\\n    \\\"endpointsCovered\\\": [string],\\n    \\\"notes\\\": string\\n  }\\n}\"\n    },\n    {\n      \"role\": \"user\",\n      \"content\": \"Generate k6 NFR test scripts for the following:\\n\\nRepository: {{ $json.repository }}\\nBase URL: {{ $json.baseUrl }}\\n\\nAPI Endpoints to Test:\\n{{ JSON.stringify($json.apiEndpoints) }}\\n\\nExisting NFR Code (for reference):\\n```\\n{{ $json.existingNfrCode }}\\n```\\n\\nGenerate all 4 NFR test scripts (load, stress, spike, soak).\"\n    }\n  ]\n}",
+        "options": {}
+      },
+      "id": "ai-nfr-generator",
+      "name": "AI NFR Script Generator",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [640, 300],
+      "typeVersion": 4.1
+    },
+    {
+      "parameters": {
+        "jsCode": "// Parse OpenAI response and extract NFR scripts\nconst response = $input.first().json;\nconst content = response.choices?.[0]?.message?.content || '{}';\n\nlet parsed = {};\ntry {\n  const jsonMatch = content.match(/\\{[\\s\\S]*\\}/);\n  parsed = jsonMatch ? JSON.parse(jsonMatch[0]) : {};\n} catch (e) {\n  parsed = { rawContent: content, parseError: e.message };\n}\n\n// Validate each script\nfunction validateScript(script, type) {\n  if (!script) return { valid: false, reason: 'Missing script' };\n  const hasOptions = script.includes('export const options');\n  const hasDefault = script.includes('export default function');\n  const hasChecks = script.includes('check(');\n  const hasThresholds = script.includes('thresholds');\n  return {\n    valid: hasOptions && hasDefault,\n    hasChecks,\n    hasThresholds,\n    lineCount: script.split('\\n').length\n  };\n}\n\nconst scripts = {\n  loadTest: parsed.loadTest || {},\n  stressTest: parsed.stressTest || {},\n  spikeTest: parsed.spikeTest || {},\n  soakTest: parsed.soakTest || {}\n};\n\nconst validations = {\n  loadTest: validateScript(scripts.loadTest?.script, 'load'),\n  stressTest: validateScript(scripts.stressTest?.script, 'stress'),\n  spikeTest: validateScript(scripts.spikeTest?.script, 'spike'),\n  soakTest: validateScript(scripts.soakTest?.script, 'soak')\n};\n\nconst previousData = $('Prepare NFR Input').first().json;\n\nreturn [{\n  json: {\n    ...previousData,\n    scripts,\n    validations,\n    summary: parsed.summary || {},\n    allValid: Object.values(validations).every(v => v.valid),\n    tokensUsed: response.usage?.total_tokens || 0,\n    parseError: parsed.parseError || null\n  }\n}];"
+      },
+      "id": "parse-nfr-scripts",
+      "name": "Parse NFR Scripts",
+      "type": "n8n-nodes-base.code",
+      "position": [860, 300],
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.openai.com/v1/chat/completions",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "openAiApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"model\": \"gpt-4o\",\n  \"temperature\": 0.2,\n  \"max_tokens\": 2000,\n  \"messages\": [\n    {\n      \"role\": \"system\",\n      \"content\": \"You are a performance testing expert. Review the following k6 NFR test scripts and detect issues:\\n\\n1. UNREALISTIC_LOAD_PROFILE: Load pattern does not reflect real-world usage\\n2. MISSING_THINK_TIME: No sleep() between requests causing unrealistic load\\n3. MISSING_THRESHOLDS: No SLA thresholds defined\\n4. MISSING_CHECKS: No response validation checks\\n5. MISSING_CUSTOM_METRICS: No custom metrics for business transactions\\n6. HARDCODED_BASE_URL: Base URL hardcoded instead of using environment variables\\n7. MISSING_CORRELATION: Dynamic data not correlated between requests\\n8. INSUFFICIENT_RAMPUP: Ramp-up too aggressive for realistic testing\\n9. MISSING_HANDLE_SUMMARY: No custom summary reporting\\n10. MISSING_TAGS: Requests not tagged for grouping\\n\\nReturn JSON:\\n{\\n  \\\"issues\\\": [\\n    {\\n      \\\"script\\\": \\\"load|stress|spike|soak\\\",\\n      \\\"pattern\\\": string,\\n      \\\"severity\\\": \\\"CRITICAL|WARNING|INFO\\\",\\n      \\\"description\\\": string,\\n      \\\"suggestion\\\": string\\n    }\\n  ],\\n  \\\"qualityScore\\\": number,\\n  \\\"qualityGate\\\": \\\"PASSED|FAILED\\\",\\n  \\\"overallAssessment\\\": string\\n}\"\n    },\n    {\n      \"role\": \"user\",\n      \"content\": \"Review these NFR test scripts for issues:\\n\\nLoad Test:\\n```javascript\\n{{ $json.scripts.loadTest.script }}\\n```\\n\\nStress Test:\\n```javascript\\n{{ $json.scripts.stressTest.script }}\\n```\\n\\nSpike Test:\\n```javascript\\n{{ $json.scripts.spikeTest.script }}\\n```\\n\\nSoak Test:\\n```javascript\\n{{ $json.scripts.soakTest.script }}\\n```\"\n    }\n  ]\n}",
+        "options": {}
+      },
+      "id": "ai-nfr-quality-check",
+      "name": "AI NFR Quality Check",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [1080, 300],
+      "typeVersion": 4.1
+    },
+    {
+      "parameters": {
+        "jsCode": "// Parse NFR quality check response\nconst response = $input.first().json;\nconst content = response.choices?.[0]?.message?.content || '{}';\n\nlet qualityReport = {};\ntry {\n  const jsonMatch = content.match(/\\{[\\s\\S]*\\}/);\n  qualityReport = jsonMatch ? JSON.parse(jsonMatch[0]) : {};\n} catch (e) {\n  qualityReport = { issues: [], qualityScore: 0, parseError: e.message };\n}\n\nconst previousData = $('Parse NFR Scripts').first().json;\n\nreturn [{\n  json: {\n    ...previousData,\n    qualityReport,\n    qualityScore: qualityReport.qualityScore || 0,\n    qualityGate: qualityReport.qualityGate || 'FAILED',\n    issueCount: qualityReport.issues?.length || 0,\n    criticalIssues: qualityReport.issues?.filter(i => i.severity === 'CRITICAL').length || 0\n  }\n}];"
+      },
+      "id": "parse-nfr-quality-report",
+      "name": "Parse NFR Quality Report",
+      "type": "n8n-nodes-base.code",
+      "position": [1300, 300],
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "nfr-quality-gate",
+              "leftValue": "={{ $json.qualityGate }}",
+              "rightValue": "PASSED",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ]
+        }
+      },
+      "id": "nfr-quality-gate",
+      "name": "NFR Quality Gate Passed?",
+      "type": "n8n-nodes-base.if",
+      "position": [1520, 300],
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "jsCode": "// Prepare all 4 NFR scripts for GitHub commit\nconst data = $input.first().json;\nconst scripts = data.scripts || {};\n\nconst filesToCommit = [\n  {\n    path: scripts.loadTest?.filePath || 'src/test/nfr/k6_load_test.js',\n    content: Buffer.from(scripts.loadTest?.script || '').toString('base64'),\n    commitMessage: 'test(nfr): AI-generated k6 load test script'\n  },\n  {\n    path: scripts.stressTest?.filePath || 'src/test/nfr/k6_stress_test.js',\n    content: Buffer.from(scripts.stressTest?.script || '').toString('base64'),\n    commitMessage: 'test(nfr): AI-generated k6 stress test script'\n  },\n  {\n    path: scripts.spikeTest?.filePath || 'src/test/nfr/k6_spike_test.js',\n    content: Buffer.from(scripts.spikeTest?.script || '').toString('base64'),\n    commitMessage: 'test(nfr): AI-generated k6 spike test script'\n  },\n  {\n    path: scripts.soakTest?.filePath || 'src/test/nfr/k6_soak_test.js',\n    content: Buffer.from(scripts.soakTest?.script || '').toString('base64'),\n    commitMessage: 'test(nfr): AI-generated k6 soak test script'\n  }\n].filter(f => f.content.length > 0);\n\nreturn [{\n  json: {\n    ...data,\n    filesToCommit,\n    totalFilesToCommit: filesToCommit.length\n  }\n}];"
+      },
+      "id": "prepare-nfr-commit",
+      "name": "Prepare NFR Commit Files",
+      "type": "n8n-nodes-base.code",
+      "position": [1740, 160],
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "=https://api.github.com/repos/{{ $json.owner }}/{{ $json.repo }}/git/ref/heads/{{ $json.branch }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "githubApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Accept",
+              "value": "application/vnd.github.v3+json"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "get-branch-sha",
+      "name": "Get Branch SHA",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [1960, 160],
+      "typeVersion": 4.1
+    },
+    {
+      "parameters": {
+        "jsCode": "// Split NFR files for individual commits\nconst branchData = $input.first().json;\nconst sha = branchData.object?.sha || branchData.sha;\n\nconst commitData = $('Prepare NFR Commit Files').first().json;\nconst files = commitData.filesToCommit || [];\n\nreturn files.map(file => ({\n  json: {\n    owner: commitData.owner,\n    repo: commitData.repo,\n    branch: commitData.branch,\n    filePath: file.path,\n    fileContent: file.content,\n    commitMessage: file.commitMessage,\n    sha\n  }\n}));"
+      },
+      "id": "split-nfr-files",
+      "name": "Split NFR Files for Commit",
+      "type": "n8n-nodes-base.code",
+      "position": [2180, 160],
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "method": "PUT",
+        "url": "=https://api.github.com/repos/{{ $json.owner }}/{{ $json.repo }}/contents/{{ $json.filePath }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "githubApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Accept",
+              "value": "application/vnd.github.v3+json"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"message\": \"{{ $json.commitMessage }}\",\n  \"content\": \"{{ $json.fileContent }}\",\n  \"branch\": \"{{ $json.branch }}\"\n}",
+        "options": {
+          "batching": {
+            "batch": {
+              "batchSize": 1,
+              "batchInterval": 1000
+            }
+          }
+        }
+      },
+      "id": "commit-nfr-scripts",
+      "name": "Commit NFR Scripts",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [2400, 160],
+      "typeVersion": 4.1
+    },
+    {
+      "parameters": {
+        "jsCode": "// Build Telegram success notification for NFR\nconst data = $('Parse NFR Quality Report').first().json;\nconst validations = data.validations || {};\n\nconst scriptStatus = (key) =>\n  validations[key]?.valid ? '✅' : '❌';\n\nconst message = [\n  '✅ *NFR Test Scripts Generated & Committed*',\n  '',\n  `📦 *Repository:* ${data.repository}`,\n  `🌿 *Branch:* ${data.branch}`,\n  '',\n  '━━━━━━━━━━━━━━━━━━━━━━',\n  '📊 *Scripts Generated*',\n  '━━━━━━━━━━━━━━━━━━━━━━',\n  `${scriptStatus('loadTest')} Load Test — k6_load_test.js`,\n  `${scriptStatus('stressTest')} Stress Test — k6_stress_test.js`,\n  `${scriptStatus('spikeTest')} Spike Test — k6_spike_test.js`,\n  `${scriptStatus('soakTest')} Soak Test — k6_soak_test.js`,\n  '',\n  '━━━━━━━━━━━━━━━━━━━━━━',\n  '🔍 *Quality Analysis*',\n  '━━━━━━━━━━━━━━━━━━━━━━',\n  `• Quality Score: ${data.qualityScore}/100`,\n  `• Quality Gate: ✅ ${data.qualityGate}`,\n  `• Issues Found: ${data.issueCount}`,\n  `• Critical Issues: ${data.criticalIssues}`,\n  '',\n  `🕐 *Timestamp:* ${data.timestamp}`\n].join('\\n');\n\nreturn [{ json: { message } }];"
+      },
+      "id": "build-nfr-success-notification",
+      "name": "Build NFR Success Notification",
+      "type": "n8n-nodes-base.code",
+      "position": [2620, 160],
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "jsCode": "// Build Telegram failure notification for NFR\nconst data = $input.first().json;\nconst issues = data.qualityReport?.issues || [];\nconst criticalIssues = issues.filter(i => i.severity === 'CRITICAL');\n\nconst issueLines = criticalIssues.slice(0, 5).map((issue, i) =>\n  `${i + 1}. [${issue.script}] *${issue.pattern}* — ${issue.description}`\n);\n\nconst message = [\n  '❌ *NFR Scripts — Quality Gate FAILED*',\n  '',\n  `📦 *Repository:* ${data.repository}`,\n  `🌿 *Branch:* ${data.branch}`,\n  '',\n  '━━━━━━━━━━━━━━━━━━━━━━',\n  '🔍 *Quality Analysis*',\n  '━━━━━━━━━━━━━━━━━━━━━━',\n  `• Quality Score: ${data.qualityScore}/100`,\n  `• Quality Gate: ❌ ${data.qualityGate}`,\n  `• Total Issues: ${data.issueCount}`,\n  `• Critical Issues: ${data.criticalIssues}`,\n  '',\n  '⚠️ *Critical Issues:*',\n  ...issueLines,\n  '',\n  '_Scripts NOT committed — fix issues and retry_'\n].join('\\n');\n\nreturn [{ json: { message } }];"
+      },
+      "id": "build-nfr-failure-notification",
+      "name": "Build NFR Failure Notification",
+      "type": "n8n-nodes-base.code",
+      "position": [1740, 440],
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://api.telegram.org/bot{{ $credentials.telegramBotToken }}/sendMessage",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"chat_id\": \"{{ $credentials.telegramChatId }}\",\n  \"text\": {{ JSON.stringify($json.message) }},\n  \"parse_mode\": \"Markdown\"\n}",
+        "options": {}
+      },
+      "id": "telegram-nfr-notify",
+      "name": "Telegram NFR Notification",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [2840, 300],
+      "typeVersion": 4.1
+    }
+  ],
+  "connections": {
+    "Webhook Trigger": {
+      "main": [[{ "node": "Prepare NFR Input", "type": "main", "index": 0 }]]
+    },
+    "Prepare NFR Input": {
+      "main": [[{ "node": "AI NFR Script Generator", "type": "main", "index": 0 }]]
+    },
+    "AI NFR Script Generator": {
+      "main": [[{ "node": "Parse NFR Scripts", "type": "main", "index": 0 }]]
+    },
+    "Parse NFR Scripts": {
+      "main": [[{ "node": "AI NFR Quality Check", "type": "main", "index": 0 }]]
+    },
+    "AI NFR Quality Check": {
+      "main": [[{ "node": "Parse NFR Quality Report", "type": "main", "index": 0 }]]
+    },
+    "Parse NFR Quality Report": {
+      "main": [[{ "node": "NFR Quality Gate Passed?", "type": "main", "index": 0 }]]
+    },
+    "NFR Quality Gate Passed?": {
+      "main": [
+        [{ "node": "Prepare NFR Commit Files", "type": "main", "index": 0 }],
+        [{ "node": "Build NFR Failure Notification", "type": "main", "index": 0 }]
+      ]
+    },
+    "Prepare NFR Commit Files": {
+      "main": [[{ "node": "Get Branch SHA", "type": "main", "index": 0 }]]
+    },
+    "Get Branch SHA": {
+      "main": [[{ "node": "Split NFR Files for Commit", "type": "main", "index": 0 }]]
+    },
+    "Split NFR Files for Commit": {
+      "main": [[{ "node": "Commit NFR Scripts", "type": "main", "index": 0 }]]
+    },
+    "Commit NFR Scripts": {
+      "main": [[{ "node": "Build NFR Success Notification", "type": "main", "index": 0 }]]
+    },
+    "Build NFR Success Notification": {
+      "main": [[{ "node": "Telegram NFR Notification", "type": "main", "index": 0 }]]
+    },
+    "Build NFR Failure Notification": {
+      "main": [[{ "node": "Telegram NFR Notification", "type": "main", "index": 0 }]]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

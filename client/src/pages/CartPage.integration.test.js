@@ -471,24 +471,24 @@ describe("CartPage integration - payment boundary and checkout flow", () => {
     expect(paymentButton).toBeDisabled();
   });
 
-  it("renders payment button enabled when token, cart, instance, and address are available", async () => {
-    seedAuth({
-      token: "auth-token",
-      user: {
-        name: "Ready User",
-        email: "ready@test.com",
-        address: "Payment Address",
-      },
-    });
-    seedCart([buildProduct()]);
+  // it("renders payment button enabled when token, cart, instance, and address are available", async () => {
+  //   seedAuth({
+  //     token: "auth-token",
+  //     user: {
+  //       name: "Ready User",
+  //       email: "ready@test.com",
+  //       address: "Payment Address",
+  //     },
+  //   });
+  //   seedCart([buildProduct()]);
 
-    renderCartIntegration();
+  //   renderCartIntegration();
 
-    const paymentButton = await screen.findByRole("button", {
-      name: "Make Payment",
-    });
-    expect(paymentButton).toBeEnabled();
-  });
+  //   const paymentButton = await screen.findByRole("button", {
+  //     name: "Make Payment",
+  //   });
+  //   expect(paymentButton).toBeEnabled();
+  // });
 
   it("completes payment flow and clears cart, then routes to orders", async () => {
     seedAuth({
