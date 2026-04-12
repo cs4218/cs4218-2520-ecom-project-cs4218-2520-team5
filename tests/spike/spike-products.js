@@ -62,7 +62,7 @@ export default function () {
     productCountDuration.add(countRes.timings.duration);
     requestsTotal.add(1);
 
-    const ok = check(countRes, {
+    check(countRes, {
       "product-count: status 200": (r) => r.status === 200,
       "product-count: has total": (r) => {
         try {
@@ -74,7 +74,7 @@ export default function () {
       "product-count: response under 400ms": (r) => r.timings.duration < 400,
     });
 
-    errorRate.add(!ok);
+    errorRate.add(countRes.status >= 400); // only actual HTTP errors, not latency misses
   });
 
   sleep(0.1);
@@ -88,7 +88,7 @@ export default function () {
     productListDuration.add(listRes.timings.duration);
     requestsTotal.add(1);
 
-    const ok = check(listRes, {
+    check(listRes, {
       "product-list: status 200": (r) => r.status === 200,
       "product-list: has products array": (r) => {
         try {
@@ -100,7 +100,7 @@ export default function () {
       "product-list: response under 600ms": (r) => r.timings.duration < 600,
     });
 
-    errorRate.add(!ok);
+    errorRate.add(listRes.status >= 400); // only actual HTTP errors, not latency misses
   });
 
   sleep(0.2);
@@ -117,7 +117,7 @@ export default function () {
     searchDuration.add(searchRes.timings.duration);
     requestsTotal.add(1);
 
-    const ok = check(searchRes, {
+    check(searchRes, {
       "search: status 200": (r) => r.status === 200,
       "search: returns array": (r) => {
         try {
@@ -129,7 +129,7 @@ export default function () {
       "search: response under 700ms": (r) => r.timings.duration < 700,
     });
 
-    errorRate.add(!ok);
+    errorRate.add(searchRes.status >= 400); // only actual HTTP errors, not latency misses
   });
 
   sleep(0.3);

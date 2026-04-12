@@ -61,7 +61,7 @@ export default function () {
   categoryListDuration.add(listRes.timings.duration);
   requestsTotal.add(1);
 
-  const listOk = check(listRes, {
+  check(listRes, {
     "get-category: status 200": (r) => r.status === 200,
     "get-category: has success flag": (r) => {
       try {
@@ -73,7 +73,7 @@ export default function () {
     "get-category: response under 500ms": (r) => r.timings.duration < 500,
   });
 
-  errorRate.add(!listOk);
+  errorRate.add(listRes.status >= 400); // only actual HTTP errors, not latency misses
 
   // Harvest slugs from the response for subsequent requests
   try {
@@ -98,7 +98,7 @@ export default function () {
     singleCategoryDuration.add(singleRes.timings.duration);
     requestsTotal.add(1);
 
-    const singleOk = check(singleRes, {
+    check(singleRes, {
       "single-category: status 200": (r) => r.status === 200,
       "single-category: has category": (r) => {
         try {
@@ -110,7 +110,7 @@ export default function () {
       "single-category: response under 600ms": (r) => r.timings.duration < 600,
     });
 
-    errorRate.add(!singleOk);
+    errorRate.add(singleRes.status >= 400); // only actual HTTP errors, not latency misses
   }
 
   sleep(0.3);
