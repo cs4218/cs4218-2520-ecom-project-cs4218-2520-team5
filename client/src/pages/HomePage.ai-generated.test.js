@@ -1,110 +1,138 @@
 // Alyssa Ong, A0264663X
 // These test cases are generated with the help of AI
 
-import React from 'react';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import { MemoryRouter } from 'react-router-dom';
-import axios from 'axios';
-import HomePage from './HomePage';
-import '@testing-library/jest-dom';
+import React from "react";
+import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import { MemoryRouter } from "react-router-dom";
+import "@testing-library/jest-dom";
+import axios from "axios";
+import HomePage from "./HomePage";
 
 // Mock external dependencies for isolation
-jest.mock('axios');
+jest.mock("axios");
 const mockNavigate = jest.fn();
 
-jest.mock('react-router-dom', () => ({
-  ...jest.requireActual('react-router-dom'),
+jest.mock("react-router-dom", () => ({
+  ...jest.requireActual("react-router-dom"),
   useNavigate: () => mockNavigate,
 }));
 
 // Mock context hooks
-jest.mock('../context/auth', () => ({
-  useAuth: jest.fn(() => [{}, jest.fn()]),
+jest.mock("../context/auth", () => ({
+  useAuth: jest.fn(),
 }));
 
-jest.mock('../context/cart', () => ({
-  useCart: jest.fn(() => [[], jest.fn()]),
+jest.mock("../context/cart", () => ({
+  useCart: jest.fn(),
 }));
 
-jest.mock('../context/search', () => ({
-  useSearch: jest.fn(() => [{}, jest.fn()]),
+jest.mock("../context/search", () => ({
+  useSearch: jest.fn(),
 }));
 
-jest.mock('../hooks/useCategory', () => jest.fn(() => []));
+jest.mock("../hooks/useCategory", () => jest.fn(() => []));
 
-describe('HomePage Component', () => {
-  beforeEach(() => {
-    jest.clearAllMocks();
-  });
+describe("HomePage Component", () => {
+  let useAuthMock;
+  let useCartMock;
+  let useSearchMock;
 
   const renderHomePage = () => {
-    render(
+    return render(
       <MemoryRouter>
         <HomePage />
       </MemoryRouter>
     );
   };
 
-  it('renders without crashing', () => {
-    renderHomePage();
-    expect(screen.getByTestId('homepage')).toBeInTheDocument();
+  beforeEach(() => {
+    jest.clearAllMocks();
+
+    // Default mock implementations
+    useAuthMock = [{}, jest.fn()];
+    useCartMock = [[], jest.fn()];
+    useSearchMock = [{}, jest.fn()];
+
+    require("../context/auth").useAuth.mockReturnValue(useAuthMock);
+    require("../context/cart").useCart.mockReturnValue(useCartMock);
+    require("../context/search").useSearch.mockReturnValue(useSearchMock);
+
+    axios.get.mockResolvedValue({ data: { products: [] } });
   });
 
-  it('displays expected UI elements', async () => {
-    axios.get.mockResolvedValueOnce({ data: { products: [] } });
+  // ===== RENDERING TESTS =====
+
+  it("renders without crashing", () => {
     renderHomePage();
-    await waitFor(() => expect(screen.getByText(/Featured Products/i)).toBeInTheDocument());
+    expect(screen.getByTestId("homepage")).toBeInTheDocument();
   });
 
-  it('handles user interactions', async () => {
-    axios.get.mockResolvedValueOnce({ data: { products: [{ _id: '1', name: 'Product 1', price: 100 }] } });
+  it("displays expected UI elements", async () => {
     renderHomePage();
-    await waitFor(() => expect(screen.getByText('Product 1')).toBeInTheDocument());
-
-    const productLink = screen.getByText('Product 1');
-    fireEvent.click(productLink);
-    expect(mockNavigate).toHaveBeenCalledWith('/product/1');
+    expect(screen.getByText(/Welcome to Virtual Vault/i)).toBeInTheDocument();
+    expect(screen.getByPlaceholderText(/Search products/i)).toBeInTheDocument();
   });
 
-  it('handles API success state', async () => {
-    axios.get.mockResolvedValueOnce({ data: { products: [{ _id: '1', name: 'Product 1', price: 100 }] } });
+  // ===== USER INTERACTION TESTS =====
+
+  it("navigates to product details on product click", async () => {
+    axios.get.mockResolvedValueOnce({
+      data: { products: [{ _id: "1", name: "Product 1", slug: "product-1" }] },
+    });
+
     renderHomePage();
-    await waitFor(() => expect(screen.getByText('Product 1')).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText("Product 1")).toBeInTheDocument());
+
+    fireEvent.click(screen.getByText("Product 1"));
+    expect(mockNavigate).toHaveBeenCalledWith("/product/product-1");
   });
 
-  it('handles API error state', async () => {
-    const error = new Error('Network error');
-    axios.get.mockRejectedValueOnce(error);
+  it("updates search context on search input", () => {
     renderHomePage();
-    await waitFor(() => expect(screen.getByText(/Error loading products/i)).toBeInTheDocument());
+    const searchInput = screen.getByPlaceholderText(/Search products/i);
+    fireEvent.change(searchInput, { target: { value: "Laptop" } });
+
+    expect(useSearchMock[1]).toHaveBeenCalledWith({ query: "Laptop" });
   });
 
-  it('displays no products message when API returns empty list', async () => {
-    axios.get.mockResolvedValueOnce({ data: { products: [] } });
+  // ===== API HANDLING TESTS =====
+
+  it("fetches products on component mount", async () => {
     renderHomePage();
-    await waitFor(() => expect(screen.getByText(/No products available/i)).toBeInTheDocument());
+    await waitFor(() => expect(axios.get).toHaveBeenCalledWith("/api/v1/product"));
   });
 
-  it('displays multiple products correctly', async () => {
-    const products = [
-      { _id: '1', name: 'Product 1', price: 100 },
-      { _id: '2', name: 'Product 2', price: 200 },
-    ];
-    axios.get.mockResolvedValueOnce({ data: { products } });
+  it("handles API error gracefully", async () => {
+    axios.get.mockRejectedValueOnce(new Error("Network Error"));
     renderHomePage();
+
     await waitFor(() => {
-      expect(screen.getByText('Product 1')).toBeInTheDocument();
-      expect(screen.getByText('Product 2')).toBeInTheDocument();
+      expect(screen.getByText(/Failed to load products/i)).toBeInTheDocument();
     });
   });
 
-  it('handles navigation to product details', async () => {
-    const products = [{ _id: '1', name: 'Product 1', price: 100 }];
-    axios.get.mockResolvedValueOnce({ data: { products } });
-    renderHomePage();
-    await waitFor(() => expect(screen.getByText('Product 1')).toBeInTheDocument());
+  // ===== BOUNDARY VALUE ANALYSIS =====
 
-    fireEvent.click(screen.getByText('Product 1'));
-    expect(mockNavigate).toHaveBeenCalledWith('/product/1');
+  it("displays 'No products found' when API returns empty list", async () => {
+    axios.get.mockResolvedValueOnce({ data: { products: [] } });
+    renderHomePage();
+
+    await waitFor(() => {
+      expect(screen.getByText(/No products found/i)).toBeInTheDocument();
+    });
+  });
+
+  it("displays all products when API returns multiple items", async () => {
+    const products = [
+      { _id: "1", name: "Product 1", slug: "product-1" },
+      { _id: "2", name: "Product 2", slug: "product-2" },
+    ];
+    axios.get.mockResolvedValueOnce({ data: { products } });
+
+    renderHomePage();
+    await waitFor(() => {
+      expect(screen.getByText("Product 1")).toBeInTheDocument();
+      expect(screen.getByText("Product 2")).toBeInTheDocument();
+    });
   });
 });
