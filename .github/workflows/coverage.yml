@@ -5,6 +5,7 @@ on:
     pull_request:
         branches:
             - ai-testing-main
+            - main
 
 jobs:
     coverage:
