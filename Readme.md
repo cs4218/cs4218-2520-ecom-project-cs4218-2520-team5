@@ -793,7 +793,7 @@ Each team member automated a distinct type of non-functional test. Test types ar
 | Ang Yi Jie, Ivan | **Spike Testing** | Grafana k6 | `tests/spike/` |
 | Ong Xin Hui Lynnette | **Load Testing** | TBD | TBD |
 | Alyssa Ong Yi Xian | **Stress Testing** | TBD | TBD |
-| Koo Zhuo Hui | **Volume Testing** | TBD | TBD |
+| Koo Zhuo Hui | **Volume Testing** | Grafana k6 | `tests/volume/` |
 | Premakumar Meenu Lekha | **Soak Testing** | TBD | TBD |
 
 ---
@@ -881,7 +881,54 @@ bash tests/spike/run-spike-tests.sh
 
 ### 8.4 Koo Zhuo Hui — Volume Testing
 
-*(To be filled in by Zhuo Hui)*
+#### Overview
+
+Volume testing evaluates the application's **performance, stability, and data integrity** when subjected to large amounts of data in the database. Volume testing testing stresses the **database layer** by seeding large numbers of records and observing how query response times and correctness hold up.
+
+#### Running the Test
+
+#### Basic run (default 1000 products)
+```bash
+k6 --env SEED_COUNT=2000 run tests/volume/volumeTest.test.js
+```
+
+#### Test Structure
+
+The test runs in three phases:
+
+| Phase | Description |
+|---|---|
+| `setup()` | Seeds `SEED_COUNT` products into the database. Logs progress every 100 products and reports total seeding time. |
+| **Scenarios** | 7 isolated scenarios run sequentially (staggered `startTime`) so metrics do not interfere with each other. |
+| `teardown()` | Deletes all seeded products by ID. Logs progress every 100 deletions and reports total deletion time. |
+
+#### Scenarios
+
+Each scenario runs for **1 minute** with **3 VUs**, staggered so only one scenario is active at a time:
+
+| Scenario | Start Time | Endpoint Tested | What is Verified |
+|---|---|---|---|
+| `listing` | 0m | `GET /product-count` | Total count reflects seeded volume |
+| `pagination` | 1m | `GET /product-list/:page` | Pages return exactly 6 products; zero duplicates across pages |
+| `search` | 2m | `GET /search/:keyword` | Large result set returned without truncation; all records have required fields |
+| `filter` | 3m | `POST /product-filters` | Filters product based on price range, and exact price |
+| `category` | 4m | `GET /product-category/:slug` | Category query returns all seeded products |
+| `cart` | 5m | `POST /braintree/payment` | Handles cart payload without crashing |
+| `related` | 6m | `GET /related-product/:pid/:cid` | Returns at most 3 results; excludes the queried product |
+
+#### Metrics
+
+| Metric | Threshold | Description |
+|---|---|---|
+| `vol_list_duration` | p(90) < 3000ms | Product listing query latency |
+| `vol_pagination_duration` | p(90) < 3000ms | Pagination query latency |
+| `vol_search_duration` | p(90) < 3000ms | Search query latency |
+| `vol_filter_duration` | p(90) < 3000ms | Filter query latency |
+| `vol_category_duration` | p(90) < 3000ms | Category products query latency |
+| `vol_related_duration` | p(90) < 3000ms | Related products query latency |
+| `vol_error_rate` | rate < 2% | Proportion of failed requests |
+| `data_integrity_errors` | count < 1 | Duplicate products detected across pagination pages |
+
 
 ---
 
