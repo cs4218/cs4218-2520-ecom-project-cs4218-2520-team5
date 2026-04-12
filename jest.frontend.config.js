@@ -25,7 +25,7 @@ export default {
 	],
 
 	collectCoverage: true,
-	coverageDirectory: "coverage/frontend",
+	coverageDirectory: "coverage",
 	coverageReporters: ["lcov", "text", "json-summary", "json"],
 	collectCoverageFrom: [
 		"client/src/pages/About.js",
