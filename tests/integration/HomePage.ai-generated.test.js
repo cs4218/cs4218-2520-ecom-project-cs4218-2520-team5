@@ -1,139 +1,123 @@
-import React from 'react';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import '@testing-library/jest-dom';
-import axios from 'axios';
-import { BrowserRouter as Router } from 'react-router-dom';
-import HomePage from './HomePage';
+import { MongoMemoryServer } from 'mongodb-memory-server';
+import mongoose from 'mongoose';
+import request from 'supertest';
+import express from 'express';
+import categoryRoutes from '../routes/categoryRoutes';
+import productRoutes from '../routes/productRoutes';
+import Category from '../models/categoryModel';
+import Product from '../models/productModel';
 
-// Mock axios
-jest.mock('axios');
+let mongoServer, app;
 
-describe('HomePage', () => {
-  const categoriesMock = {
-    data: {
-      success: true,
-      category: [
-        { _id: '1', name: 'Electronics' },
-        { _id: '2', name: 'Books' },
-      ],
-    },
-  };
+beforeAll(async () => {
+  mongoServer = await MongoMemoryServer.create();
+  await mongoose.connect(mongoServer.getUri(), { useNewUrlParser: true, useUnifiedTopology: true });
+  app = express();
+  app.use(express.json());
+  app.use('/api/v1/category', categoryRoutes);
+  app.use('/api/v1/product', productRoutes);
+});
 
-  const productsMock = {
-    data: {
-      products: [
-        { _id: '1', name: 'Laptop', price: 1000, description: 'A good laptop', slug: 'laptop' },
-        { _id: '2', name: 'Book', price: 20, description: 'A good book', slug: 'book' },
-      ],
-    },
-  };
+afterAll(async () => {
+  await mongoose.disconnect();
+  await mongoServer.stop();
+});
 
-  const productCountMock = {
-    data: {
-      total: 2,
-    },
-  };
+afterEach(async () => {
+  await Category.deleteMany({});
+  await Product.deleteMany({});
+});
 
-  beforeEach(() => {
-    axios.get.mockImplementation((url) => {
-      if (url.includes('/api/v1/category/get-category')) {
-        return Promise.resolve(categoriesMock);
-      }
-      if (url.includes('/api/v1/product/product-list')) {
-        return Promise.resolve(productsMock);
-      }
-      if (url.includes('/api/v1/product/product-count')) {
-        return Promise.resolve(productCountMock);
-      }
-      return Promise.reject(new Error('not found'));
-    });
+describe('GET /api/v1/category/get-category', () => {
+  test('should return all categories', async () => {
+    const category = new Category({ name: 'Electronics' });
+    await category.save();
 
-    axios.post.mockImplementation((url) => {
-      if (url.includes('/api/v1/product/product-filters')) {
-        return Promise.resolve(productsMock);
-      }
-      return Promise.reject(new Error('not found'));
-    });
+    const response = await request(app).get('/api/v1/category/get-category');
+
+    expect(response.status).toBe(200);
+    expect(response.body.success).toBe(true);
+    expect(response.body.category).toHaveLength(1);
+    expect(response.body.category[0].name).toBe('Electronics');
   });
 
-  afterEach(() => {
-    jest.clearAllMocks();
+  test('should return empty array if no categories', async () => {
+    const response = await request(app).get('/api/v1/category/get-category');
+
+    expect(response.status).toBe(200);
+    expect(response.body.success).toBe(true);
+    expect(response.body.category).toHaveLength(0);
+  });
+});
+
+describe('GET /api/v1/product/product-list/:page', () => {
+  test('should return products for the given page', async () => {
+    const product = new Product({ name: 'Laptop', price: 1000, description: 'A powerful laptop', slug: 'laptop' });
+    await product.save();
+
+    const response = await request(app).get('/api/v1/product/product-list/1');
+
+    expect(response.status).toBe(200);
+    expect(response.body.products).toHaveLength(1);
+    expect(response.body.products[0].name).toBe('Laptop');
   });
 
-  test('renders HomePage and fetches categories and products', async () => {
-    render(
-      <Router>
-        <HomePage />
-      </Router>
-    );
+  test('should return empty array if no products', async () => {
+    const response = await request(app).get('/api/v1/product/product-list/1');
 
-    expect(screen.getByText(/All Products/i)).toBeInTheDocument();
+    expect(response.status).toBe(200);
+    expect(response.body.products).toHaveLength(0);
+  });
+});
 
-    await waitFor(() => {
-      expect(screen.getByText(/Electronics/i)).toBeInTheDocument();
-      expect(screen.getByText(/Books/i)).toBeInTheDocument();
-      expect(screen.getByText(/Laptop/i)).toBeInTheDocument();
-      expect(screen.getByText(/Book/i)).toBeInTheDocument();
-    });
+describe('GET /api/v1/product/product-count', () => {
+  test('should return total count of products', async () => {
+    const product1 = new Product({ name: 'Laptop', price: 1000, description: 'A powerful laptop', slug: 'laptop' });
+    const product2 = new Product({ name: 'Phone', price: 500, description: 'A smartphone', slug: 'phone' });
+    await product1.save();
+    await product2.save();
+
+    const response = await request(app).get('/api/v1/product/product-count');
+
+    expect(response.status).toBe(200);
+    expect(response.body.total).toBe(2);
   });
 
-  test('filters products by category', async () => {
-    render(
-      <Router>
-        <HomePage />
-      </Router>
-    );
+  test('should return zero if no products', async () => {
+    const response = await request(app).get('/api/v1/product/product-count');
 
-    await waitFor(() => {
-      expect(screen.getByText(/Electronics/i)).toBeInTheDocument();
-    });
+    expect(response.status).toBe(200);
+    expect(response.body.total).toBe(0);
+  });
+});
 
-    fireEvent.click(screen.getByText(/Electronics/i));
+describe('POST /api/v1/product/product-filters', () => {
+  test('should filter products by category and price', async () => {
+    const category = new Category({ name: 'Electronics' });
+    await category.save();
 
-    await waitFor(() => {
-      expect(axios.post).toHaveBeenCalledWith('/api/v1/product/product-filters', {
-        checked: ['1'],
-        radio: [],
-      });
-    });
+    const product1 = new Product({ name: 'Laptop', price: 1000, description: 'A powerful laptop', slug: 'laptop', category: category._id });
+    const product2 = new Product({ name: 'Phone', price: 500, description: 'A smartphone', slug: 'phone', category: category._id });
+    await product1.save();
+    await product2.save();
+
+    const response = await request(app)
+      .post('/api/v1/product/product-filters')
+      .send({ checked: [category._id], radio: [[0, 1000]] });
+
+    expect(response.status).toBe(200);
+    expect(response.body.products).toHaveLength(2);
   });
 
-  test('filters products by price', async () => {
-    render(
-      <Router>
-        <HomePage />
-      </Router>
-    );
+  test('should return empty array if no products match filters', async () => {
+    const category = new Category({ name: 'Electronics' });
+    await category.save();
 
-    await waitFor(() => {
-      expect(screen.getByText(/Filter By Price/i)).toBeInTheDocument();
-    });
+    const response = await request(app)
+      .post('/api/v1/product/product-filters')
+      .send({ checked: [category._id], radio: [[0, 100]] });
 
-    fireEvent.click(screen.getByText(/$0 - $50/i));
-
-    await waitFor(() => {
-      expect(axios.post).toHaveBeenCalledWith('/api/v1/product/product-filters', {
-        checked: [],
-        radio: [[0, 50]],
-      });
-    });
-  });
-
-  test('loads more products when "Loadmore" is clicked', async () => {
-    render(
-      <Router>
-        <HomePage />
-      </Router>
-    );
-
-    await waitFor(() => {
-      expect(screen.getByText(/Loadmore/i)).toBeInTheDocument();
-    });
-
-    fireEvent.click(screen.getByText(/Loadmore/i));
-
-    await waitFor(() => {
-      expect(axios.get).toHaveBeenCalledWith('/api/v1/product/product-list/2');
-    });
+    expect(response.status).toBe(200);
+    expect(response.body.products).toHaveLength(0);
   });
 });
