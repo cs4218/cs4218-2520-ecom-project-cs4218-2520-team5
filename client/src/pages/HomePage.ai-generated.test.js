@@ -34,77 +34,94 @@ jest.mock("../context/search", () => ({
 
 jest.mock("../hooks/useCategory", () => jest.fn(() => []));
 
+// Mock child components
+jest.mock("../components/Layout", () => {
+  return function Layout({ children }) {
+    return <div data-testid="layout">{children}</div>;
+  };
+});
+
 describe("HomePage Component", () => {
   beforeEach(() => {
     jest.clearAllMocks();
   });
 
-  const renderHomePage = () =>
-    render(
+  const renderHomePage = () => {
+    return render(
       <MemoryRouter>
         <HomePage />
       </MemoryRouter>
     );
+  };
 
-  describe("Initial render", () => {
-    it("renders without crashing", () => {
-      renderHomePage();
-      expect(screen.getByTestId("homepage")).toBeInTheDocument();
-    });
-
-    it("displays expected UI elements", () => {
-      renderHomePage();
-      expect(screen.getByText(/Welcome to Virtual Vault/i)).toBeInTheDocument();
-      expect(screen.getByText(/Featured Products/i)).toBeInTheDocument();
-    });
+  it("renders without crashing", () => {
+    renderHomePage();
+    expect(screen.getByTestId("layout")).toBeInTheDocument();
   });
 
-  describe("API interactions", () => {
-    it("fetches featured products on mount", async () => {
-      axios.get.mockResolvedValueOnce({ data: { products: [] } });
-      renderHomePage();
-      await waitFor(() => expect(axios.get).toHaveBeenCalledWith("/api/v1/product/featured"));
-    });
-
-    it("handles API error gracefully", async () => {
-      const error = new Error("Network error");
-      axios.get.mockRejectedValueOnce(error);
-      renderHomePage();
-      await waitFor(() => expect(console.log).toHaveBeenCalledWith(error));
-    });
+  it("displays expected UI elements", async () => {
+    renderHomePage();
+    expect(screen.getByText(/Welcome to Virtual Vault/i)).toBeInTheDocument();
+    expect(screen.getByText(/Featured Products/i)).toBeInTheDocument();
   });
 
-  describe("User interactions", () => {
-    it("navigates to product details when a product is clicked", async () => {
-      const mockProducts = [
-        { _id: "1", name: "Product 1", slug: "product-1" },
-      ];
-      axios.get.mockResolvedValueOnce({ data: { products: mockProducts } });
-      renderHomePage();
-      await waitFor(() => expect(screen.getByText("Product 1")).toBeInTheDocument());
-      fireEvent.click(screen.getByText("Product 1"));
-      expect(mockNavigate).toHaveBeenCalledWith("/product/product-1");
-    });
+  it("handles navigation to product details on click", async () => {
+    renderHomePage();
+    const productLink = screen.getByText(/View Details/i);
+    fireEvent.click(productLink);
+    expect(mockNavigate).toHaveBeenCalledWith("/product/some-product-slug");
   });
 
-  describe("Boundary value analysis", () => {
-    it("displays 'No Featured Products' when there are no products", async () => {
-      axios.get.mockResolvedValueOnce({ data: { products: [] } });
-      renderHomePage();
-      await waitFor(() => expect(screen.getByText("No Featured Products")).toBeInTheDocument());
+  it("fetches featured products on load", async () => {
+    axios.get.mockResolvedValueOnce({
+      data: { products: [{ _id: "1", name: "Product 1", price: 100 }] },
     });
 
-    it("displays products when there are featured products", async () => {
-      const mockProducts = [
-        { _id: "1", name: "Product 1", slug: "product-1" },
-        { _id: "2", name: "Product 2", slug: "product-2" },
-      ];
-      axios.get.mockResolvedValueOnce({ data: { products: mockProducts } });
-      renderHomePage();
-      await waitFor(() => {
-        expect(screen.getByText("Product 1")).toBeInTheDocument();
-        expect(screen.getByText("Product 2")).toBeInTheDocument();
-      });
+    renderHomePage();
+
+    await waitFor(() => expect(axios.get).toHaveBeenCalledWith("/api/v1/product/featured"));
+    expect(screen.getByText("Product 1")).toBeInTheDocument();
+  });
+
+  it("handles API error state gracefully", async () => {
+    axios.get.mockRejectedValueOnce(new Error("Network Error"));
+
+    renderHomePage();
+
+    await waitFor(() => expect(screen.getByText(/Error loading products/i)).toBeInTheDocument());
+  });
+
+  it("displays 'No Products Found' when API returns empty list", async () => {
+    axios.get.mockResolvedValueOnce({ data: { products: [] } });
+
+    renderHomePage();
+
+    await waitFor(() => expect(screen.getByText(/No Products Found/i)).toBeInTheDocument());
+  });
+
+  it("displays product details correctly", async () => {
+    axios.get.mockResolvedValueOnce({
+      data: { products: [{ _id: "1", name: "Product 1", price: 100 }] },
     });
+
+    renderHomePage();
+
+    await waitFor(() => expect(screen.getByText("Product 1")).toBeInTheDocument());
+    expect(screen.getByText("$100.00")).toBeInTheDocument();
+  });
+
+  it("handles user interactions with search", async () => {
+    renderHomePage();
+    const searchInput = screen.getByPlaceholderText(/Search products/i);
+    fireEvent.change(searchInput, { target: { value: "Laptop" } });
+    expect(searchInput.value).toBe("Laptop");
+  });
+
+  it("navigates to search results on search submit", async () => {
+    renderHomePage();
+    const searchInput = screen.getByPlaceholderText(/Search products/i);
+    fireEvent.change(searchInput, { target: { value: "Laptop" } });
+    fireEvent.keyDown(searchInput, { key: "Enter", code: "Enter" });
+    expect(mockNavigate).toHaveBeenCalledWith("/search?query=Laptop");
   });
 });
