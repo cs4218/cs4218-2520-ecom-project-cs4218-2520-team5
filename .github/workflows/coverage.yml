@@ -1,34 +1,37 @@
 name: Jest Coverage
 
 on:
-  workflow_dispatch:
+    workflow_dispatch:
+    pull_request:
+        branches:
+            - ai-testing-main
 
 jobs:
-  coverage:
-    runs-on: ubuntu-latest
+    coverage:
+        runs-on: ubuntu-latest
 
-    steps:
-      - name: Checkout repo
-        uses: actions/checkout@v4
+        steps:
+            - name: Checkout repo
+              uses: actions/checkout@v4
 
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20
+            - name: Setup Node
+              uses: actions/setup-node@v4
+              with:
+                  node-version: 20
 
-      - name: Install frontend dependencies
-        run: |
-          npm ci
-          cd client
-          npm ci
+            - name: Install frontend dependencies
+              run: |
+                  npm ci
+                  cd client
+                  npm ci
 
-      - name: Run frontend Jest coverage
-        run: |
-          npm run test:frontend -- --coverage --coverageReporters=json-summary --coverageReporters=json
+            - name: Run frontend Jest coverage
+              run: |
+                  npm run test:frontend -- --coverage --coverageReporters=json-summary --coverageReporters=json
 
-      - name: Upload coverage summary
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: coverage-summary
-          path: coverage/frontend/coverage-summary.json
+            - name: Upload coverage summary
+              if: always()
+              uses: actions/upload-artifact@v4
+              with:
+                  name: coverage-summary
+                  path: coverage/frontend/coverage-summary.json
