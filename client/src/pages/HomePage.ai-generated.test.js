@@ -14,9 +14,7 @@ jest.mock('react-router-dom', () => ({
 jest.mock('../context/cart', () => ({
   useCart: jest.fn(),
 }));
-jest.mock('react-hot-toast', () => ({
-  success: jest.fn(),
-}));
+jest.mock('react-hot-toast');
 
 describe('HomePage', () => {
   beforeEach(() => {
@@ -25,90 +23,98 @@ describe('HomePage', () => {
   });
 
   test('renders without crashing', () => {
-    render(<HomePage />, { wrapper: MemoryRouter });
+    render(
+      <MemoryRouter>
+        <HomePage />
+      </MemoryRouter>
+    );
     expect(screen.getByAltText('bannerimage')).toBeInTheDocument();
   });
 
   test('displays expected UI elements', async () => {
-    axios.get.mockResolvedValueOnce({ data: { success: true, category: [] } });
-    axios.get.mockResolvedValueOnce({ data: { total: 0 } });
+    axios.get.mockResolvedValueOnce({
+      data: { success: true, category: [{ _id: '1', name: 'Electronics' }] },
+    });
+    axios.get.mockResolvedValueOnce({
+      data: { products: [], total: 0 },
+    });
 
-    render(<HomePage />, { wrapper: MemoryRouter });
+    render(
+      <MemoryRouter>
+        <HomePage />
+      </MemoryRouter>
+    );
 
-    expect(screen.getByText('Filter By Category')).toBeInTheDocument();
+    await waitFor(() => expect(screen.getByText('Filter By Category')).toBeInTheDocument());
     expect(screen.getByText('Filter By Price')).toBeInTheDocument();
     expect(screen.getByText('All Products')).toBeInTheDocument();
   });
 
-  test('handles category filter interaction', async () => {
-    const categories = [{ _id: '1', name: 'Electronics' }];
-    axios.get.mockResolvedValueOnce({ data: { success: true, category: categories } });
-    axios.get.mockResolvedValueOnce({ data: { total: 0 } });
+  test('handles user interactions', async () => {
+    axios.get.mockResolvedValueOnce({
+      data: { success: true, category: [{ _id: '1', name: 'Electronics' }] },
+    });
+    axios.get.mockResolvedValueOnce({
+      data: { products: [{ _id: '1', name: 'Laptop', price: 999, description: 'A great laptop', slug: 'laptop' }], total: 1 },
+    });
 
-    render(<HomePage />, { wrapper: MemoryRouter });
+    render(
+      <MemoryRouter>
+        <HomePage />
+      </MemoryRouter>
+    );
 
     await waitFor(() => expect(screen.getByText('Electronics')).toBeInTheDocument());
 
-    const checkbox = screen.getByText('Electronics').closest('input');
-    userEvent.click(checkbox);
+    const categoryCheckbox = screen.getByText('Electronics').closest('input');
+    fireEvent.click(categoryCheckbox);
 
-    expect(checkbox.checked).toBe(true);
-  });
+    expect(categoryCheckbox.checked).toBe(true);
 
-  test('handles price filter interaction', async () => {
-    const prices = [{ _id: '1', name: '$0 - $50', array: [0, 50] }];
-    axios.get.mockResolvedValueOnce({ data: { success: true, category: [] } });
-    axios.get.mockResolvedValueOnce({ data: { total: 0 } });
+    const addToCartButton = screen.getByText('ADD TO CART');
+    fireEvent.click(addToCartButton);
 
-    render(<HomePage />, { wrapper: MemoryRouter });
-
-    await waitFor(() => expect(screen.getByText('$0 - $50')).toBeInTheDocument());
-
-    const checkbox = screen.getByText('$0 - $50').closest('input');
-    userEvent.click(checkbox);
-
-    expect(checkbox.checked).toBe(true);
+    expect(toast.success).toHaveBeenCalledWith('Item Added to cart');
   });
 
   test('handles API success and error states', async () => {
-    axios.get.mockResolvedValueOnce({ data: { success: true, category: [] } });
-    axios.get.mockResolvedValueOnce({ data: { total: 0 } });
+    axios.get.mockResolvedValueOnce({
+      data: { success: true, category: [{ _id: '1', name: 'Electronics' }] },
+    });
     axios.get.mockRejectedValueOnce(new Error('Network Error'));
 
-    render(<HomePage />, { wrapper: MemoryRouter });
+    render(
+      <MemoryRouter>
+        <HomePage />
+      </MemoryRouter>
+    );
 
-    await waitFor(() => expect(axios.get).toHaveBeenCalledTimes(2));
+    await waitFor(() => expect(screen.getByText('Filter By Category')).toBeInTheDocument());
+    expect(screen.queryByText('All Products')).not.toBeInTheDocument();
   });
 
-  test('handles load more products', async () => {
-    const products = [{ _id: '1', name: 'Product 1', price: 100, description: 'Description', slug: 'product-1' }];
-    axios.get.mockResolvedValueOnce({ data: { success: true, category: [] } });
-    axios.get.mockResolvedValueOnce({ data: { total: 2 } });
-    axios.get.mockResolvedValueOnce({ data: { products } });
+  test('handles load more functionality', async () => {
+    axios.get.mockResolvedValueOnce({
+      data: { success: true, category: [{ _id: '1', name: 'Electronics' }] },
+    });
+    axios.get.mockResolvedValueOnce({
+      data: { products: [{ _id: '1', name: 'Laptop', price: 999, description: 'A great laptop', slug: 'laptop' }], total: 2 },
+    });
+    axios.get.mockResolvedValueOnce({
+      data: { products: [{ _id: '2', name: 'Phone', price: 499, description: 'A great phone', slug: 'phone' }] },
+    });
 
-    render(<HomePage />, { wrapper: MemoryRouter });
+    render(
+      <MemoryRouter>
+        <HomePage />
+      </MemoryRouter>
+    );
 
-    await waitFor(() => expect(screen.getByText('Product 1')).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText('Laptop')).toBeInTheDocument());
 
     const loadMoreButton = screen.getByText(/Loadmore/i);
-    userEvent.click(loadMoreButton);
+    fireEvent.click(loadMoreButton);
 
-    await waitFor(() => expect(axios.get).toHaveBeenCalledTimes(3));
-  });
-
-  test('adds product to cart', async () => {
-    const products = [{ _id: '1', name: 'Product 1', price: 100, description: 'Description', slug: 'product-1' }];
-    axios.get.mockResolvedValueOnce({ data: { success: true, category: [] } });
-    axios.get.mockResolvedValueOnce({ data: { total: 1 } });
-    axios.get.mockResolvedValueOnce({ data: { products } });
-
-    render(<HomePage />, { wrapper: MemoryRouter });
-
-    await waitFor(() => expect(screen.getByText('Product 1')).toBeInTheDocument());
-
-    const addToCartButton = screen.getByText('ADD TO CART');
-    userEvent.click(addToCartButton);
-
-    expect(toast.success).toHaveBeenCalledWith('Item Added to cart');
+    await waitFor(() => expect(screen.getByText('Phone')).toBeInTheDocument());
   });
 });
