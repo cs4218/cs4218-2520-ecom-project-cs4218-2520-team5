@@ -792,7 +792,7 @@ Each team member automated a distinct type of non-functional test. Test types ar
 |--------|-----------|------|-------|
 | Ang Yi Jie, Ivan | **Spike Testing** | Grafana k6 | `tests/spike/` |
 | Ong Xin Hui Lynnette | **Load Testing** | Grafana k6 | `tests/load/` |
-| Alyssa Ong Yi Xian | **Stress Testing** | TBD | TBD |
+| Alyssa Ong Yi Xian | **Stress Testing** | Grafana k6 | `tests/stress-testing/` |
 | Koo Zhuo Hui | **Volume Testing** | Grafana k6 | `tests/volume/` |
 | Premakumar Meenu Lekha | **Soak Testing** | TBD | TBD |
 
@@ -965,9 +965,65 @@ npm run test:load:checkout
 
 ---
 
-### 8.3 Alyssa Ong Yi Xian — Stress Testing
+### 8.3 Alyssa Ong Yi Xian — Stress Testing with Grafana k6
 
-*(To be filled in by Alyssa)*
+#### What is Stress Testing?
+
+Stress testing pushes the system beyond expected operating limits to identify the breaking point, observe failure behaviour, and check whether the application can recover after overload.
+
+For this e-commerce application, stress testing focused on realistic high-risk traffic such as authentication, product browsing/search, category operations, and order/admin workflows.
+
+#### Tool: Grafana k6
+
+I used **Grafana k6** with the `ramping-arrival-rate` executor to model demand using requests-per-second (RPS), which is more suitable for stress testing than only scaling virtual users.
+
+#### Test Files
+
+All files are in `tests/stress-testing/`.
+
+| File | Scope Covered |
+|---|---|
+| `stress-test-auth.js` | Auth flows (`register`, `login`, `forgot-password`) to stress CPU-bound bcrypt paths |
+| `stress-test-products.js` | Product browse/search/filter/category endpoints to stress DB-heavy read paths |
+| `stress-test-categories.js` | Category read/write operations to observe CRUD contention |
+| `stress-test-orders.js` | Orders/profile/admin endpoints to stress populate-heavy queries + auth checks |
+| `stress-test-combined-phase1.js` | Mixed realistic workload to detect initial breaking point (auto-abort enabled) |
+| `stress-test-combined-phase2.js` | Mixed realistic workload to observe full collapse and recovery (no auto-abort) |
+
+#### Two-Phase Method
+
+| Phase | Purpose | Auto-Abort | Max VUs |
+|---|---|---|---|
+| Phase 1 | Identify degradation onset / breaking point | Yes (`p(95) > 5s`) | 500 |
+| Phase 2 | Observe collapse behaviour and post-peak recovery | No | 2000 |
+
+RPS ramp pattern used in combined tests:
+
+`5 -> 10 -> 20 -> 30 -> 40 -> 50 -> 60 -> 80 -> 100 -> 120 -> 150`
+
+#### How to Run
+
+From the project root:
+
+```bash
+# Component isolation tests
+k6 run tests/stress-testing/stress-test-auth.js
+k6 run tests/stress-testing/stress-test-products.js
+k6 run tests/stress-testing/stress-test-categories.js
+k6 run tests/stress-testing/stress-test-orders.js
+
+# Combined phases
+k6 run tests/stress-testing/stress-test-combined-phase1.js
+k6 run tests/stress-testing/stress-test-combined-phase2.js
+```
+
+#### Key Findings
+
+- **Combined Phase 1:** 9,262 total requests, **98.16%** success rate, **1.83%** failure rate, and 8,512 dropped iterations under sustained overload.
+- **Combined Phase 2:** 23,021 total requests, **24.95%** success rate, **75.04%** failure rate, and 34,280 dropped iterations, indicating collapse under extreme pressure.
+- **Component severity trend:** Products degraded the most, followed by categories and orders, while auth degraded but remained partially functional.
+
+These results show that the system can serve normal traffic but experiences severe instability under prolonged high-intensity demand, especially on DB-heavy and mixed-write workloads.
 
 ---
 
