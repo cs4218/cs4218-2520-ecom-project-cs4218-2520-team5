@@ -20,7 +20,13 @@
     "test:spike": "bash tests/spike/run-spike-tests.sh",
     "test:spike:categories": "k6 run tests/spike/spike-categories.js",
     "test:spike:products": "k6 run tests/spike/spike-products.js",
-    "test:spike:auth": "k6 run tests/spike/spike-auth.js"
+    "test:spike:auth": "k6 run tests/spike/spike-auth.js",
+    "test:load:explore": "bash tests/load/run-explore.sh",
+    "test:load": "bash tests/load/run-load-tests.sh",
+    "test:load:login": "bash tests/load/run-load-tests.sh login",
+    "test:load:product": "bash tests/load/run-load-tests.sh product",
+    "test:load:cart": "bash tests/load/run-load-tests.sh cart",
+    "test:load:checkout": "bash tests/load/run-load-tests.sh checkout"
   },
   "keywords": [],
   "author": "RP",

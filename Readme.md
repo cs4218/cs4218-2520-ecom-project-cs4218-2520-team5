@@ -791,7 +791,7 @@ Each team member automated a distinct type of non-functional test. Test types ar
 | Member | Test Type | Tool | Files |
 |--------|-----------|------|-------|
 | Ang Yi Jie, Ivan | **Spike Testing** | Grafana k6 | `tests/spike/` |
-| Ong Xin Hui Lynnette | **Load Testing** | TBD | TBD |
+| Ong Xin Hui Lynnette | **Load Testing** | Grafana k6 | `tests/load/` |
 | Alyssa Ong Yi Xian | **Stress Testing** | Grafana k6 | `tests/stress-testing/` |
 | Koo Zhuo Hui | **Volume Testing** | Grafana k6 | `tests/volume/` |
 | Premakumar Meenu Lekha | **Soak Testing** | TBD | TBD |
@@ -867,9 +867,101 @@ bash tests/spike/run-spike-tests.sh
 
 ---
 
-### 8.2 Ong Xin Hui Lynnette — Load Testing
+### 8.2 Ong Xin Hui Lynnette (A0257058X) — Load Testing with Grafana k6
 
-*(To be filled in by Lynnette)*
+#### What is Load Testing?
+
+Load testing measures how a system performs under expected, realistic traffic levels. Unlike spike testing (sudden bursts) or stress testing (pushing to failure), load testing focuses on sustained, gradual load that reflects normal-to-busy usage patterns. The goal is to identify the point where performance starts to deteriorate under expected load, not to find the absolute breaking point.
+
+#### Methodology: Empirical Two-Phase Calibration
+
+When no official traffic target or SLA is provided, load levels should be justified empirically rather than assumed. Picking an arbitrary VU count risks either under-testing (missing real bottlenecks) or over-testing (conflating load behaviour with failure behaviour). This test suite uses a two-phase approach:
+
+**Phase 1 — Exploratory Calibration:** Short trial runs at gradually increasing VU levels to observe where response time, throughput, or error rate begins to degrade. Each endpoint group has its own VU ladder reflecting expected relative traffic.
+
+**Phase 2 — Final Report Runs:** After observing exploratory results, a gradual ramp profile for each endpoint spans from baseline to the empirically-determined upper-normal load ceiling. The chosen VU limits are based on observed degradation trends rather than arbitrary guesses.
+
+#### Tool: Grafana k6
+
+Install: `brew install k6`
+
+#### Test Files
+
+All files are in `tests/load/`. See `tests/load/README.md` for full methodology details.
+
+**Exploratory calibration scripts** (Phase 1):
+
+| File | Endpoints Under Test | VU Ladder |
+|------|---------------------|-----------|
+| `explore-login.js` | `POST /api/v1/auth/login` | 5, 10, 20, 30, 40 |
+| `explore-product.js` | `GET /product-list/:page`, `GET /product-count`, `GET /search/:keyword` | 5, 10, 20, 30, 40 |
+| `explore-cart.js` | `GET /get-product`, `POST /product-filters`, `GET /related-product/:pid/:cid` | 3, 8, 15, 20, 25 |
+| `explore-checkout.js` | `POST /auth/login`, `GET /braintree/token` | 2, 5, 10, 15, 20 |
+
+**Final load test scripts** (Phase 2):
+
+| File | Endpoints Under Test | Peak VUs |
+|------|---------------------|----------|
+| `load-login.js` | `POST /api/v1/auth/login` | 30 |
+| `load-product.js` | `GET /product-list/:page`, `GET /product-count`, `GET /search/:keyword` | 30 |
+| `load-cart.js` | `GET /get-product`, `POST /product-filters`, `GET /related-product/:pid/:cid` | 20 |
+| `load-checkout.js` | `POST /auth/login`, `GET /braintree/token` | 15 |
+| `run-explore.sh` | Orchestrates all exploratory calibration ladders | — |
+| `run-load-tests.sh` | Orchestrates all final load test runs | — |
+
+#### Load Profile (final tests)
+
+All final tests follow a stepped ramp pattern:
+
+```
+Ramp-up  (30s → baseline VUs)
+Step 1   (1m  → light load)
+Step 2   (1m  → moderate load)
+Step 3   (1m  → upper-normal load)
+Sustain  (2m  → hold for measurement)
+Ramp-down(30s → 0 VUs)
+```
+
+#### Thresholds
+
+All scripts enforce two universal thresholds plus per-endpoint thresholds:
+
+- **Universal:** `http_req_duration p(90) < 1500ms`, `http_req_failed rate < 1%`
+
+| Test | Per-Endpoint Thresholds |
+|------|---------------|
+| Login | `login_duration p(90) < 800ms`, `error_rate < 5%`, `login_success_rate > 95%` |
+| Product | `product_list_duration p(90) < 600ms`, `search_duration p(90) < 700ms`, `error_rate < 5%` |
+| Cart | `product_fetch_duration p(90) < 600ms`, `filter_duration p(90) < 700ms`, `error_rate < 5%` |
+| Checkout | `checkout_login_duration p(90) < 800ms`, `braintree_token_duration p(90) < 2000ms`, `error_rate < 10%` |
+
+#### How to Run
+
+Prerequisites: k6 installed, server running on port 6060, a test user registered in the database.
+
+```bash
+# Phase 1: Exploratory calibration (all endpoints)
+npm run test:load:explore
+
+# Phase 1: Single endpoint ladder
+bash tests/load/run-explore.sh login
+
+# Phase 2: Final load tests (all endpoints)
+npm run test:load
+
+# Phase 2: Individual final tests
+npm run test:load:login
+npm run test:load:product
+npm run test:load:cart
+npm run test:load:checkout
+```
+
+#### Rationale for Endpoint Selection
+
+- **Login**: CPU-intensive due to bcrypt hashing; the most likely single-endpoint bottleneck under concurrent load. Realistic traffic pattern during peak hours (e.g. start of business, post-marketing campaign).
+- **Product listing & search**: The core browsing hot path. Product search uses MongoDB regex scans; listing uses sorting and pagination — both sensitive to concurrency.
+- **Cart (browse & filter)**: Simulates users building carts by browsing products, applying price/category filters, and viewing related items. While the cart state is client-side, these server queries represent the real load during cart-building.
+- **Checkout**: Involves external Braintree gateway calls, making it latency-sensitive and resource-constrained. Lower VU ceilings reflect the natural funnel: fewer users reach checkout than browse products.
 
 ---
 
