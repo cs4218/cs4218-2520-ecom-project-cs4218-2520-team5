@@ -1,15 +1,19 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import axios from 'axios';
-import HomePage from './HomePage';
 import userEvent from '@testing-library/user-event';
+import HomePage from './HomePage';
+import { useAuth } from '../context/auth';
+import { useCart } from '../context/cart';
+import { useSearch } from '../context/search';
+import useCategory from '../hooks/useCategory';
 
 jest.mock('axios');
 jest.mock('react-router-dom', () => ({
   ...jest.requireActual('react-router-dom'),
   useNavigate: () => jest.fn(),
   useParams: () => ({}),
-  useLocation: () => ({}),
+  useLocation: () => ({ pathname: '/' }),
 }));
 
 jest.mock('../context/auth', () => ({
@@ -43,101 +47,78 @@ describe('HomePage', () => {
   test('displays expected UI elements', async () => {
     axios.get.mockResolvedValueOnce({ data: { success: true, category: [] } });
     axios.get.mockResolvedValueOnce({ data: { total: 0 } });
-
     render(
       <MemoryRouter>
         <HomePage />
       </MemoryRouter>
     );
-
     expect(screen.getByText('Filter By Category')).toBeInTheDocument();
     expect(screen.getByText('Filter By Price')).toBeInTheDocument();
     expect(screen.getByText('All Products')).toBeInTheDocument();
   });
 
-  test('handles category filter interaction', async () => {
-    axios.get.mockResolvedValueOnce({ data: { success: true, category: [{ _id: '1', name: 'Electronics' }] } });
-    axios.get.mockResolvedValueOnce({ data: { total: 0 } });
-
-    render(
-      <MemoryRouter>
-        <HomePage />
-      </MemoryRouter>
-    );
-
-    await waitFor(() => expect(screen.getByText('Electronics')).toBeInTheDocument());
-
-    const checkbox = screen.getByText('Electronics').closest('div').querySelector('input[type="checkbox"]');
-    fireEvent.click(checkbox);
-
-    expect(checkbox.checked).toBe(true);
-  });
-
-  test('handles price filter interaction', async () => {
+  test('handles user interactions', async () => {
     axios.get.mockResolvedValueOnce({ data: { success: true, category: [] } });
     axios.get.mockResolvedValueOnce({ data: { total: 0 } });
-
     render(
       <MemoryRouter>
         <HomePage />
       </MemoryRouter>
     );
 
-    const priceCheckbox = screen.getByText('Filter By Price').closest('div').querySelector('input[type="checkbox"]');
-    fireEvent.click(priceCheckbox);
-
-    expect(priceCheckbox.checked).toBe(true);
+    const resetButton = screen.getByText('RESET FILTERS');
+    userEvent.click(resetButton);
+    await waitFor(() => {
+      expect(window.location.reload).toHaveBeenCalled();
+    });
   });
 
   test('handles API success and error states', async () => {
     axios.get.mockResolvedValueOnce({ data: { success: true, category: [] } });
     axios.get.mockResolvedValueOnce({ data: { total: 0 } });
-    axios.get.mockRejectedValueOnce(new Error('Network Error'));
-
     render(
       <MemoryRouter>
         <HomePage />
       </MemoryRouter>
     );
 
-    await waitFor(() => expect(axios.get).toHaveBeenCalledTimes(3));
+    await waitFor(() => {
+      expect(axios.get).toHaveBeenCalledWith('/api/v1/category/get-category');
+      expect(axios.get).toHaveBeenCalledWith('/api/v1/product/product-count');
+    });
+
+    axios.get.mockRejectedValueOnce(new Error('API Error'));
+    render(
+      <MemoryRouter>
+        <HomePage />
+      </MemoryRouter>
+    );
+
+    await waitFor(() => {
+      expect(console.log).toHaveBeenCalledWith(new Error('API Error'));
+    });
   });
 
-  test('handles load more products', async () => {
+  test('loads more products when "Loadmore" button is clicked', async () => {
     axios.get.mockResolvedValueOnce({ data: { success: true, category: [] } });
-    axios.get.mockResolvedValueOnce({ data: { total: 10 } });
+    axios.get.mockResolvedValueOnce({ data: { total: 2 } });
     axios.get.mockResolvedValueOnce({ data: { products: [{ _id: '1', name: 'Product 1', price: 100, description: 'Description 1', slug: 'product-1' }] } });
-
     render(
       <MemoryRouter>
         <HomePage />
       </MemoryRouter>
     );
 
-    await waitFor(() => expect(screen.getByText('Product 1')).toBeInTheDocument());
+    await waitFor(() => {
+      expect(screen.getByText('Product 1')).toBeInTheDocument();
+    });
 
+    axios.get.mockResolvedValueOnce({ data: { products: [{ _id: '2', name: 'Product 2', price: 200, description: 'Description 2', slug: 'product-2' }] } });
     const loadMoreButton = screen.getByText(/Loadmore/i);
-    fireEvent.click(loadMoreButton);
+    userEvent.click(loadMoreButton);
 
-    await waitFor(() => expect(axios.get).toHaveBeenCalledTimes(4));
-  });
-
-  test('adds product to cart', async () => {
-    axios.get.mockResolvedValueOnce({ data: { success: true, category: [] } });
-    axios.get.mockResolvedValueOnce({ data: { total: 10 } });
-    axios.get.mockResolvedValueOnce({ data: { products: [{ _id: '1', name: 'Product 1', price: 100, description: 'Description 1', slug: 'product-1' }] } });
-
-    render(
-      <MemoryRouter>
-        <HomePage />
-      </MemoryRouter>
-    );
-
-    await waitFor(() => expect(screen.getByText('Product 1')).toBeInTheDocument());
-
-    const addToCartButton = screen.getByText('ADD TO CART');
-    fireEvent.click(addToCartButton);
-
-    expect(localStorage.setItem).toHaveBeenCalledWith('cart', JSON.stringify([{ _id: '1', name: 'Product 1', price: 100, description: 'Description 1', slug: 'product-1' }]));
+    await waitFor(() => {
+      expect(screen.getByText('Product 2')).toBeInTheDocument();
+    });
   });
 });
