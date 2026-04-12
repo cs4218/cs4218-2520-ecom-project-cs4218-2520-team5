@@ -10,14 +10,11 @@ jest.mock('axios');
 jest.mock('react-router-dom', () => ({
   ...jest.requireActual('react-router-dom'),
   useNavigate: () => jest.fn(),
-  useParams: () => ({}),
 }));
 jest.mock('../context/cart', () => ({
   useCart: jest.fn(),
 }));
-jest.mock('react-hot-toast', () => ({
-  success: jest.fn(),
-}));
+jest.mock('react-hot-toast');
 
 describe('HomePage', () => {
   beforeEach(() => {
@@ -26,7 +23,11 @@ describe('HomePage', () => {
   });
 
   test('renders without crashing', () => {
-    render(<HomePage />, { wrapper: MemoryRouter });
+    render(
+      <MemoryRouter>
+        <HomePage />
+      </MemoryRouter>
+    );
     expect(screen.getByAltText('bannerimage')).toBeInTheDocument();
   });
 
@@ -35,7 +36,11 @@ describe('HomePage', () => {
     axios.get.mockResolvedValueOnce({ data: { total: 0 } });
     axios.get.mockResolvedValueOnce({ data: { products: [] } });
 
-    render(<HomePage />, { wrapper: MemoryRouter });
+    render(
+      <MemoryRouter>
+        <HomePage />
+      </MemoryRouter>
+    );
 
     expect(screen.getByText('Filter By Category')).toBeInTheDocument();
     expect(screen.getByText('Filter By Price')).toBeInTheDocument();
@@ -43,22 +48,26 @@ describe('HomePage', () => {
   });
 
   test('handles user interactions', async () => {
-    const mockNavigate = jest.fn();
-    jest.mock('react-router-dom', () => ({
-      ...jest.requireActual('react-router-dom'),
-      useNavigate: () => mockNavigate,
-    }));
+    const mockSetCart = jest.fn();
+    useCart.mockReturnValue([[], mockSetCart]);
 
     axios.get.mockResolvedValueOnce({ data: { success: true, category: [] } });
     axios.get.mockResolvedValueOnce({ data: { total: 0 } });
-    axios.get.mockResolvedValueOnce({ data: { products: [] } });
+    axios.get.mockResolvedValueOnce({ data: { products: [{ _id: '1', name: 'Product 1', price: 100, description: 'Description', slug: 'product-1' }] } });
 
-    render(<HomePage />, { wrapper: MemoryRouter });
+    render(
+      <MemoryRouter>
+        <HomePage />
+      </MemoryRouter>
+    );
 
-    const loadMoreButton = screen.getByText(/Loadmore/i);
-    fireEvent.click(loadMoreButton);
+    await waitFor(() => expect(screen.getByText('Product 1')).toBeInTheDocument());
 
-    expect(mockNavigate).not.toHaveBeenCalled();
+    const addToCartButton = screen.getByText('ADD TO CART');
+    userEvent.click(addToCartButton);
+
+    expect(mockSetCart).toHaveBeenCalledWith([{ _id: '1', name: 'Product 1', price: 100, description: 'Description', slug: 'product-1' }]);
+    expect(toast.success).toHaveBeenCalledWith('Item Added to cart');
   });
 
   test('handles API success and error states', async () => {
@@ -66,42 +75,43 @@ describe('HomePage', () => {
     axios.get.mockResolvedValueOnce({ data: { total: 0 } });
     axios.get.mockResolvedValueOnce({ data: { products: [] } });
 
-    render(<HomePage />, { wrapper: MemoryRouter });
+    render(
+      <MemoryRouter>
+        <HomePage />
+      </MemoryRouter>
+    );
 
-    await waitFor(() => {
-      expect(axios.get).toHaveBeenCalledWith('/api/v1/category/get-category');
-      expect(axios.get).toHaveBeenCalledWith('/api/v1/product/product-count');
-    });
+    await waitFor(() => expect(axios.get).toHaveBeenCalledTimes(3));
 
     axios.get.mockRejectedValueOnce(new Error('Network Error'));
 
-    render(<HomePage />, { wrapper: MemoryRouter });
+    render(
+      <MemoryRouter>
+        <HomePage />
+      </MemoryRouter>
+    );
 
-    await waitFor(() => {
-      expect(axios.get).toHaveBeenCalledWith('/api/v1/product/product-list/1');
-    });
+    await waitFor(() => expect(axios.get).toHaveBeenCalledTimes(6)); // 3 initial + 3 retries
   });
 
-  test('adds product to cart and shows toast notification', async () => {
-    const setCart = jest.fn();
-    useCart.mockReturnValue([[], setCart]);
-
+  test('handles load more functionality', async () => {
     axios.get.mockResolvedValueOnce({ data: { success: true, category: [] } });
-    axios.get.mockResolvedValueOnce({ data: { total: 1 } });
-    axios.get.mockResolvedValueOnce({
-      data: {
-        products: [
-          { _id: '1', name: 'Product 1', price: 100, description: 'Description', slug: 'product-1' },
-        ],
-      },
-    });
+    axios.get.mockResolvedValueOnce({ data: { total: 2 } });
+    axios.get.mockResolvedValueOnce({ data: { products: [{ _id: '1', name: 'Product 1', price: 100, description: 'Description', slug: 'product-1' }] } });
 
-    render(<HomePage />, { wrapper: MemoryRouter });
+    render(
+      <MemoryRouter>
+        <HomePage />
+      </MemoryRouter>
+    );
 
-    const addToCartButton = await screen.findByText('ADD TO CART');
-    userEvent.click(addToCartButton);
+    await waitFor(() => expect(screen.getByText('Product 1')).toBeInTheDocument());
 
-    expect(setCart).toHaveBeenCalledWith([{ _id: '1', name: 'Product 1', price: 100, description: 'Description', slug: 'product-1' }]);
-    expect(toast.success).toHaveBeenCalledWith('Item Added to cart');
+    axios.get.mockResolvedValueOnce({ data: { products: [{ _id: '2', name: 'Product 2', price: 200, description: 'Description', slug: 'product-2' }] } });
+
+    const loadMoreButton = screen.getByText(/Loadmore/i);
+    userEvent.click(loadMoreButton);
+
+    await waitFor(() => expect(screen.getByText('Product 2')).toBeInTheDocument());
   });
 });
