@@ -40,6 +40,7 @@ export default {
         "<rootDir>/controllers/*.integration.test.js",
         "<rootDir>/middlewares/*.integration.test.js",
         "<rootDir>/tests/**/*.supertest.integration.test.js",
+        "<rootDir>/tests/integration/*.ai-generated.test.js",
       ],
     },
   ],
