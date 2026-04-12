@@ -4,8 +4,8 @@ import request from 'supertest';
 import express from 'express';
 import categoryRoutes from '../routes/categoryRoutes';
 import productRoutes from '../routes/productRoutes';
-import Category from '../models/categoryModel';
-import Product from '../models/productModel';
+import Category from '../models/Category';
+import Product from '../models/Product';
 
 let mongoServer, app;
 
@@ -28,73 +28,93 @@ afterEach(async () => {
   await Product.deleteMany({});
 });
 
-describe('Category API', () => {
-  test('GET /api/v1/category/get-category - success', async () => {
+describe('GET /api/v1/category/get-category', () => {
+  test('should return all categories (happy path)', async () => {
     const category = new Category({ name: 'Electronics' });
     await category.save();
 
     const response = await request(app).get('/api/v1/category/get-category');
     expect(response.status).toBe(200);
     expect(response.body.success).toBe(true);
-    expect(response.body.category.length).toBe(1);
+    expect(response.body.category).toHaveLength(1);
     expect(response.body.category[0].name).toBe('Electronics');
   });
 
-  test('GET /api/v1/category/get-category - no categories', async () => {
+  test('should return empty array if no categories exist', async () => {
     const response = await request(app).get('/api/v1/category/get-category');
     expect(response.status).toBe(200);
     expect(response.body.success).toBe(true);
-    expect(response.body.category.length).toBe(0);
+    expect(response.body.category).toHaveLength(0);
   });
 });
 
-describe('Product API', () => {
-  test('GET /api/v1/product/product-list/:page - success', async () => {
-    const product = new Product({ name: 'Laptop', price: 1000, description: 'A powerful laptop', slug: 'laptop' });
+describe('GET /api/v1/product/product-list/:page', () => {
+  test('should return products for the first page (happy path)', async () => {
+    const product = new Product({ name: 'Laptop', price: 1000, description: 'A high-end laptop', slug: 'laptop' });
     await product.save();
 
     const response = await request(app).get('/api/v1/product/product-list/1');
     expect(response.status).toBe(200);
-    expect(response.body.products.length).toBe(1);
+    expect(response.body.products).toHaveLength(1);
     expect(response.body.products[0].name).toBe('Laptop');
   });
 
-  test('GET /api/v1/product/product-list/:page - no products', async () => {
+  test('should return empty array if no products exist', async () => {
     const response = await request(app).get('/api/v1/product/product-list/1');
     expect(response.status).toBe(200);
-    expect(response.body.products.length).toBe(0);
+    expect(response.body.products).toHaveLength(0);
   });
+});
 
-  test('GET /api/v1/product/product-count - success', async () => {
-    const product = new Product({ name: 'Laptop', price: 1000, description: 'A powerful laptop', slug: 'laptop' });
-    await product.save();
-
-    const response = await request(app).get('/api/v1/product/product-count');
-    expect(response.status).toBe(200);
-    expect(response.body.total).toBe(1);
-  });
-
-  test('POST /api/v1/product/product-filters - filter by category', async () => {
-    const category = new Category({ name: 'Electronics' });
-    await category.save();
-    const product = new Product({ name: 'Laptop', price: 1000, description: 'A powerful laptop', slug: 'laptop', category: category._id });
-    await product.save();
-
-    const response = await request(app).post('/api/v1/product/product-filters').send({ checked: [category._id], radio: [] });
-    expect(response.status).toBe(200);
-    expect(response.body.products.length).toBe(1);
-    expect(response.body.products[0].name).toBe('Laptop');
-  });
-
-  test('POST /api/v1/product/product-filters - filter by price', async () => {
-    const product1 = new Product({ name: 'Laptop', price: 1000, description: 'A powerful laptop', slug: 'laptop' });
-    const product2 = new Product({ name: 'Phone', price: 500, description: 'A smart phone', slug: 'phone' });
+describe('GET /api/v1/product/product-count', () => {
+  test('should return the total count of products (happy path)', async () => {
+    const product1 = new Product({ name: 'Laptop', price: 1000, description: 'A high-end laptop', slug: 'laptop' });
+    const product2 = new Product({ name: 'Phone', price: 500, description: 'A smartphone', slug: 'phone' });
     await product1.save();
     await product2.save();
 
-    const response = await request(app).post('/api/v1/product/product-filters').send({ checked: [], radio: [[0, 600]] });
+    const response = await request(app).get('/api/v1/product/product-count');
     expect(response.status).toBe(200);
-    expect(response.body.products.length).toBe(1);
-    expect(response.body.products[0].name).toBe('Phone');
+    expect(response.body.total).toBe(2);
+  });
+
+  test('should return zero if no products exist', async () => {
+    const response = await request(app).get('/api/v1/product/product-count');
+    expect(response.status).toBe(200);
+    expect(response.body.total).toBe(0);
+  });
+});
+
+describe('POST /api/v1/product/product-filters', () => {
+  test('should return filtered products based on category and price (happy path)', async () => {
+    const category = new Category({ name: 'Electronics' });
+    await category.save();
+
+    const product1 = new Product({ name: 'Laptop', price: 1000, description: 'A high-end laptop', slug: 'laptop', category: category._id });
+    const product2 = new Product({ name: 'Phone', price: 500, description: 'A smartphone', slug: 'phone', category: category._id });
+    await product1.save();
+    await product2.save();
+
+    const response = await request(app)
+      .post('/api/v1/product/product-filters')
+      .send({ checked: [category._id], radio: [[0, 1000]] });
+
+    expect(response.status).toBe(200);
+    expect(response.body.products).toHaveLength(2);
+  });
+
+  test('should return empty array if no products match the filters', async () => {
+    const category = new Category({ name: 'Electronics' });
+    await category.save();
+
+    const product = new Product({ name: 'Laptop', price: 1000, description: 'A high-end laptop', slug: 'laptop', category: category._id });
+    await product.save();
+
+    const response = await request(app)
+      .post('/api/v1/product/product-filters')
+      .send({ checked: [category._id], radio: [[0, 500]] });
+
+    expect(response.status).toBe(200);
+    expect(response.body.products).toHaveLength(0);
   });
 });
