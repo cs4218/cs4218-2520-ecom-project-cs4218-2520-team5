@@ -1,0 +1,289 @@
+{
+  "name": "AI Integration Test Generator",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "generate-integration-tests",
+        "responseMode": "onReceived",
+        "options": {}
+      },
+      "id": "webhook-trigger",
+      "name": "Webhook Trigger",
+      "type": "n8n-nodes-base.webhook",
+      "position": [200, 300],
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "jsCode": "// Extract and prepare source code for integration test generation\nconst payload = $input.first().json;\n\nconst repository = payload.repository || 'owner/repo';\nconst branch = payload.branch || 'main';\nconst sourceFiles = payload.sourceFiles || [];\nconst testCode = payload.testCode || '';\n\nreturn [{\n  json: {\n    repository,\n    branch,\n    owner: repository.split('/')[0],\n    repo: repository.split('/')[1],\n    sourceFiles,\n    testCode,\n    timestamp: new Date().toISOString()\n  }\n}];"
+      },
+      "id": "prepare-input",
+      "name": "Prepare Input",
+      "type": "n8n-nodes-base.code",
+      "position": [420, 300],
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.openai.com/v1/chat/completions",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "openAiApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"model\": \"gpt-4o\",\n  \"temperature\": 0.3,\n  \"max_tokens\": 4000,\n  \"messages\": [\n    {\n      \"role\": \"system\",\n      \"content\": \"You are an expert test engineer specializing in integration tests.\\n\\nGenerate integration tests that verify:\\n1. Component interactions and data flow between modules\\n2. Database operations (use @DataJpaTest or TestContainers where applicable)\\n3. API endpoint integration (use @SpringBootTest, MockMvc, or WebTestClient)\\n4. Service layer interactions with repositories\\n5. Message queue interactions (if applicable)\\n6. External API integrations (use WireMock or MockServer)\\n\\nRULES:\\n- Use proper test lifecycle management (@BeforeEach, @AfterEach)\\n- Use TestContainers for database tests where possible\\n- Include proper cleanup in tests\\n- Test both success and failure scenarios\\n- Verify transactional behavior\\n- Follow AAA pattern (Arrange, Act, Assert)\\n- Use descriptive test names: should_ExpectedBehavior_When_Condition\\n- Each test must be independent and idempotent\\n- Mock external dependencies appropriately\\n\\nReturn JSON:\\n{\\n  \\\"tests\\\": [\\n    {\\n      \\\"fileName\\\": string,\\n      \\\"filePath\\\": string,\\n      \\\"framework\\\": string,\\n      \\\"testCode\\\": string,\\n      \\\"dependencies\\\": [string],\\n      \\\"description\\\": string\\n    }\\n  ],\\n  \\\"summary\\\": {\\n    \\\"totalTests\\\": number,\\n    \\\"coverageAreas\\\": [string],\\n    \\\"frameworks\\\": [string],\\n    \\\"notes\\\": string\\n  }\\n}\"\n    },\n    {\n      \"role\": \"user\",\n      \"content\": \"Generate integration tests for the following source code:\\n\\nRepository: {{ $json.repository }}\\nBranch: {{ $json.branch }}\\n\\nSource Files:\\n{{ JSON.stringify($json.sourceFiles) }}\\n\\nExisting Test Code (for context):\\n```\\n{{ $json.testCode }}\\n```\\n\\nGenerate comprehensive integration tests covering all component interactions.\"\n    }\n  ]\n}",
+        "options": {}
+      },
+      "id": "ai-integration-test-generator",
+      "name": "AI Integration Test Generator",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [640, 300],
+      "typeVersion": 4.1
+    },
+    {
+      "parameters": {
+        "jsCode": "// Parse OpenAI response and extract generated tests\nconst response = $input.first().json;\nconst content = response.choices?.[0]?.message?.content || '{}';\n\nlet parsed = {};\ntry {\n  const jsonMatch = content.match(/\\{[\\s\\S]*\\}/);\n  parsed = jsonMatch ? JSON.parse(jsonMatch[0]) : {};\n} catch (e) {\n  parsed = { rawContent: content, parseError: e.message };\n}\n\nconst tests = parsed.tests || [];\nconst summary = parsed.summary || {};\n\n// Validate each generated test\nconst validatedTests = tests.map(test => ({\n  ...test,\n  isValid: !!(test.testCode && test.fileName),\n  hasAssertions: test.testCode?.includes('assert') ||\n                 test.testCode?.includes('Assert') ||\n                 test.testCode?.includes('expect') ||\n                 test.testCode?.includes('verify'),\n  hasSetup: test.testCode?.includes('@BeforeEach') ||\n             test.testCode?.includes('beforeEach') ||\n             test.testCode?.includes('setup'),\n  lineCount: test.testCode?.split('\\n').length || 0\n}));\n\nconst previousData = $('Prepare Input').first().json;\n\nreturn [{\n  json: {\n    ...previousData,\n    generatedTests: validatedTests,\n    summary,\n    totalGenerated: validatedTests.length,\n    validTests: validatedTests.filter(t => t.isValid).length,\n    tokensUsed: response.usage?.total_tokens || 0,\n    parseError: parsed.parseError || null\n  }\n}];"
+      },
+      "id": "parse-integration-tests",
+      "name": "Parse Generated Integration Tests",
+      "type": "n8n-nodes-base.code",
+      "position": [860, 300],
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.openai.com/v1/chat/completions",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "openAiApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"model\": \"gpt-4o\",\n  \"temperature\": 0.2,\n  \"max_tokens\": 2000,\n  \"messages\": [\n    {\n      \"role\": \"system\",\n      \"content\": \"You are a senior QA architect specializing in test code quality.\\n\\nAnalyze the provided integration test code and detect these anti-patterns:\\n1. BRITTLE_TEST: Tests coupled to implementation details or hardcoded values\\n2. FLAKY_TEST: Race conditions, timing issues, order-dependent tests\\n3. MISSING_ASSERTION: Tests that cannot fail\\n4. IMPROPER_CLEANUP: Missing teardown for shared resources\\n5. OVER_MOCKING: Mocking too many real integration points\\n6. MISSING_NEGATIVE_TESTS: Only happy path tested\\n7. HARDCODED_TEST_DATA: Magic numbers or strings without constants\\n8. MISSING_TRANSACTION_VERIFICATION: Not verifying transactional behavior\\n\\nReturn JSON:\\n{\\n  \\\"issues\\\": [\\n    {\\n      \\\"pattern\\\": string,\\n      \\\"severity\\\": \\\"CRITICAL|WARNING|INFO\\\",\\n      \\\"file\\\": string,\\n      \\\"description\\\": string,\\n      \\\"suggestion\\\": string\\n    }\\n  ],\\n  \\\"qualityScore\\\": number,\\n  \\\"qualityGate\\\": \\\"PASSED|FAILED\\\",\\n  \\\"summary\\\": string\\n}\"\n    },\n    {\n      \"role\": \"user\",\n      \"content\": \"Analyze these generated integration tests for anti-patterns:\\n\\n{{ JSON.stringify($json.generatedTests) }}\"\n    }\n  ]\n}",
+        "options": {}
+      },
+      "id": "ai-antipattern-check",
+      "name": "AI Anti-Pattern Check",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [1080, 300],
+      "typeVersion": 4.1
+    },
+    {
+      "parameters": {
+        "jsCode": "// Parse anti-pattern analysis response\nconst response = $input.first().json;\nconst content = response.choices?.[0]?.message?.content || '{}';\n\nlet antiPatternReport = {};\ntry {\n  const jsonMatch = content.match(/\\{[\\s\\S]*\\}/);\n  antiPatternReport = jsonMatch ? JSON.parse(jsonMatch[0]) : {};\n} catch (e) {\n  antiPatternReport = { issues: [], qualityScore: 0, parseError: e.message };\n}\n\nconst previousData = $('Parse Generated Integration Tests').first().json;\n\nreturn [{\n  json: {\n    ...previousData,\n    antiPatternReport,\n    qualityScore: antiPatternReport.qualityScore || 0,\n    qualityGate: antiPatternReport.qualityGate || 'FAILED',\n    issueCount: antiPatternReport.issues?.length || 0,\n    criticalIssues: antiPatternReport.issues?.filter(i => i.severity === 'CRITICAL').length || 0\n  }\n}];"
+      },
+      "id": "parse-antipattern-report",
+      "name": "Parse Anti-Pattern Report",
+      "type": "n8n-nodes-base.code",
+      "position": [1300, 300],
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "quality-gate-check",
+              "leftValue": "={{ $json.qualityGate }}",
+              "rightValue": "PASSED",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ]
+        }
+      },
+      "id": "quality-gate",
+      "name": "Quality Gate Passed?",
+      "type": "n8n-nodes-base.if",
+      "position": [1520, 300],
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "jsCode": "// Prepare files for GitHub commit\nconst data = $input.first().json;\nconst tests = data.generatedTests || [];\n\n// Only commit valid tests\nconst validTests = tests.filter(t => t.isValid);\n\nconst filesToCommit = validTests.map(test => ({\n  path: test.filePath || `src/test/java/generated/integration/${test.fileName}`,\n  content: Buffer.from(test.testCode).toString('base64'),\n  commitMessage: `test(integration): AI-generated - ${test.fileName}`\n}));\n\nreturn [{\n  json: {\n    ...data,\n    filesToCommit,\n    totalFilesToCommit: filesToCommit.length\n  }\n}];"
+      },
+      "id": "prepare-commit-files",
+      "name": "Prepare Commit Files",
+      "type": "n8n-nodes-base.code",
+      "position": [1740, 160],
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "=https://api.github.com/repos/{{ $json.owner }}/{{ $json.repo }}/git/ref/heads/{{ $json.branch }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "githubApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Accept",
+              "value": "application/vnd.github.v3+json"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "get-branch-sha",
+      "name": "Get Branch SHA",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [1960, 160],
+      "typeVersion": 4.1
+    },
+    {
+      "parameters": {
+        "jsCode": "// Prepare each file for individual commit\nconst branchData = $input.first().json;\nconst sha = branchData.object?.sha || branchData.sha;\n\nconst commitData = $('Prepare Commit Files').first().json;\nconst files = commitData.filesToCommit || [];\n\nreturn files.map(file => ({\n  json: {\n    owner: commitData.owner,\n    repo: commitData.repo,\n    branch: commitData.branch,\n    filePath: file.path,\n    fileContent: file.content,\n    commitMessage: file.commitMessage,\n    sha\n  }\n}));"
+      },
+      "id": "split-files-for-commit",
+      "name": "Split Files for Commit",
+      "type": "n8n-nodes-base.code",
+      "position": [2180, 160],
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "method": "PUT",
+        "url": "=https://api.github.com/repos/{{ $json.owner }}/{{ $json.repo }}/contents/{{ $json.filePath }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "githubApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Accept",
+              "value": "application/vnd.github.v3+json"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"message\": \"{{ $json.commitMessage }}\",\n  \"content\": \"{{ $json.fileContent }}\",\n  \"branch\": \"{{ $json.branch }}\"\n}",
+        "options": {
+          "batching": {
+            "batch": {
+              "batchSize": 1,
+              "batchInterval": 1000
+            }
+          }
+        }
+      },
+      "id": "commit-integration-tests",
+      "name": "Commit Integration Tests",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [2400, 160],
+      "typeVersion": 4.1
+    },
+    {
+      "parameters": {
+        "jsCode": "// Build Telegram success notification\nconst data = $('Parse Anti-Pattern Report').first().json;\n\nconst message = [\n  '✅ *Integration Tests Generated & Committed*',\n  '',\n  `📦 *Repository:* ${data.repository}`,\n  `🌿 *Branch:* ${data.branch}`,\n  '',\n  '━━━━━━━━━━━━━━━━━━━━━━',\n  '📊 *Generation Summary*',\n  '━━━━━━━━━━━━━━━━━━━━━━',\n  `• Total Generated: ${data.totalGenerated}`,\n  `• Valid Tests: ${data.validTests}`,\n  `• Files Committed: ${data.totalFilesToCommit || 0}`,\n  '',\n  '━━━━━━━━━━━━━━━━━━━━━━',\n  '🔍 *Quality Analysis*',\n  '━━━━━━━━━━━━━━━━━━━━━━',\n  `• Quality Score: ${data.qualityScore}/100`,\n  `• Quality Gate: ✅ ${data.qualityGate}`,\n  `• Issues Found: ${data.issueCount}`,\n  `• Critical Issues: ${data.criticalIssues}`,\n  '',\n  `🕐 *Timestamp:* ${data.timestamp}`\n].join('\\n');\n\nreturn [{ json: { message, data } }];"
+      },
+      "id": "build-success-notification",
+      "name": "Build Success Notification",
+      "type": "n8n-nodes-base.code",
+      "position": [2620, 160],
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "jsCode": "// Build Telegram failure notification with issues\nconst data = $input.first().json;\nconst issues = data.antiPatternReport?.issues || [];\nconst criticalIssues = issues.filter(i => i.severity === 'CRITICAL');\n\nconst issueLines = criticalIssues.slice(0, 5).map((issue, i) =>\n  `${i + 1}. *${issue.pattern}* — ${issue.description}`\n);\n\nconst message = [\n  '❌ *Integration Tests — Quality Gate FAILED*',\n  '',\n  `📦 *Repository:* ${data.repository}`,\n  `🌿 *Branch:* ${data.branch}`,\n  '',\n  '━━━━━━━━━━━━━━━━━━━━━━',\n  '🔍 *Quality Analysis*',\n  '━━━━━━━━━━━━━━━━━━━━━━',\n  `• Quality Score: ${data.qualityScore}/100`,\n  `• Quality Gate: ❌ ${data.qualityGate}`,\n  `• Total Issues: ${data.issueCount}`,\n  `• Critical Issues: ${data.criticalIssues}`,\n  '',\n  '⚠️ *Critical Issues Found:*',\n  ...issueLines,\n  '',\n  '_Tests NOT committed — fix issues and retry_'\n].join('\\n');\n\nreturn [{ json: { message, data } }];"
+      },
+      "id": "build-failure-notification",
+      "name": "Build Failure Notification",
+      "type": "n8n-nodes-base.code",
+      "position": [1740, 440],
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://api.telegram.org/bot{{ $credentials.telegramBotToken }}/sendMessage",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"chat_id\": \"{{ $credentials.telegramChatId }}\",\n  \"text\": {{ JSON.stringify($json.message) }},\n  \"parse_mode\": \"Markdown\"\n}",
+        "options": {}
+      },
+      "id": "telegram-notify",
+      "name": "Telegram Notification",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [2840, 300],
+      "typeVersion": 4.1
+    }
+  ],
+  "connections": {
+    "Webhook Trigger": {
+      "main": [[{ "node": "Prepare Input", "type": "main", "index": 0 }]]
+    },
+    "Prepare Input": {
+      "main": [[{ "node": "AI Integration Test Generator", "type": "main", "index": 0 }]]
+    },
+    "AI Integration Test Generator": {
+      "main": [[{ "node": "Parse Generated Integration Tests", "type": "main", "index": 0 }]]
+    },
+    "Parse Generated Integration Tests": {
+      "main": [[{ "node": "AI Anti-Pattern Check", "type": "main", "index": 0 }]]
+    },
+    "AI Anti-Pattern Check": {
+      "main": [[{ "node": "Parse Anti-Pattern Report", "type": "main", "index": 0 }]]
+    },
+    "Parse Anti-Pattern Report": {
+      "main": [[{ "node": "Quality Gate Passed?", "type": "main", "index": 0 }]]
+    },
+    "Quality Gate Passed?": {
+      "main": [
+        [{ "node": "Prepare Commit Files", "type": "main", "index": 0 }],
+        [{ "node": "Build Failure Notification", "type": "main", "index": 0 }]
+      ]
+    },
+    "Prepare Commit Files": {
+      "main": [[{ "node": "Get Branch SHA", "type": "main", "index": 0 }]]
+    },
+    "Get Branch SHA": {
+      "main": [[{ "node": "Split Files for Commit", "type": "main", "index": 0 }]]
+    },
+    "Split Files for Commit": {
+      "main": [[{ "node": "Commit Integration Tests", "type": "main", "index": 0 }]]
+    },
+    "Commit Integration Tests": {
+      "main": [[{ "node": "Build Success Notification", "type": "main", "index": 0 }]]
+    },
+    "Build Success Notification": {
+      "main": [[{ "node": "Telegram Notification", "type": "main", "index": 0 }]]
+    },
+    "Build Failure Notification": {
+      "main": [[{ "node": "Telegram Notification", "type": "main", "index": 0 }]]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

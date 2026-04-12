@@ -1,0 +1,62 @@
+{
+  "name": "Scheduled Test Trend Analysis",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "hours",
+              "hoursInterval": 24
+            }
+          ]
+        }
+      },
+      "id": "daily-trigger",
+      "name": "Daily Schedule",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "position": [200, 300],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "jsCode": "// Fetch historical test data from storage\n// This could be from a database, file, or API\nconst historicalData = {\n  last7Days: [\n    { date: '2024-01-15', unitPass: 95, integrationPass: 88, uiPass: 92, nfrPass: true, healthScore: 85 },\n    { date: '2024-01-16', unitPass: 93, integrationPass: 90, uiPass: 91, nfrPass: true, healthScore: 83 },\n    { date: '2024-01-17', unitPass: 96, integrationPass: 85, uiPass: 93, nfrPass: true, healthScore: 86 },\n    { date: '2024-01-18', unitPass: 91, integrationPass: 87, uiPass: 89, nfrPass: false, healthScore: 78 },\n    { date: '2024-01-19', unitPass: 97, integrationPass: 92, uiPass: 94, nfrPass: true, healthScore: 89 },\n    { date: '2024-01-20', unitPass: 94, integrationPass: 89, uiPass: 90, nfrPass: true, healthScore: 84 },\n    { date: '2024-01-21', unitPass: 98, integrationPass: 91, uiPass: 95, nfrPass: true, healthScore: 91 }\n  ],\n  flakyTests: [\n    { name: 'testUserLogin', failureRate: 0.15, lastFailed: '2024-01-18' },\n    { name: 'testApiTimeout', failureRate: 0.22, lastFailed: '2024-01-20' },\n    { name: 'testDatabaseConnection', failureRate: 0.08, lastFailed: '2024-01-17' }\n  ],\n  slowestTests: [\n    { name: 'testFullUserJourney', avgDuration: 45000 },\n    { name: 'testDatabaseMigration', avgDuration: 32000 },\n    { name: 'testFileUpload', avgDuration: 28000 }\n  ]\n};\n\nreturn [{ json: historicalData }];"
+      },
+      "id": "fetch-historical-data",
+      "name": "Fetch Historical Test Data",
+      "type": "n8n-nodes-base.code",
+      "position": [420, 300],
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "model": "gpt-4o",
+        "messages": {
+          "values": [
+            {
+              "role": "system",
+              "content": "You are a test analytics expert. Analyze historical test data to identify:\n\n1. TRENDS: Are tests getting better or worse over time?\n2. FLAKY TESTS: Which tests are unreliable and should be fixed?\n3. SLOW TESTS: Which tests are bottlenecks?\n4. PATTERNS: Are failures correlated with specific days/times?\n5. PREDICTIONS: Based on trends, predict upcoming issues\n6. RECOMMENDATIONS: Prioritized action items\n\nProvide a weekly trend report with actionable insights."
+            },
+            {
+              "role": "user",
+              "content": "Historical test data:\n{{ JSON.stringify($json) }}"
+            }
+          ]
+        }
+      },
+      "id": "ai-trend-analysis",
+      "name": "AI Trend Analysis",
+      "type": "n8n-nodes-base.openAi",
+      "position": [640, 300],
+      "typeVersion": 1
+    }
+  ],
+  "connections": {
+    "Daily Schedule": {
+      "main": [[{ "node": "Fetch Historical Test Data", "type": "main", "index": 0 }]]
+    },
+    "Fetch Historical Test Data": {
+      "main": [[{ "node": "AI Trend Analysis", "type": "main", "index": 0 }]]
+    }
+  }
+}
